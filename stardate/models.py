@@ -49,3 +49,8 @@ class Post(models.Model):
     title = models.CharField(blank=True, max_length=255)
     content = models.TextField(blank=True)
     blog = models.ForeignKey(Blog)
+
+    # On save, a post should parse the dropbox blog file
+    # and update the post that was changed.
+    # def save(self):
+    #     pass

@@ -5,7 +5,7 @@ from django.conf import settings
 from django.shortcuts import render_to_response
 from dropbox.rest import ErrorResponse
 
-from stardate.decorators import dropbox_auth
+from stardate.decorators import dropbox_auth_required
 from stardate.models import DropboxFile, DropboxFolder, Blog, Post
 
 
@@ -78,13 +78,13 @@ def _save_file_or_folder(klient, path, parent=None):
             raise e
 
 
-@dropbox_auth
+@dropbox_auth_required
 def read_dir(request, klient, path='/'):
     metadata = _save_file_or_folder(klient, path)
     return render_to_response('metadata.html', {'metadata': metadata})
 
 
-@dropbox_auth
+@dropbox_auth_required
 def import_posts(request, klient):
     blogs = Blog.objects.all()
 
