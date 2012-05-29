@@ -33,7 +33,8 @@ class DropboxFolder(DropboxCommon):
 
 class DropboxFile(DropboxCommon):
     client_mtime = models.DateTimeField(blank=True, null=True)
-    folder = models.ForeignKey(DropboxFolder)
+    content = models.TextField(blank=True)
+    # folder = models.ForeignKey(DropboxFolder)
     mime_type = models.CharField(max_length=255)
 
 
