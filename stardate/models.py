@@ -1,12 +1,6 @@
 import markdown
 
 from django.db import models
-from django.contrib.auth.models import User
-
-
-class DropboxAuth(models.Model):
-    user = models.OneToOneField(User, related_name="dropbox")
-    access_token = models.CharField(max_length="255")
 
 
 class DropboxCommon(models.Model):
@@ -36,7 +30,7 @@ class DropboxFolder(DropboxCommon):
 class DropboxFile(DropboxCommon):
     client_mtime = models.DateTimeField(blank=True, null=True)
     content = models.TextField(blank=True)
-    # folder = models.ForeignKey(DropboxFolder)
+    folder = models.ForeignKey(DropboxFolder, blank=True, null=True)
     mime_type = models.CharField(max_length=255)
 
 
