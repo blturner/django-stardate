@@ -1,3 +1,5 @@
+import markdown
+
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -42,14 +44,26 @@ class Blog(models.Model):
     title = models.CharField(blank=True, max_length=255)
     dropbox_file = models.ForeignKey(DropboxFile)
 
+    def __unicode__(self):
+        return self.title
+
     def __init__(self, *args, **kwargs):
         super(Blog, self).__init__(*args, **kwargs)
+
+    def save(self, *args, **kwargs):
+        super(Blog, self).save(*args, **kwargs)
+        # Parse the dropbox_file and save individual posts
+        markdown.markdown(self.dropbox_file.content,
+            extensions=['mypreprocessor(blog_id=%s)' % self.id])
 
 
 class Post(models.Model):
     title = models.CharField(blank=True, max_length=255)
     content = models.TextField(blank=True)
     blog = models.ForeignKey(Blog)
+
+    def __unicode__(self):
+        return self.title
 
     # On save, a post should parse the dropbox blog file
     # and update the post that was changed.
