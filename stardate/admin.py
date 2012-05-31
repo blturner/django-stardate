@@ -8,11 +8,11 @@ class DropboxFileAdmin(admin.ModelAdmin):
 
 
 class BlogAdmin(admin.ModelAdmin):
-    pass
+    prepopulated_fields = {'slug': ('title',)}
 
 
 class PostAdmin(admin.ModelAdmin):
-    pass
+    prepopulated_fields = {'slug': ('title',)}
 
 
 admin.site.register(DropboxFile, DropboxFileAdmin)

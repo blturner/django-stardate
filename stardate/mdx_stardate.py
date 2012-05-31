@@ -1,5 +1,7 @@
 import markdown
 
+from django.template.defaultfilters import slugify
+
 from stardate.models import Blog, Post
 
 
@@ -40,8 +42,10 @@ def makeExtension(configs=None):
 
 
 def _save_or_update_post(blog_id, title, content=None):
+    slug = slugify(title)
     p, created = Post.objects.get_or_create(title=title,
         blog=Blog.objects.get(id=blog_id))
     p.title = title
+    p.slug = slug
     p.content = content
     p.save()

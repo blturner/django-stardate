@@ -35,8 +35,9 @@ class DropboxFile(DropboxCommon):
 
 
 class Blog(models.Model):
-    title = models.CharField(blank=True, max_length=255)
+    title = models.CharField(max_length=255)
     dropbox_file = models.ForeignKey(DropboxFile)
+    slug = models.SlugField()
 
     def __unicode__(self):
         return self.title
@@ -48,18 +49,28 @@ class Blog(models.Model):
         super(Blog, self).save(*args, **kwargs)
         # Parse the dropbox_file and save individual posts
         markdown.markdown(self.dropbox_file.content,
-            extensions=['mypreprocessor(blog_id=%s)' % self.id])
+            extensions=['stardate(blog_id=%s)' % self.id])
+
+    @models.permalink
+    def get_absolute_url(self):
+        return ('blog_list_view', (), {'slug': self.slug})
 
 
 class Post(models.Model):
-    title = models.CharField(blank=True, max_length=255)
-    content = models.TextField(blank=True)
     blog = models.ForeignKey(Blog)
+    content = models.TextField(blank=True)
+    slug = models.SlugField()
+    title = models.CharField(max_length=255)
 
     def __unicode__(self):
         return self.title
 
     # On save, a post should parse the dropbox blog file
     # and update the post that was changed.
-    # def save(self):
-    #     pass
+    def save(self, *args, **kwargs):
+        super(Post, self).save(*args, **kwargs)
+
+    @models.permalink
+    def get_absolute_url(self):
+        return ('post_detail_view', (), {'blog_slug': self.blog.slug,
+            'post_slug': self.slug})

@@ -1,0 +1,9 @@
+{% load markup %}
+
+{% with post.blog as blog %}
+<h2><a href="{{ blog.get_absolute_url }}">{{ blog.title }}</a></h2>
+{% endwith %}
+
+<h1>{{ post.title }}</h1>
+
+{{ post.content|markdown }}
