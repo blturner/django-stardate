@@ -58,7 +58,7 @@ class Blog(models.Model):
 
 class Post(models.Model):
     blog = models.ForeignKey(Blog)
-    content = models.TextField(blank=True)
+    body = models.TextField(blank=True)
     slug = models.SlugField()
     title = models.CharField(max_length=255)
 

@@ -47,5 +47,5 @@ def _save_or_update_post(blog_id, title, content=None):
         blog=Blog.objects.get(id=blog_id))
     p.title = title
     p.slug = slug
-    p.content = content
+    p.body = content
     p.save()
