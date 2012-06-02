@@ -1,5 +1,6 @@
 import markdown
 
+from django.contrib.auth.models import User
 from django.db import models
 
 
@@ -35,12 +36,13 @@ class DropboxFile(DropboxCommon):
 
 
 class Blog(models.Model):
-    title = models.CharField(max_length=255)
+    authors = models.ManyToManyField(User, blank=True, null=True)
     dropbox_file = models.ForeignKey(DropboxFile)
+    name = models.CharField(max_length=255)
     slug = models.SlugField()
 
     def __unicode__(self):
-        return self.title
+        return self.name
 
     def __init__(self, *args, **kwargs):
         super(Blog, self).__init__(*args, **kwargs)
@@ -57,6 +59,7 @@ class Blog(models.Model):
 
 
 class Post(models.Model):
+    authors = models.ManyToManyField(User, blank=True, null=True)
     blog = models.ForeignKey(Blog)
     body = models.TextField(blank=True)
     slug = models.SlugField()

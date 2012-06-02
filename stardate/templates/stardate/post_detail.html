@@ -5,5 +5,18 @@
 {% endwith %}
 
 <h1>{{ post.title }}</h1>
+{% if post.authors.all or post.blog.authors.all %}
+<ul>
+{% if post.authors.all %}
+    {% with post.authors.all as author_list %}
+        {% include 'stardate/includes/author_list.html' %}
+    {% endwith %}
+{% elif post.blog.authors.all %}
+    {% with post.blog.authors.all as author_list %}
+        {% include 'stardate/includes/author_list.html' %}
+    {% endwith %}
+{% endif %}
+</ul>
+{% endif %}
 
 {{ post.body|markdown }}

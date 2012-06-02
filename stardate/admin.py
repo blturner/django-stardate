@@ -8,7 +8,7 @@ class DropboxFileAdmin(admin.ModelAdmin):
 
 
 class BlogAdmin(admin.ModelAdmin):
-    prepopulated_fields = {'slug': ('title',)}
+    prepopulated_fields = {'slug': ('name',)}
 
 
 class PostAdmin(admin.ModelAdmin):
