@@ -56,9 +56,11 @@ class Blog(models.Model):
             for key, value in post.iteritems():
                 if key == 'publish':
                     post[key] = datetime.strptime(value, '%m/%d/%Y')
+                elif key == 'stardate':
+                    post[key] = int(value)
                 else:
                     post[key] = value
-            p, created = Post.objects.get_or_create(title=post.get('title'), blog_id=self.id)
+            p, created = Post.objects.get_or_create(stardate=post.get('stardate'), blog_id=self.id)
             p.__dict__.update(**post)
             p.save()
 
@@ -80,6 +82,7 @@ class Post(models.Model):
     objects = PostManager()
     publish = models.DateTimeField(blank=True, null=True)
     slug = models.SlugField()
+    stardate = models.IntegerField()
     title = models.CharField(max_length=255)
 
     def __unicode__(self):
