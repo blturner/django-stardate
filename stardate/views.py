@@ -9,4 +9,4 @@ class BlogPostListView(generic.ListView):
 
     def get_queryset(self):
         blog = get_object_or_404(Blog, slug__iexact=self.kwargs['slug'])
-        return Post.objects.filter(blog=blog)
+        return Post.objects.published().filter(blog=blog)

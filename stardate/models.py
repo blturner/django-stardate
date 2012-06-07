@@ -1,7 +1,9 @@
-import markdown
+from datetime import datetime
 
 from django.contrib.auth.models import User
 from django.db import models
+
+from stardate.parser import parse_file
 
 
 class DropboxCommon(models.Model):
@@ -50,18 +52,33 @@ class Blog(models.Model):
     def save(self, *args, **kwargs):
         super(Blog, self).save(*args, **kwargs)
         # Parse the dropbox_file and save individual posts
-        markdown.markdown(self.dropbox_file.content,
-            extensions=['stardate(blog_id=%s)' % self.id])
+        for post in parse_file(self.dropbox_file.content):
+            for key, value in post.iteritems():
+                if key == 'publish':
+                    post[key] = datetime.strptime(value, '%m/%d/%Y')
+                else:
+                    post[key] = value
+            p, created = Post.objects.get_or_create(title=post.get('title'), blog_id=self.id)
+            p.__dict__.update(**post)
+            p.save()
 
     @models.permalink
     def get_absolute_url(self):
         return ('blog_list_view', (), {'slug': self.slug})
 
 
+class PostManager(models.Manager):
+
+    def published(self):
+        return self.get_query_set().filter(publish__lte=datetime.now()).order_by('-publish')
+
+
 class Post(models.Model):
     authors = models.ManyToManyField(User, blank=True, null=True)
     blog = models.ForeignKey(Blog)
     body = models.TextField(blank=True)
+    objects = PostManager()
+    publish = models.DateTimeField(blank=True, null=True)
     slug = models.SlugField()
     title = models.CharField(max_length=255)
 
@@ -75,5 +92,9 @@ class Post(models.Model):
 
     @models.permalink
     def get_absolute_url(self):
-        return ('post_detail_view', (), {'blog_slug': self.blog.slug,
+        return ('post_detail_view', (), {
+            'blog_slug': self.blog.slug,
+            'year': self.publish.year,
+            'day': self.publish.day,
+            'month': self.publish.strftime('%b').lower(),
             'post_slug': self.slug})

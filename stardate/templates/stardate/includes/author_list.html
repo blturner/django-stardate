@@ -1,0 +1,5 @@
+<li>By 
+{% for author in author_list %}
+    {% firstof author.get_full_name author.username %}{% if not forloop.last %}, {% else %}{% endif %}
+{% endfor %}
+</li>
