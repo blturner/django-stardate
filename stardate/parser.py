@@ -26,7 +26,6 @@ class Parser(object):
     def __init__(self, parser=None):
         self.parser = parser
         self.parser.processors['setextheader'] = SetextHeaderProcessor(self.parser)
-        self.parser.processors['emptyblock'] = EmptyBlockProcessor(self.parser)
 
     def parse(self, source):
         self.lines = source.split("\n")
@@ -79,17 +78,6 @@ class SetextHeaderProcessor(Processor):
         post['title'] = lines[0].strip()
         post['content'] = '\n'.join(lines[2:])
         self.parser.bits.append(post)
-
-
-class EmptyBlockProcessor(Processor):
-    RE = re.compile(r'^\s*\n')
-
-    def test(self, block):
-        return bool(self.RE.match(block))
-
-    def run(self, blocks):
-        blocks.pop(0)
-        print "Removed empty block."
 
 
 def parse_file(source, parser=BlockParser()):
