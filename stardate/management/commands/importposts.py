@@ -4,7 +4,8 @@ import json
 from django.core.management.base import BaseCommand, CommandError
 
 from stardate.dropbox_auth import DropboxAuth
-from stardate.models import DropboxFile
+from stardate.models import Blog, DropboxFile, Post
+from stardate.parser import parse_file
 from stardate.utils import prepare_bits
 
 
@@ -32,6 +33,14 @@ class Command(BaseCommand):
                         obj = DropboxFile(**metadata)
                     obj.content = client.get_file(path).read()
                     obj.save()
+
+                    blogs = Blog.objects.filter(dropbox_file=obj)
+                    for blog in blogs:
+                        for post in parse_file(obj.content):
+                            p, created = Post.objects.get_or_create(stardate=post.get('stardate'), blog_id=blog.id)
+                            p.__dict__.update(**post)
+                            p.save()
+
             self.save_cursor(delta.get('cursor'))
 
     def save_cursor(self, cursor):
