@@ -52,15 +52,7 @@ class Blog(models.Model):
     def save(self, *args, **kwargs):
         super(Blog, self).save(*args, **kwargs)
         # Parse the dropbox_file and save individual posts
-        posts = parse_file(self.dropbox_file.content)
-        for post in posts:
-            for key, value in post.items():
-                if key == 'publish':
-                    post[key] = datetime.strptime(value, '%m/%d/%Y')
-                elif key == 'stardate':
-                    post[key] = int(value)
-                else:
-                    post[key] = value
+        for post in parse_file(self.dropbox_file.content):
             p, created = Post.objects.get_or_create(stardate=post.get('stardate'), blog_id=self.id)
             p.__dict__.update(**post)
             p.save()

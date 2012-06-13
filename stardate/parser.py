@@ -12,6 +12,7 @@ Copyright 2007, 2008 The Python Markdown Project (v. 1.7 and later)
 Copyright 2004, 2005, 2006 Yuri Takhteyev (v. 0.2-1.6b)
 Copyright 2004 Manfred Stienstra (the original version)
 """
+import datetime
 import yaml
 
 from django.template.defaultfilters import slugify
@@ -46,8 +47,12 @@ class BlockParser(object):
         for post in text:
             bits = post.split('\n\n\n')
             data = yaml.load(bits[0])
-            data['slug'] = slugify(data['title'])
+
             data['body'] = bits[1]
+            data['publish'] = datetime.datetime.strptime(data['publish'], '%m/%d/%Y')
+            data['slug'] = slugify(data['title'])
+            data['stardate'] = int(data['stardate'])
+
             self.bits.append(data)
 
     # def parseBlocks(self, blocks):
