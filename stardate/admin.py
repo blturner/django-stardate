@@ -12,6 +12,8 @@ class BlogAdmin(admin.ModelAdmin):
 
 
 class PostAdmin(admin.ModelAdmin):
+    list_display = ('title', 'publish', 'blog')
+    list_filter = ('blog',)
     prepopulated_fields = {'slug': ('title',)}
 
 

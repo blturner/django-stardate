@@ -37,7 +37,9 @@ class Command(BaseCommand):
                     blogs = Blog.objects.filter(dropbox_file=obj)
                     for blog in blogs:
                         for post in parse_file(obj.content):
-                            p, created = Post.objects.get_or_create(stardate=post.get('stardate'), blog_id=blog.id)
+                            p, created = Post.objects.get_or_create(
+                                stardate=post.get('stardate'),
+                                blog_id=blog.id)
                             p.__dict__.update(**post)
                             p.save()
 
