@@ -76,6 +76,20 @@ class Processor(object):
         pass
 
 
+def reverse_parse(post, dropbox):
+    post_obj = post
+
+    posts = dropbox.content.split('\n---\n')
+    new_posts = []
+    for post in posts:
+        bits = post.split('\n\n\n')
+        data = yaml.load(bits[0])
+        if data['stardate'] == post_obj.stardate:
+            bits[1] = post_obj.body
+        new_posts.append('\n\n\n'.join(bits))
+    return '\n---\n'.join(new_posts)
+
+
 def parse_file(source, parser=BlockParser()):
     parser = Parser(parser=parser)
 

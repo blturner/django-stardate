@@ -3,7 +3,8 @@ from datetime import datetime
 from django.contrib.auth.models import User
 from django.db import models
 
-from stardate.parser import parse_file
+from stardate.dropbox_auth import DropboxAuth
+from stardate.parser import parse_file, reverse_parse
 
 
 class DropboxCommon(models.Model):
@@ -85,6 +86,13 @@ class Post(models.Model):
     # and update the post that was changed.
     def save(self, *args, **kwargs):
         super(Post, self).save(*args, **kwargs)
+
+        dbfile = self.blog.dropbox_file
+        dbfile.content = reverse_parse(self, self.blog.dropbox_file)
+        dbfile.save()
+
+        client = DropboxAuth().dropbox_client
+        client.put_file(dbfile.path, dbfile.content, overwrite=True)
 
     @models.permalink
     def get_absolute_url(self):
