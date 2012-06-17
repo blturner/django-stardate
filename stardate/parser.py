@@ -84,10 +84,23 @@ def reverse_parse(post, dropbox):
     for post in posts:
         bits = post.split('\n\n\n')
         data = yaml.load(bits[0])
+
+        if data['stardate'] == post_obj.stardate:
+            for key in data.keys():
+                try:
+                    data[key] = getattr(post_obj, key)
+                except AttributeError:
+                    pass
+
+        bits.pop(0)
+        bits.insert(0, '')
+        for key, value in data.items():
+            bits[0] += "%s: %s\n" % (key, value)
+
         if data['stardate'] == post_obj.stardate:
             bits[1] = post_obj.body
-        new_posts.append('\n\n\n'.join(bits))
-    return '\n---\n'.join(new_posts)
+        new_posts.append('\n\n'.join(bits))
+    return '\n---\n\n'.join(new_posts)
 
 
 def parse_file(source, parser=BlockParser()):
