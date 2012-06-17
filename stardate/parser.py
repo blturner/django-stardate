@@ -19,6 +19,7 @@ from django.template.defaultfilters import slugify
 
 
 TAB_LENGTH = 4
+TIMEFORMAT = '%Y-%m-%d %I:%M %p'  # 2012-01-01 09:00 AM
 STX = u'\u0002'  # Use STX ("Start of text") for start-of-placeholder
 ETX = u'\u0003'  # Use ETX ("End of text") for end-of-placeholder
 
@@ -49,9 +50,12 @@ class BlockParser(object):
             data = yaml.load(bits[0])
 
             data['body'] = bits[1]
-            data['publish'] = datetime.datetime.strptime(data['publish'], '%m/%d/%Y')
             data['slug'] = slugify(data['title'])
             data['stardate'] = int(data['stardate'])
+            try:
+                data['publish'] = datetime.datetime.strptime(data['publish'], TIMEFORMAT)
+            except KeyError:
+                pass
 
             self.bits.append(data)
 
@@ -89,6 +93,8 @@ def reverse_parse(post, dropbox):
             for key in data.keys():
                 try:
                     data[key] = getattr(post_obj, key)
+                    if key == 'publish':
+                        data[key] = datetime.datetime.strftime(data[key], TIMEFORMAT)
                 except AttributeError:
                     pass
 
