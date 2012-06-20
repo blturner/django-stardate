@@ -12,8 +12,9 @@ class BlogAdmin(admin.ModelAdmin):
 
 
 class PostAdmin(admin.ModelAdmin):
+    fields = ('stardate', 'blog', 'title', 'slug', 'body', 'publish', 'authors')
     list_display = ('title', 'publish', 'blog')
-    list_filter = ('blog',)
+    list_filter = ('blog', 'publish',)
     prepopulated_fields = {'slug': ('title',)}
 
 
