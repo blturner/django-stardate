@@ -1,127 +1,80 @@
-"""
-Django Stardate Parser
-======================
-
-Simplified version of Python-Markdown's parser implementation. This version is
-designed to parse a markdown-formatted file and split it's syntax up into a
-Stardate Post model.
-
-## Python-Markdown, https://github.com/waylan/Python-Markdown
-
-Copyright 2007, 2008 The Python Markdown Project (v. 1.7 and later)
-Copyright 2004, 2005, 2006 Yuri Takhteyev (v. 0.2-1.6b)
-Copyright 2004 Manfred Stienstra (the original version)
-"""
 import datetime
 import yaml
 
-from django.template.defaultfilters import slugify
-
-
-TAB_LENGTH = 4
+DELIMITER = "\n---\n"
 TIMEFORMAT = '%Y-%m-%d %I:%M %p'  # 2012-01-01 09:00 AM
-STX = u'\u0002'  # Use STX ("Start of text") for start-of-placeholder
-ETX = u'\u0003'  # Use ETX ("End of text") for end-of-placeholder
 
 
-class Parser(object):
-    def __init__(self, parser=None):
-        self.parser = parser
-        # self.parser.processors['default'] = DefaultProcessor(self.parser)
-        # self.parser.processors['setextheader'] = SetextHeaderProcessor(self.parser)
-
-    def parse(self, source):
-        self.lines = source.split("\n---\n")
-        return self.parser.parseDocument(self.lines)
-
-
-class BlockParser(object):
+class Stardate(object):
     def __init__(self):
-        self.processors = dict()
+        self.parser = PostParser()
+        self.parser.processors['datetime'] = DatetimeProcessor()
 
-    def parseDocument(self, lines):
-        self.bits = []
-        self.parseChunk(lines)
-        return self.bits
+    def parse(self, text):
+        return self.parser.parse_text(text)
 
-    def parseChunk(self, text):
-        for post in text:
-            bits = post.split('\n\n\n')
-            data = yaml.load(bits[0])
+    def parse_for_dropbox(self, posts):
+        return self.parser.format_for_dropbox(posts)
 
-            data['body'] = bits[1]
-            data['slug'] = slugify(data['title'])
-            data['stardate'] = int(data['stardate'])
-            try:
-                data['publish'] = datetime.datetime.strptime(data['publish'], TIMEFORMAT)
-            except KeyError:
-                pass
 
-            self.bits.append(data)
+class PostParser(object):
+    def __init__(self):
+        self.delimiter = DELIMITER
+        self.processors = {}
 
-    # def parseBlocks(self, blocks):
-    #     blocks = filter(None, blocks)
-    #     while blocks:
-    #         for processor in self.processors.values():
-    #             if processor.test(blocks[0]):
-    #                 processor.run(blocks)
-    #                 break
+    def parse_text(self, text):
+        self.parsed_posts = []
+
+        for post in text.split(self.delimiter):
+            self.parsed_posts.append(self.parse_post(post))
+        return self.parsed_posts
+
+    def parse_post(self, post):
+        bits = post.split('\n\n')
+        post_data = yaml.load(bits[0])
+        post_data['body'] = bits[1]
+        self.process_fields(post_data)
+        return post_data
+
+    def format_for_dropbox(self, posts):
+        processed_posts = []
+        for post in posts:
+            processed_post = ['']
+            fields = post.get('fields')
+            body = fields.pop('body')
+            del fields['blog']
+            for k, v in fields.items():
+                if v:
+                    v = self.process_value(v)
+                    processed_post[0] += "%s: %s\n" % (k, v)
+            processed_post.insert(1, body)
+            processed_posts.append('\n'.join(processed_post))
+        return '\n---\n\n'.join(processed_posts)
+
+    def process_value(self, value):
+        return value
+
+    def process_fields(self, fields):
+        for processor in self.processors.values():
+            if processor.test(fields):
+                processor.run(fields)
 
 
 class Processor(object):
-    """ Base processor class. """
-    def __init__(self, parser=None):
-        self.parser = parser
-
-    def test(self, block):
+    def test(self, fields):
         pass
 
-    def run(self, blocks):
+    def run(self, fields):
         pass
 
 
-def reverse_parse(post, dropbox):
-    post_obj = post
+class DatetimeProcessor(Processor):
+    def test(self, fields):
+        for field in fields.iteritems():
+            try:
+                fields[field[0]] = datetime.datetime.strptime(field[1], TIMEFORMAT)
+            except (ValueError, TypeError):
+                pass
 
-    posts = dropbox.content.split('\n---\n')
-    new_posts = []
-    for post in posts:
-        bits = post.split('\n\n\n')
-        data = yaml.load(bits[0])
-
-        if data['stardate'] == post_obj.stardate:
-            for key in data.keys():
-                try:
-                    data[key] = getattr(post_obj, key)
-                    if key == 'publish':
-                        data[key] = datetime.datetime.strftime(data[key], TIMEFORMAT)
-                except AttributeError:
-                    pass
-
-        bits.pop(0)
-        bits.insert(0, '')
-        for key, value in data.items():
-            bits[0] += "%s: %s\n" % (key, value)
-
-        if data['stardate'] == post_obj.stardate:
-            bits[1] = post_obj.body
-        new_posts.append('\n\n'.join(bits))
-    return '\n---\n\n'.join(new_posts)
-
-
-def parse_file(source, parser=BlockParser()):
-    parser = Parser(parser=parser)
-
-    if not source.strip():
-        return u""
-    try:
-        source = unicode(source)
-    except UnicodeDecodeError:
-        raise Exception
-
-    source = source.replace(STX, "").replace(ETX, "")
-    # source = source.replace("\r\n", "\n").replace("\r", "\n") + "\n\n"
-    # source = re.sub(r'\n\s+\n', '\n\n', source)
-    source = source.expandtabs(TAB_LENGTH)
-
-    return parser.parse(source)
+    def run(self, field):
+        print field

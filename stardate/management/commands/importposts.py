@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 from stardate.dropbox_auth import DropboxAuth
 from stardate.models import Blog, DropboxFile, Post
-from stardate.parser import parse_file
+from stardate.parser import Stardate
 from stardate.utils import prepare_bits
 
 
@@ -18,6 +18,7 @@ class Command(BaseCommand):
         self.get_cursor()
         client = DropboxAuth().dropbox_client
         delta = client.delta(cursor=self._cursor)
+        stardate = Stardate()
 
         if delta.get('entries'):
             for entry in delta.get('entries'):
@@ -36,7 +37,8 @@ class Command(BaseCommand):
 
                     blogs = Blog.objects.filter(dropbox_file=obj)
                     for blog in blogs:
-                        for post in parse_file(obj.content):
+                        posts = stardate.parse(obj.content)
+                        for post in posts:
                             p, created = Post.objects.get_or_create(
                                 stardate=post.get('stardate'),
                                 blog_id=blog.id)

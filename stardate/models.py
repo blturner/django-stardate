@@ -1,10 +1,11 @@
 from datetime import datetime
 
 from django.contrib.auth.models import User
+from django.core import serializers
 from django.db import models
 
 from stardate.dropbox_auth import DropboxAuth
-from stardate.parser import parse_file, reverse_parse
+from stardate.parser import Stardate
 
 
 class DropboxCommon(models.Model):
@@ -47,20 +48,12 @@ class Blog(models.Model):
     def __unicode__(self):
         return self.name
 
-    def __init__(self, *args, **kwargs):
-        super(Blog, self).__init__(*args, **kwargs)
-
-    def save(self, *args, **kwargs):
-        super(Blog, self).save(*args, **kwargs)
-        # Parse the dropbox_file and save individual posts
-        for post in parse_file(self.dropbox_file.content):
-            p, created = Post.objects.get_or_create(stardate=post.get('stardate'), blog_id=self.id)
-            p.__dict__.update(**post)
-            p.save()
-
     @models.permalink
     def get_absolute_url(self):
         return ('blog_list_view', (), {'slug': self.slug})
+
+    def get_serialized_posts(self):
+        return serializers.serialize("python", self.post_set.all())
 
 
 class PostManager(models.Manager):
@@ -75,20 +68,37 @@ class Post(models.Model):
     body = models.TextField(blank=True)
     objects = PostManager()
     publish = models.DateTimeField(blank=True, null=True)
-    slug = models.SlugField()
-    stardate = models.IntegerField()
-    title = models.CharField(max_length=255)
+    slug = models.SlugField(blank=True)
+    stardate = models.CharField(blank=True, max_length=255)
+    title = models.CharField(blank=True, max_length=255)
 
     def __unicode__(self):
         return self.title
 
+    def clean(self, *args, **kwargs):
+        import uuid
+        from django.core.exceptions import ValidationError
+        from django.template.defaultfilters import slugify
+
+        # if not self.title:
+        #     raise ValidationError('A title is required.')
+        if not self.stardate:
+            self.stardate = str(uuid.uuid1())
+        if not self.slug:
+            self.slug = slugify(self.title)
+        if not self.body.endswith('\n'):
+            self.body += '\n'
+
     # On save, a post should parse the dropbox blog file
     # and update the post that was changed.
     def save(self, *args, **kwargs):
+        self.full_clean()
         super(Post, self).save(*args, **kwargs)
 
+        stardate = Stardate()
+        posts = self.blog.get_serialized_posts()
         dbfile = self.blog.dropbox_file
-        dbfile.content = reverse_parse(self, self.blog.dropbox_file)
+        dbfile.content = stardate.parse_for_dropbox(posts)
         dbfile.save()
 
         client = DropboxAuth().dropbox_client
