@@ -68,20 +68,17 @@ class Post(models.Model):
     body = models.TextField(blank=True)
     objects = PostManager()
     publish = models.DateTimeField(blank=True, null=True)
-    slug = models.SlugField(blank=True)
-    stardate = models.CharField(blank=True, max_length=255)
-    title = models.CharField(blank=True, max_length=255)
+    slug = models.SlugField()
+    stardate = models.CharField(max_length=255)
+    title = models.CharField(max_length=255)
 
     def __unicode__(self):
         return self.title
 
     def clean(self, *args, **kwargs):
         import uuid
-        from django.core.exceptions import ValidationError
         from django.template.defaultfilters import slugify
 
-        # if not self.title:
-        #     raise ValidationError('A title is required.')
         if not self.stardate:
             self.stardate = str(uuid.uuid1())
         if not self.slug:
@@ -92,7 +89,6 @@ class Post(models.Model):
     # On save, a post should parse the dropbox blog file
     # and update the post that was changed.
     def save(self, *args, **kwargs):
-        self.full_clean()
         super(Post, self).save(*args, **kwargs)
 
         stardate = Stardate()

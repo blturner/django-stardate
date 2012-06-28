@@ -43,6 +43,7 @@ class Command(BaseCommand):
                                 stardate=post.get('stardate'),
                                 blog_id=blog.id)
                             p.__dict__.update(**post)
+                            p.full_clean()
                             p.save()
 
             self.save_cursor(delta.get('cursor'))
