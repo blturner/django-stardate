@@ -12,6 +12,7 @@ class BlogAdmin(admin.ModelAdmin):
 
 
 class PostAdmin(admin.ModelAdmin):
+    date_hierarchy = 'publish'
     fields = ('blog', 'title', 'slug', 'body', 'publish', 'authors')
     list_display = ('title', 'publish', 'blog')
     list_filter = ('blog', 'publish',)

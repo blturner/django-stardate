@@ -72,6 +72,9 @@ class Post(models.Model):
     stardate = models.CharField(max_length=255)
     title = models.CharField(max_length=255)
 
+    class Meta:
+        ordering = ['-publish']
+
     def __unicode__(self):
         return self.title
 
