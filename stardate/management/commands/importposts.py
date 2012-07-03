@@ -39,11 +39,13 @@ class Command(BaseCommand):
                     for blog in blogs:
                         posts = stardate.parse(obj.content)
                         for post in posts:
-                            p, created = Post.objects.get_or_create(
-                                stardate=post.get('stardate'),
-                                blog_id=blog.id)
+                            post['blog_id'] = blog.id
+                            try:
+                                p = Post.objects.get(stardate=post.get("stardate"))
+                            except Post.DoesNotExist:
+                                p = Post(**post)
                             p.__dict__.update(**post)
-                            p.full_clean()
+                            p.clean()
                             p.save()
 
             self.save_cursor(delta.get('cursor'))
