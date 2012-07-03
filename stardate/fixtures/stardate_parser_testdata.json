@@ -1,0 +1,42 @@
+[
+    {
+        "pk": 1,
+        "model": "stardate.dropboxfile",
+        "fields": {
+            "size": "3.3 KB",
+            "bytes": 3390,
+            "thumb_exists": false,
+            "rev": "2f107486f6b",
+            "modified": "2012-07-03T12:38:40Z",
+            "content": "title: Vastness is bearable only through love Euclid\nstardate: 550a1859-c4d1-11e1-82ee-b88d120c8298\nslug: vastness-is-bearable-only-through-love-euclid\n\nVastness is bearable only through love Euclid. White dwarf hydrogen atoms hundreds of thousands! Corpus callosum hundreds of thousands star stuff harvesting star light Euclid. Realm of the galaxies vastness is bearable only through love, courage of our questions preserve and cherish that pale blue dot. Inconspicuous motes of rock and gas worldlets light years. A billion trillion kindling the energy hidden in matter Vangelis, vanquish the impossible Cambrian explosion extraplanetary, laws of physics star stuff harvesting star light bits of moving fluff cosmos not a sunrise but a galaxyrise birth. Vastness is bearable only through love.\n\n---\n\ntitle: A post about posting\npublish: 2012-01-03 00:00:00+00:00\nstardate: 5603aa82-c4d1-11e1-865b-b88d120c8298\nslug: a-post-about-posting\n\nVastness is bearable only through love Euclid. White dwarf hydrogen atoms hundreds of thousands! Corpus callosum hundreds of thousands star stuff harvesting star light Euclid. Realm of the galaxies vastness is bearable only through love, courage of our questions preserve and cherish that pale blue dot. Inconspicuous motes of rock and gas worldlets light years. A billion trillion kindling the energy hidden in matter Vangelis, vanquish the impossible Cambrian explosion extraplanetary, laws of physics star stuff harvesting star light bits of moving fluff cosmos not a sunrise but a galaxyrise birth. Vastness is bearable only through love.\n\n---\n\ntitle: Another world\npublish: 2012-01-02 08:00:00+00:00\nstardate: 56fb3bcf-c4d1-11e1-9110-b88d120c8298\nslug: another-world\n\nAnother world. Gathered by gravity, rogue globular star cluster worldlets finite but unbounded made in the interiors of collapsing stars rings of Uranus galaxies tesseract science, a still more glorious dawn awaits, astonishment intelligent beings. Jean-Franois Champollion, astonishment circumnavigated! Vanquish the impossible network of wormholes as a patch of light extraordinary claims require extraordinary evidence corpus callosum, Jean-Franois Champollion not a sunrise but a galaxyrise a still more glorious dawn awaits rogue shores of the cosmic ocean. How far away, two ghostly white figures in coveralls and helmets are soflty dancing, not a sunrise but a galaxyrise!\n\n---\n\ntitle: Hello world\npublish: 2012-01-01 14:00:00+00:00\nstardate: 57f5ea57-c4d1-11e1-bcd1-b88d120c8298\nslug: hello-world\n\nDream of the mind's eye Apollonius of Perga. Quasar of brilliant syntheses Apollonius of Perga from which we spring culture take root and flourish cosmic fugue. Dream of the mind's eye finite but unbounded a still more glorious dawn awaits brain is the seed of intelligence ship of the imagination corpus callosum as a patch of light a billion trillion. Cosmic ocean birth descended from astronomers, extraordinary claims require extraordinary evidence a billion trillion, realm of the galaxies bits of moving fluff quasar. Corpus callosum! Great turbulent clouds prime number. Hydrogen atoms rich in mystery Sea of Tranquility made in the interiors of collapsing stars worldlets, consciousness, concept of the number one. Of brilliant syntheses? At the edge of forever, preserve and cherish that pale blue dot inconspicuous motes of rock and gas great turbulent clouds.\n",
+            "mime_type": "application/octet-stream",
+            "path": "/blog_2.md",
+            "is_dir": false,
+            "revision": 753,
+            "root": "app_folder",
+            "folder": null,
+            "client_mtime": "2012-07-03T12:38:40Z",
+            "icon": "page_white"
+        }
+    },
+    {
+        "pk": 2,
+        "model": "stardate.dropboxfile",
+        "fields": {
+            "size": "477 bytes",
+            "bytes": 477,
+            "thumb_exists": false,
+            "rev": "2e107486f6b",
+            "modified": "2012-07-03T12:18:30Z",
+            "content": "title: Gathered by gravity\npublish: 2012-02-02 04:00:00+00:00\n\nGathered by gravity, not a sunrise but a galaxyrise hydrogen atoms.\n\n---\n\ntitle: Vanquish the impossible across the centuries\npublish: 2012-01-01 22:00:00+00:00\n\nVanquish the impossible across the centuries, brain is the seed of intelligence?\n",
+            "mime_type": "application/octet-stream",
+            "path": "/blog_1.md",
+            "is_dir": false,
+            "revision": 737,
+            "root": "app_folder",
+            "folder": null,
+            "client_mtime": "2012-07-03T12:18:30Z",
+            "icon": "page_white"
+        }
+    }
+]
