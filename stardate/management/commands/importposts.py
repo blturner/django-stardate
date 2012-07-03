@@ -42,6 +42,10 @@ class Command(BaseCommand):
                             post['blog_id'] = blog.id
                             try:
                                 p = Post.objects.get(stardate=post.get("stardate"))
+                                # Pop the slug because updating the dict on
+                                # line 49 causes a uniqueness error and screws
+                                # up the dropbox sync.
+                                post.pop('slug')
                             except Post.DoesNotExist:
                                 p = Post(**post)
                             p.__dict__.update(**post)
