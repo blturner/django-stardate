@@ -1,17 +1,9 @@
 import copy
 
-from datetime import datetime, timedelta
+from dateutil.parser import parse
+from django.utils import timezone
 
-TIMEFORMAT = "%a, %d %b %Y %H:%M:%S"
-
-
-def format_timestamp(string, format):
-    timestamp = string[:-6]
-    offset = int(string[-5:])
-    delta = timedelta(hours=offset / 100)
-    d = datetime.strptime(timestamp, format)
-    d -= delta
-    return d
+TZ = timezone.get_default_timezone()
 
 
 def prepare_bits(metadata, parent=None):
@@ -21,8 +13,8 @@ def prepare_bits(metadata, parent=None):
     except:
         pass
     try:
-        bits['modified'] = format_timestamp(bits.get('modified'), TIMEFORMAT)
-        bits['client_mtime'] = format_timestamp(bits.get('client_mtime'), TIMEFORMAT)
+        bits['modified'] = timezone.make_aware(parse(bits.get('modified')), TZ)
+        bits['client_mtime'] = timezone.make_aware(parse(bits.get('client_mtime')), TZ)
     except:
         pass
     if parent:

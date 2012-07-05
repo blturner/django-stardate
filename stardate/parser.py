@@ -1,8 +1,12 @@
 import datetime
 import yaml
 
+from dateutil.parser import parse
+from django.utils import timezone
+
 DELIMITER = "\n---\n"
 TIMEFORMAT = '%Y-%m-%d %I:%M %p'  # 2012-01-01 09:00 AM
+TZ = timezone.get_default_timezone()
 
 
 class Stardate(object):
@@ -33,6 +37,15 @@ class PostParser(object):
         bits = post.split('\n\n')
         post_data = yaml.load(bits[0])
         post_data['body'] = bits[1]
+        if post_data.get('publish'):
+            if not isinstance(post_data['publish'], datetime.datetime):
+                post_data['publish'] = parse(post_data['publish'])
+            try:
+                post_data['publish'] = timezone.make_aware(post_data['publish'], TZ)
+            except:
+                import sys
+                print "Unexpected error:", sys.exc_info()[0]
+                raise
         self.process_fields(post_data)
         return post_data
 
@@ -73,7 +86,8 @@ class DatetimeProcessor(Processor):
         for field in fields.iteritems():
             try:
                 fields[field[0]] = datetime.datetime.strptime(field[1], TIMEFORMAT)
-            except (ValueError, TypeError):
+                # fields[field[0]] = timezone.make_aware(parse(field[1]), TZ)
+            except (ValueError, TypeError, AttributeError):
                 pass
 
     def run(self, field):

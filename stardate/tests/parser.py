@@ -2,6 +2,7 @@ import datetime
 
 # from django.core.management import call_command
 from django.test import TestCase
+from django.utils import timezone
 
 from stardate.models import Blog, DropboxFile, Post
 from stardate.parser import Stardate
@@ -13,6 +14,7 @@ class StardateTestCase(TestCase):
     def setUp(self):
         super(StardateTestCase, self).setUp()
 
+        self.time_zone = timezone.get_default_timezone()
         self.dropbox_file = DropboxFile.objects.get(pk=2)
         self.stardate = Stardate()
         self.result = self.stardate.parse(self.dropbox_file.content)
@@ -28,7 +30,7 @@ class StardateTestCase(TestCase):
 
         # Assert that the expected values are parsed.
         self.assertEqual(title, u'Gathered by gravity')
-        self.assertEqual(publish, datetime.datetime(2012, 2, 2, 4, 0))
+        self.assertEqual(publish, datetime.datetime(2012, 2, 2, 4, 0, tzinfo=self.time_zone))
         self.assertEqual(body, u'Gathered by gravity, not a sunrise but a galaxyrise hydrogen atoms.\n')
 
     def test_parse_post(self):
@@ -40,8 +42,17 @@ class StardateTestCase(TestCase):
 
         self.assertEqual(len(result), 3)
         self.assertEqual(title, u'Another world')
-        self.assertEqual(publish, datetime.datetime(2012, 1, 2, 0, 0))
+        self.assertTrue(timezone.is_aware(publish))
+        self.assertEqual(publish, datetime.datetime(2012, 1, 2, 0, 0, tzinfo=self.time_zone))
         self.assertEqual(body, u'Gathered by gravity, not a sunrise but a galaxyrise hydrogen atoms.\n')
+
+    def test_parse_post_no_publish(self):
+        text = "title: Another world\n\nContent.\n"
+        result = self.stardate.parser.parse_post(text)
+
+        self.assertTrue(result.get('title'))
+        self.assertTrue(result.get('body'))
+        self.assertFalse(result.get('publish'))
 
     def test_import_multiple_posts(self):
         blog = Blog(name="Test", slug="test", dropbox_file=self.dropbox_file)
