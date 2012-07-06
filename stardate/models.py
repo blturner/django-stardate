@@ -1,8 +1,7 @@
-from datetime import datetime
-
 from django.contrib.auth.models import User
 from django.core import serializers
 from django.db import models
+from django.utils import timezone
 
 from stardate.dropbox_auth import DropboxAuth
 from stardate.parser import Stardate
@@ -59,7 +58,7 @@ class Blog(models.Model):
 class PostManager(models.Manager):
 
     def published(self):
-        return self.get_query_set().filter(publish__lte=datetime.now()).order_by('-publish')
+        return self.get_query_set().filter(publish__lte=timezone.now()).order_by('-publish')
 
 
 class Post(models.Model):
