@@ -55,7 +55,6 @@ class PostParser(object):
             processed_post = ['']
             fields = post.get('fields')
             body = fields.pop('body')
-            del fields['blog']
             for k, v in fields.items():
                 if v:
                     v = self.process_value(v)

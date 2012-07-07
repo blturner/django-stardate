@@ -52,7 +52,8 @@ class Blog(models.Model):
         return ('blog_list_view', (), {'slug': self.slug})
 
     def get_serialized_posts(self):
-        return serializers.serialize("python", self.post_set.all())
+        return serializers.serialize("python", self.post_set.all(),
+            fields=('title', 'publish', 'stardate', 'body'))
 
 
 class PostManager(models.Manager):
