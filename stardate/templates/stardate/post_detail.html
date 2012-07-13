@@ -1,5 +1,6 @@
 {% load markup %}
 
+
 {% with post.blog as blog %}
 <h2><a href="{{ blog.get_absolute_url }}">{{ blog.title }}</a></h2>
 {% endwith %}
@@ -15,7 +16,7 @@
         {% include 'stardate/includes/author_list.html' %}
     {% endwith %}
 {% endif %}
-<li>Posted {{ post.publish|date }}</li>
+<li>Posted {{ post.publish|date:"l, F jS, Y h:i a T" }}</li>
 </ul>
 
 {{ post.body|markdown }}
