@@ -1,9 +1,6 @@
 import copy
 
 from dateutil.parser import parse
-from django.utils import timezone
-
-TZ = timezone.get_default_timezone()
 
 
 def prepare_bits(metadata, parent=None):
@@ -13,8 +10,8 @@ def prepare_bits(metadata, parent=None):
     except:
         pass
     try:
-        bits['modified'] = timezone.make_aware(parse(bits.get('modified')), TZ)
-        bits['client_mtime'] = timezone.make_aware(parse(bits.get('client_mtime')), TZ)
+        bits['modified'] = parse(bits.get('modified'))
+        bits['client_mtime'] = parse(bits.get('client_mtime'))
     except:
         pass
     if parent:

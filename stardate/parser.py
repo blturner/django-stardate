@@ -2,11 +2,11 @@ import datetime
 import yaml
 
 from dateutil.parser import parse
-from django.utils import timezone
+from django.utils.timezone import get_current_timezone, make_aware, utc
 
 DELIMITER = "\n---\n"
 TIMEFORMAT = '%Y-%m-%d %I:%M %p'  # 2012-01-01 09:00 AM
-TZ = timezone.get_default_timezone()
+current_timezone = get_current_timezone()
 
 
 class Stardate(object):
@@ -40,12 +40,7 @@ class PostParser(object):
         if post_data.get('publish'):
             if not isinstance(post_data['publish'], datetime.datetime):
                 post_data['publish'] = parse(post_data['publish'])
-            try:
-                post_data['publish'] = timezone.make_aware(post_data['publish'], TZ)
-            except:
-                import sys
-                print "Unexpected error:", sys.exc_info()[0]
-                raise
+                post_data['publish'] = make_aware(post_data['publish'], current_timezone).astimezone(utc)
         self.process_fields(post_data)
         return post_data
 
@@ -54,7 +49,15 @@ class PostParser(object):
         for post in posts:
             processed_post = ['']
             fields = post.get('fields')
+
+            try:
+                fields['publish'] = fields['publish'].astimezone(current_timezone)
+                fields['publish'] = datetime.datetime.strftime(fields['publish'], TIMEFORMAT)
+            except:
+                pass
+
             body = fields.pop('body')
+
             for k, v in fields.items():
                 if v:
                     v = self.process_value(v)
