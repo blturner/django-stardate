@@ -67,7 +67,7 @@ class Post(models.Model):
     blog = models.ForeignKey(Blog)
     body = models.TextField(blank=True)
     objects = PostManager()
-    publish = models.DateTimeField(blank=True, null=True)
+    publish = models.DateTimeField(blank=True, null=True, unique=True)
     slug = models.SlugField(unique=True)
     stardate = models.CharField(max_length=255)
     title = models.CharField(max_length=255)

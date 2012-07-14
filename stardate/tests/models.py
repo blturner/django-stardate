@@ -1,3 +1,4 @@
+from django.db import IntegrityError
 from django.test import TestCase
 
 from stardate.models import Blog, Post
@@ -29,3 +30,12 @@ class BlogTestCase(TestCase):
 
         p = Post.objects.get(pk=2)
         self.assertFalse(p.get_prev_post())
+
+    def test_invalid_publish(self):
+        data = {
+            'title': 'A duplicate publish date',
+            'publish': '2012-01-01T14:00:00Z',
+        }
+        data['blog_id'] = 1
+        p = Post(**data)
+        self.assertRaises(IntegrityError, p.save)

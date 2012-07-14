@@ -20,8 +20,6 @@ class StardateTestCase(TestCase):
         self.time_zone = timezone.get_default_timezone()
 
         self.stardate = Stardate()
-        # self.result = self.stardate.parse(self.dropbox_file.content)
-        # self.parsed_post = self.result[0]
 
     def test_stardate_parse(self):
         c = self.blog.dropbox_file.content
@@ -40,7 +38,7 @@ class StardateTestCase(TestCase):
         self.assertEqual(body, u'Extraordinary claims require extraordinary evidence!\n')
 
     def test_stardate_parse_publish(self):
-        text = "title: Testing publish\npublish: 2012-01-01 06:00 AM\n\nTest content.\n"
+        text = "title: Testing publish\npublish: 2012-01-01 07:00 AM\n\nTest content.\n"
         post_data = self.stardate.parser.parse_post(text)
         post_data['blog_id'] = self.blog.id
         p = Post.objects.create(**post_data)
@@ -51,10 +49,10 @@ class StardateTestCase(TestCase):
         for post in serialized_data:
             if post.get('fields')['title'] == u'Testing publish':
                 self.assertTrue(timezone.is_aware(post.get('fields')['publish']))
-                # January 1, 2012 6:00 AM PST should convert to January 1, 2012 2:00 PM UTC
-                self.assertEqual(post.get('fields')['publish'], datetime.datetime(2012, 1, 1, 14, 0, tzinfo=timezone.utc))
-                # January 1, 2012 2:00 PM UTC should convert to January 1, 2012 6:00 AM PST
-                self.assertEqual(datetime.datetime.strftime(post.get('fields')['publish'].astimezone(self.time_zone), '%Y-%m-%d %I:%M %p %Z'), u'2012-01-01 06:00 AM PST')
+                # January 1, 2012 7:00 AM PST should convert to January 1, 2012 3:00 PM UTC
+                self.assertEqual(post.get('fields')['publish'], datetime.datetime(2012, 1, 1, 15, 0, tzinfo=timezone.utc))
+                # January 1, 2012 3:00 PM UTC should convert to January 1, 2012 7:00 AM PST
+                self.assertEqual(datetime.datetime.strftime(post.get('fields')['publish'].astimezone(self.time_zone), '%Y-%m-%d %I:%M %p %Z'), u'2012-01-01 07:00 AM PST')
 
     def test_parse_post(self):
         text = "title: Another world\npublish: 2012-01-02 12:00 AM\n\nGathered by gravity, not a sunrise but a galaxyrise hydrogen atoms.\n"
