@@ -111,3 +111,17 @@ class Post(models.Model):
             'day': self.publish.day,
             'month': self.publish.strftime('%b').lower(),
             'post_slug': self.slug})
+
+    def get_next_post(self):
+        next = Post.objects.published().filter(publish__gt=self.publish
+            ).exclude(id__exact=self.id).order_by('publish')
+        if next:
+            return next[0]
+        return False
+
+    def get_prev_post(self):
+        prev = Post.objects.published().filter(publish__lt=self.publish
+            ).exclude(id__exact=self.id).order_by('-publish')
+        if prev:
+            return prev[0]
+        return False

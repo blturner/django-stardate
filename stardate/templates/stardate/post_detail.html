@@ -5,6 +5,7 @@
 <h2><a href="{{ blog.get_absolute_url }}">{{ blog.title }}</a></h2>
 {% endwith %}
 
+
 <h1>{{ post.title }}</h1>
 <ul>
 {% if post.authors.all %}
@@ -20,3 +21,11 @@
 </ul>
 
 {{ post.body|markdown }}
+
+{% if post.get_prev_post %}
+    <p><a href="{{ post.get_prev_post.get_absolute_url }}">Previous: {{ post.get_prev_post.title }}</a></p>
+{% endif %}
+
+{% if post.get_next_post %}
+    <p><a href="{{ post.get_next_post.get_absolute_url }}">Next: {{ post.get_next_post.title }}</a></p>
+{% endif %}
