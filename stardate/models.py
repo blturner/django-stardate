@@ -105,6 +105,7 @@ class Post(models.Model):
 
     @models.permalink
     def get_absolute_url(self):
+        self.publish = self.publish.astimezone(timezone.get_current_timezone())
         return ('post_detail_view', (), {
             'blog_slug': self.blog.slug,
             'year': self.publish.year,
