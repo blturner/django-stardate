@@ -14,9 +14,9 @@ class Command(BaseCommand):
     help = 'Imports posts for the specified blogs'
     _cursor = None
 
-    def handle(self, *args, **kwargs):
+    def handle(self, client=DropboxAuth(), *args, **kwargs):
         self.get_cursor()
-        client = DropboxAuth().dropbox_client
+        client = client.dropbox_client
         delta = client.delta(cursor=self._cursor)
         stardate = Stardate()
 
