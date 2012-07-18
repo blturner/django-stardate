@@ -2,7 +2,8 @@ import json
 
 from django.core import management
 from django.test import TestCase
-from mock import Mock
+from dropbox import client
+from mock import Mock, patch
 
 from stardate.dropbox_auth import DropboxAuth
 from stardate.models import Blog, DropboxFile, Post
@@ -53,7 +54,8 @@ class ImportTestCase(TestCase):
         self.assertTrue(imported_file)
         self.assertEqual(imported_file.content, 'title: Hello world\npublish: 2012-06-01 6:00 AM\n\nThe post content.')
 
-    def test_importposts_created_post(self):
+    @patch.object(client.DropboxClient, 'put_file')
+    def test_importposts_created_post(self, mock_put_file):
         management.call_command('importposts', client=self.MockDropboxAuth)
         blog = Blog(name='Test blog', slug='test-blog',
             dropbox_file=DropboxFile.objects.get(path='/test_file.md'))

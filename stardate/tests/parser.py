@@ -1,9 +1,11 @@
 import datetime
 
-# from django.core.management import call_command
 from django.test import TestCase
 from django.utils import timezone
+from dropbox import client
+from mock import patch
 
+from stardate.dropbox_auth import DropboxAuth
 from stardate.models import Blog, DropboxFile, Post
 from stardate.parser import Stardate
 
@@ -37,7 +39,9 @@ class StardateTestCase(TestCase):
         self.assertEqual(publish, datetime.datetime(2012, 1, 2, 0, 0, tzinfo=timezone.get_current_timezone()))
         self.assertEqual(body, u'Extraordinary claims require extraordinary evidence!\n')
 
-    def test_stardate_parse_publish(self):
+    @patch.object(client.DropboxClient, 'put_file')
+    @patch.object(DropboxAuth, 'get_dropbox_client')
+    def test_stardate_parse_publish(self, mock_put_file, mock_get_dropbox_client):
         text = "title: Testing publish\npublish: 2012-01-01 07:00 AM\n\nTest content.\n"
         post_data = self.stardate.parser.parse_post(text)
         post_data['blog_id'] = self.blog.id
@@ -81,7 +85,9 @@ class StardateTestCase(TestCase):
 
         self.assertEqual(result.get('publish'), datetime.datetime(2012, 1, 2, 14, 0))
 
-    def test_import_multiple_posts(self):
+    @patch.object(client.DropboxClient, 'put_file')
+    @patch.object(DropboxAuth, 'get_dropbox_client')
+    def test_import_multiple_posts(self, mock_put_file, mock_get_dropbox_client):
         self.blog.dropbox_file = DropboxFile.objects.get(pk=2)
 
         posts = self.stardate.parse(self.blog.dropbox_file.content)
