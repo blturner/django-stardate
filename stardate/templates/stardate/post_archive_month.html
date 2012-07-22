@@ -1,0 +1,7 @@
+<h1>Posts in {{ month|date:"F Y" }}</h1>
+
+<ol>
+{% for post in object_list %}
+    <li><a href="{{ post.get_absolute_url }}">{{ post }}</a></li>
+{% endfor %}
+</ol>

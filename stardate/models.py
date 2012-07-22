@@ -49,7 +49,7 @@ class Blog(models.Model):
 
     @models.permalink
     def get_absolute_url(self):
-        return ('blog_list_view', (), {'slug': self.slug})
+        return ('post-archive-index', (), {'blog_slug': self.slug})
 
     def get_serialized_posts(self):
         return serializers.serialize("python", self.post_set.all(),
@@ -106,7 +106,7 @@ class Post(models.Model):
     @models.permalink
     def get_absolute_url(self):
         self.publish = self.publish.astimezone(timezone.get_current_timezone())
-        return ('post_detail_view', (), {
+        return ('post-detail', (), {
             'blog_slug': self.blog.slug,
             'year': self.publish.year,
             'day': self.publish.day,
@@ -114,15 +114,15 @@ class Post(models.Model):
             'post_slug': self.slug})
 
     def get_next_post(self):
-        next = Post.objects.published().filter(publish__gt=self.publish
-            ).exclude(id__exact=self.id).order_by('publish')
+        next = Post.objects.published().filter(publish__gt=self.publish,
+            blog__exact=self.blog.id).exclude(id__exact=self.id).order_by('publish')
         if next:
             return next[0]
         return False
 
     def get_prev_post(self):
-        prev = Post.objects.published().filter(publish__lt=self.publish
-            ).exclude(id__exact=self.id).order_by('-publish')
+        prev = Post.objects.published().filter(publish__lt=self.publish,
+            blog__exact=self.blog.id).exclude(id__exact=self.id).order_by('-publish')
         if prev:
             return prev[0]
         return False

@@ -1,0 +1,7 @@
+<h1>{{ day }}</h1>
+
+<ol>
+{% for object in object_list %}
+    <li><a href="{{ object.get_absolute_url }}">{{ object.title }}</a></li>
+{% endfor %}
+</ol>
