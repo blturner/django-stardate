@@ -64,5 +64,5 @@ class PostParser(object):
                 if v:
                     processed_post[0] += "%s: %s\n" % (k, v)
             processed_post.insert(1, body)
-            processed_posts.append('\n'.join(processed_post))
+            processed_posts.append('\n\n'.join(processed_post))
         return '\n---\n\n'.join(processed_posts)
