@@ -1,6 +1,9 @@
 {% load markup %}
 
 
+{% include 'stardate/includes/breadcrumbs.html' %}
+
+
 {% with post.blog as blog %}
 <h2><a href="{{ blog.get_absolute_url }}">{{ blog.title }}</a></h2>
 {% endwith %}
