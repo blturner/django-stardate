@@ -1,12 +1,22 @@
-{% regroup object_list by publish|date:"F" as grouped %}
+{% extends "stardate/base_stardate.html" %}
 
-<h1>Posts in {{ year }}</h1>
+{% block title %}Posts in {{ year }}{% endblock %}
 
-{% for group in grouped %}
-    <h2>{{ group.grouper }}</h2>
-    <ol>
-        {% for post in group.list %}
-            <li><a href="{{ post.get_absolute_url }}">{{ post.title }}</a></li>
-        {% endfor %}
-    </ol>
-{% endfor %}
+
+{% block content_title %}
+    <h1>Posts in {{ year }}</h1>
+{% endblock %}
+
+
+{% block content %}
+    {% regroup object_list by publish|date:"F" as grouped %}
+    
+    {% for group in grouped %}
+        <h2>{{ group.grouper }}</h2>
+        <ol>
+            {% for post in group.list %}
+                <li><a href="{{ post.get_absolute_url }}">{{ post.title }}</a></li>
+            {% endfor %}
+        </ol>
+    {% endfor %}
+{% endblock %}

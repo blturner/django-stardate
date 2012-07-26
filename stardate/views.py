@@ -16,6 +16,11 @@ class PostViewMixin(object):
 class PostArchiveIndex(PostViewMixin, generic.ArchiveIndexView):
     context_object_name = 'post_list'
 
+    def get_context_data(self, **kwargs):
+        context = super(PostArchiveIndex, self).get_context_data(**kwargs)
+        context['blog'] = Blog.objects.get(slug__iexact=self.kwargs['blog_slug'])
+        return context
+
 
 class PostYearArchive(PostViewMixin, generic.YearArchiveView):
     make_object_list = True

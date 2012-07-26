@@ -1,0 +1,12 @@
+<!doctype html>
+<head>
+    <meta charset="utf-8">
+    <title>{% block full_title %}{% block title %}{% endblock %} | Django Stardate{% endblock %}</title>
+</head>
+<body>
+{% block page %}
+    {% block content_title %}{% endblock %}
+    {% block content %}{% endblock %}
+{% endblock %}
+</body>
+</html>

@@ -1,34 +1,41 @@
+{% extends "stardate/base_stardate.html" %}
+
 {% load markup %}
 
 
-{% include 'stardate/includes/breadcrumbs.html' %}
+{% block title %}{{ post.title }}{% endblock %}
 
 
-{% with post.blog as blog %}
-<h2><a href="{{ blog.get_absolute_url }}">{{ blog.title }}</a></h2>
-{% endwith %}
+{% block page %}
+    {% include 'stardate/includes/breadcrumbs.html' %}
 
 
-<h1>{{ post.title }}</h1>
-<ul>
-{% if post.authors.all %}
-    {% with post.authors.all as author_list %}
-        {% include 'stardate/includes/author_list.html' %}
-    {% endwith %}
-{% elif post.blog.authors.all %}
-    {% with post.blog.authors.all as author_list %}
-        {% include 'stardate/includes/author_list.html' %}
-    {% endwith %}
-{% endif %}
-<li>Posted {{ post.publish|date:"l, F jS, Y h:i a T" }}</li>
-</ul>
+    {% block content_title %}
+        <h1>{{ post.title }}</h1>
+        <ul>
+        {% if post.authors.all %}
+            {% with post.authors.all as author_list %}
+                {% include 'stardate/includes/author_list.html' %}
+            {% endwith %}
+        {% elif post.blog.authors.all %}
+            {% with post.blog.authors.all as author_list %}
+                {% include 'stardate/includes/author_list.html' %}
+            {% endwith %}
+        {% endif %}
+        <li>Posted {{ post.publish|date:"l, F jS, Y P T" }}</li>
+        </ul>
+    {% endblock content_title %}
 
-{{ post.body|markdown }}
 
-{% if post.get_prev_post %}
-    <p><a href="{{ post.get_prev_post.get_absolute_url }}">Previous: {{ post.get_prev_post.title }}</a></p>
-{% endif %}
+    {% block content %}
+        {{ post.body|markdown }}
 
-{% if post.get_next_post %}
-    <p><a href="{{ post.get_next_post.get_absolute_url }}">Next: {{ post.get_next_post.title }}</a></p>
-{% endif %}
+        {% if post.get_prev_post %}
+            <p><a href="{{ post.get_prev_post.get_absolute_url }}">Previous: {{ post.get_prev_post.title }}</a></p>
+        {% endif %}
+
+        {% if post.get_next_post %}
+            <p><a href="{{ post.get_next_post.get_absolute_url }}">Next: {{ post.get_next_post.title }}</a></p>
+        {% endif %}
+    {% endblock content %}
+{% endblock page %}

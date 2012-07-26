@@ -1,7 +1,17 @@
-<h1>{{ day }}</h1>
+{% extends "stardate/base_stardate.html" %}
 
-<ol>
-{% for object in object_list %}
-    <li><a href="{{ object.get_absolute_url }}">{{ object.title }}</a></li>
-{% endfor %}
-</ol>
+{% block title %}Posts for {{ day }}{% endblock %}
+
+
+{% block content_title %}
+    <h1>Posts for {{ day }}</h1>
+{% endblock %}
+
+
+{% block content %}
+    <ol>
+    {% for object in object_list %}
+        <li><a href="{{ object.get_absolute_url }}">{{ object.title }}</a></li>
+    {% endfor %}
+    </ol>
+{% endblock %}

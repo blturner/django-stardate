@@ -1,5 +1,17 @@
-<ul>
-{% for post in post_list %}
-  <li><a href="{{ post.get_absolute_url }}">{{ post.title }}</a></li>
-{% endfor %}
-</ul>
+{% extends "stardate/base_stardate.html" %}
+
+{% block title %}{{ blog.name }} post list{% endblock %}
+
+
+{% block content_title %}
+    <h1>{{ blog.name }}</h1>
+{% endblock %}
+
+
+{% block content %}
+    <ul>
+    {% for post in post_list %}
+        <li><a href="{{ post.get_absolute_url }}">{{ post.title }}</a></li>
+    {% endfor %}
+    </ul>
+{% endblock %}

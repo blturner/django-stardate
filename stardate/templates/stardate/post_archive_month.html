@@ -1,7 +1,17 @@
-<h1>Posts in {{ month|date:"F Y" }}</h1>
+{% extends "stardate/base_stardate.html" %}
 
-<ol>
-{% for post in object_list %}
-    <li><a href="{{ post.get_absolute_url }}">{{ post }}</a></li>
-{% endfor %}
-</ol>
+{% block title %}Posts in {{ month|date:"F Y" }}{% endblock %}
+
+
+{% block content_title %}
+    <h1>Posts in {{ month|date:"F Y" }}</h1>
+{% endblock %}
+
+
+{% block content %}
+    <ol>
+    {% for post in object_list %}
+        <li><a href="{{ post.get_absolute_url }}">{{ post }}</a></li>
+    {% endfor %}
+    </ol>
+{% endblock %}
