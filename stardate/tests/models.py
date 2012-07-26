@@ -1,5 +1,7 @@
-from django.db import IntegrityError
+from django.core.exceptions import ValidationError
 from django.test import TestCase
+from dropbox import client
+from mock import patch
 
 from stardate.models import Blog, Post
 
@@ -31,6 +33,27 @@ class BlogTestCase(TestCase):
         p = Post.objects.get(pk=2)
         self.assertFalse(p.get_prev_post())
 
+    @patch.object(client.DropboxClient, 'put_file')
+    def test_save_post(self, mock_put_file):
+        data = {
+            'title': 'Test post',
+            'body': 'This is the content.',
+            'blog': Blog.objects.get(pk=1)
+        }
+        p = Post(**data)
+        p.save()
+
+        saved_post = Post.objects.get(title='Test post')
+        self.assertEqual(saved_post.title, 'Test post')
+        self.assertEqual(saved_post.body, 'This is the content.\n')
+
+    def test_save_invalid_post(self):
+        data = {
+            'blog': Blog.objects.get(pk=1)
+        }
+        p = Post(**data)
+        self.assertRaises(ValidationError, p.save)
+
     def test_invalid_publish(self):
         data = {
             'title': 'A duplicate publish date',
@@ -38,4 +61,4 @@ class BlogTestCase(TestCase):
         }
         data['blog_id'] = 1
         p = Post(**data)
-        self.assertRaises(IntegrityError, p.save)
+        self.assertRaises(ValidationError, p.save)

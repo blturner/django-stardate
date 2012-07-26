@@ -42,11 +42,10 @@ class StardateTestCase(TestCase):
     @patch.object(client.DropboxClient, 'put_file')
     @patch.object(DropboxAuth, 'get_dropbox_client')
     def test_stardate_parse_publish(self, mock_put_file, mock_get_dropbox_client):
-        text = "title: Testing publish\npublish: 2012-01-01 07:00 AM\n\nTest content.\n"
+        text = "title: Testing publish\npublish: 2012-01-01 07:00 AM\n\n\nTest content.\n"
         post_data = self.stardate.parser.parse_post(text)
         post_data['blog_id'] = self.blog.id
         p = Post.objects.create(**post_data)
-        p.clean()
         p.save()
 
         serialized_data = self.blog.get_serialized_posts()
@@ -59,7 +58,7 @@ class StardateTestCase(TestCase):
                 self.assertEqual(datetime.datetime.strftime(post.get('fields')['publish'].astimezone(self.time_zone), '%Y-%m-%d %I:%M %p %Z'), u'2012-01-01 07:00 AM PST')
 
     def test_parse_post(self):
-        text = "title: Another world\npublish: 2012-01-02 12:00 AM\n\nGathered by gravity, not a sunrise but a galaxyrise hydrogen atoms.\n"
+        text = "title: Another world\npublish: 2012-01-02 12:00 AM\n\n\nGathered by gravity, not a sunrise but a galaxyrise hydrogen atoms.\n"
         result = self.stardate.parser.parse_post(text)
         title = result.get('title')
         publish = result.get('publish')
@@ -71,8 +70,15 @@ class StardateTestCase(TestCase):
         self.assertEqual(publish, datetime.datetime(2012, 1, 2, 0, 0, tzinfo=self.time_zone))
         self.assertEqual(body, u'Gathered by gravity, not a sunrise but a galaxyrise hydrogen atoms.\n')
 
+    def test_parse_complex_post(self):
+        text = 'title: A complicated post\n\n\nThis is the first paragraph.\n\nThis is the second paragraph.'
+        result = self.stardate.parser.parse_post(text)
+        body = result.get('body')
+
+        self.assertEqual(body, u'This is the first paragraph.\n\nThis is the second paragraph.')
+
     def test_parse_post_no_publish(self):
-        text = "title: Another world\n\nContent.\n"
+        text = "title: Another world\n\n\nContent.\n"
         result = self.stardate.parser.parse_post(text)
 
         self.assertTrue(result.get('title'))
@@ -80,7 +86,7 @@ class StardateTestCase(TestCase):
         self.assertFalse(result.get('publish'))
 
     def test_parse_post_invalid_publish(self):
-        text = u'title: A broken post\npublish: 2012-01-02 14:00:00+00:00\n\nContent.\n'
+        text = u'title: A broken post\npublish: 2012-01-02 14:00:00+00:00\n\n\nContent.\n'
         result = self.stardate.parser.parse_post(text)
 
         self.assertEqual(result.get('publish'), datetime.datetime(2012, 1, 2, 14, 0))
@@ -92,12 +98,11 @@ class StardateTestCase(TestCase):
 
         posts = self.stardate.parse(self.blog.dropbox_file.content)
         for post in posts:
-            post['blog_id'] = self.blog.id
+            post['blog'] = self.blog
             try:
                 p = Post.objects.get(stardate=post.get('stardate'))
             except Post.DoesNotExist:
                 p = Post(**post)
-            p.clean()
             p.save()
 
             self.assertTrue(p.stardate)
@@ -105,22 +110,16 @@ class StardateTestCase(TestCase):
 
         self.assertEqual(self.blog.post_set.count(), 2)
 
-        self.blog.dropbox_file.content = self.stardate.parse_for_dropbox(self.blog.get_serialized_posts())
-        self.blog.dropbox_file.content = "title: A new post\n\nSome new content.\n\n---\n\ntitle: A funny thing happened\n\nOn my walk today.\n\n---\n\n" + self.blog.dropbox_file.content
+        self.blog.dropbox_file.content = "title: A new post\n\n\nSome new content.\n\n---\n\ntitle: A funny thing happened\n\n\nOn my walk today.\n\n---\n\n" + self.blog.dropbox_file.content
 
         posts = self.stardate.parse(self.blog.dropbox_file.content)
         for post in posts:
-            post['blog_id'] = self.blog.id
+            post['blog'] = self.blog
             try:
                 p = Post.objects.get(stardate=post.get('stardate'))
             except Post.DoesNotExist:
                 p = Post(**post)
-
-            p.__dict__.update(**post)
-            p.clean()
             p.save()
-
-            self.assertTrue(p.body)
 
         self.assertEqual(self.blog.post_set.count(), 4)
         self.blog.dropbox_file.content = self.stardate.parse_for_dropbox(self.blog.get_serialized_posts())
