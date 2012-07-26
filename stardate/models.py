@@ -92,6 +92,9 @@ class Post(models.Model):
     # On save, a post should parse the dropbox blog file
     # and update the post that was changed.
     def save(self, *args, **kwargs):
+        self.clean()
+        self.clean_fields()
+        self.validate_unique()
         super(Post, self).save(*args, **kwargs)
 
         stardate = Stardate()
@@ -101,7 +104,10 @@ class Post(models.Model):
         dbfile.save()
 
         client = DropboxAuth().dropbox_client
-        client.put_file(dbfile.path, dbfile.content, overwrite=True)
+        try:
+            client.put_file(dbfile.path, dbfile.content, overwrite=True)
+        except:
+            pass
 
     @models.permalink
     def get_absolute_url(self):

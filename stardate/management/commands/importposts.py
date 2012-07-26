@@ -1,7 +1,7 @@
 import os
 import json
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 
 from stardate.dropbox_auth import DropboxAuth
 from stardate.models import Blog, DropboxFile, Post
@@ -38,15 +38,18 @@ class Command(BaseCommand):
                     blogs = Blog.objects.filter(dropbox_file=obj)
                     for blog in blogs:
                         posts = stardate.parse(obj.content)
-                        for post in posts:
-                            post['blog_id'] = blog.id
-                            try:
-                                p = Post.objects.get(stardate=post.get("stardate"))
-                            except Post.DoesNotExist:
-                                p = Post(**post)
-                            p.__dict__.update(**post)
-                            p.clean()
-                            p.save()
+                        if posts:
+                            for post in posts:
+                                post['blog_id'] = blog.id
+                                try:
+                                    p = Post.objects.get(stardate=post.get("stardate"))
+                                except Post.DoesNotExist:
+                                    p = Post(**post)
+                                p.__dict__.update(**post)
+                                try:
+                                    p.save()
+                                except:
+                                    pass
 
             self.save_cursor(delta.get('cursor'))
 
