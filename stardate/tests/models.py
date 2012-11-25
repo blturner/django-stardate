@@ -1,9 +1,34 @@
+from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.test import TestCase
-from dropbox import client
 from mock import patch
 
-from stardate.models import Blog, Post
+from stardate.models import Blog, DropboxFile, Post
+from stardate.sync import StardateSync
+from stardate.tests.sync import MockDropboxClient
+
+
+class MockStardateSync(StardateSync):
+    def __init__(self, *args, **kwargs):
+        self.client = MockDropboxClient
+        StardateSync.__init__(self, *args, **kwargs)
+
+
+class DropboxFileTestCase(TestCase):
+    fixtures = ['stardate_parser_testdata.json']
+
+    def setUp(self):
+        super(DropboxFileTestCase, self).setUp()
+        self.dropbox_file = DropboxFile.objects.get(pk=1)
+
+    @patch.object(StardateSync, 'get_dropbox_client')
+    def test_sync_to_dropbox(self, mock_method):
+        mock_method.return_value = MockDropboxClient()
+
+        user = User.objects.get(pk=1)
+        auth = user.social_auth.get(provider='dropbox')
+        self.dropbox_file.content = 'new content'
+        self.dropbox_file.sync_to_dropbox(auth)
 
 
 class BlogTestCase(TestCase):
@@ -15,7 +40,6 @@ class BlogTestCase(TestCase):
 
     def test_get_serialized_posts(self):
         posts = self.blog.get_serialized_posts()
-        # fields = posts[0].get('fields')
 
         self.assertEqual(len(posts), 2)
 
@@ -33,8 +57,10 @@ class BlogTestCase(TestCase):
         p = Post.objects.get(pk=2)
         self.assertFalse(p.get_prev_post())
 
-    @patch.object(client.DropboxClient, 'put_file')
-    def test_save_post(self, mock_put_file):
+    @patch.object(StardateSync, 'get_dropbox_client')
+    def test_save_post(self, mock_get_dropbox_client):
+        mock_get_dropbox_client.return_value = MockDropboxClient()
+
         data = {
             'title': 'Test post',
             'body': 'This is the content.',

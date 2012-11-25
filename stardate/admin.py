@@ -8,7 +8,15 @@ class DropboxFileAdmin(admin.ModelAdmin):
 
 
 class BlogAdmin(admin.ModelAdmin):
+    exclude = ['owner', ]
     prepopulated_fields = {'slug': ('name',)}
+
+    def save_model(self, request, obj, form, change):
+        """When creating a new object, set the owner field.
+        """
+        if not change:
+            obj.owner = request.user
+        obj.save()
 
 
 class PostAdmin(admin.ModelAdmin):

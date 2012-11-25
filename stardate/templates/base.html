@@ -2,6 +2,7 @@
 <head>
     <meta charset="utf-8">
     <title>{% block full_title %}{% block title %}{% endblock %} | Django Stardate{% endblock %}</title>
+    {% block extra_head %}{% endblock %}
 </head>
 <body>
 {% block page %}

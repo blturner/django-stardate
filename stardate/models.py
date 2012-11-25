@@ -3,8 +3,8 @@ from django.core import serializers
 from django.db import models
 from django.utils import timezone
 
-from stardate.dropbox_auth import DropboxAuth
 from stardate.parser import Stardate
+from stardate.sync import StardateSync
 
 
 class DropboxCommon(models.Model):
@@ -25,6 +25,18 @@ class DropboxCommon(models.Model):
     def __unicode__(self):
         return self.path
 
+    def save(self, *args, **kwargs):
+        dropbox_auth = None
+        if args:
+            dropbox_auth = args[0]
+        super(DropboxCommon, self).save()
+        if dropbox_auth:
+            self.sync_to_dropbox(dropbox_auth)
+
+    def sync_to_dropbox(self, dropbox_auth):
+        sync = StardateSync(dropbox_auth)
+        sync.dropbox_client.put_file(self.path, self.content, overwrite=True)
+
 
 class DropboxFolder(DropboxCommon):
     hash = models.CharField(max_length=255)
@@ -42,6 +54,7 @@ class Blog(models.Model):
     authors = models.ManyToManyField(User, blank=True, null=True)
     dropbox_file = models.ForeignKey(DropboxFile)
     name = models.CharField(max_length=255)
+    owner = models.ForeignKey(User, related_name="+")
     slug = models.SlugField()
 
     def __unicode__(self):
@@ -54,6 +67,28 @@ class Blog(models.Model):
     def get_serialized_posts(self):
         return serializers.serialize("python", self.post_set.all(),
             fields=('title', 'publish', 'stardate', 'body'))
+
+    def update_dropbox_file(self, dropbox_auth):
+        dropbox_file = self.dropbox_file
+        parser = Stardate()
+        posts = self.get_serialized_posts()
+        dropbox_file.content = parser.parse_for_dropbox(posts)
+        dropbox_file.save(dropbox_auth)
+
+    def save_stardate_posts(self):
+        parser = Stardate()
+        parsed = parser.parse(self.dropbox_file.content)
+        for post in parsed:
+            post['blog_id'] = self.id
+            try:
+                p = Post.objects.get(stardate=post.get('stardate'))
+            except Post.DoesNotExist:
+                p = Post(**post)
+            p.__dict__.update(**post)
+            try:
+                p.save()
+            except:
+                pass
 
 
 class PostManager(models.Manager):
@@ -97,17 +132,8 @@ class Post(models.Model):
         self.validate_unique()
         super(Post, self).save(*args, **kwargs)
 
-        stardate = Stardate()
-        posts = self.blog.get_serialized_posts()
-        dbfile = self.blog.dropbox_file
-        dbfile.content = stardate.parse_for_dropbox(posts)
-        dbfile.save()
-
-        client = DropboxAuth().dropbox_client
-        try:
-            client.put_file(dbfile.path, dbfile.content, overwrite=True)
-        except:
-            pass
+        dropbox_auth = self.blog.owner.social_auth.get(provider='dropbox')
+        self.blog.update_dropbox_file(dropbox_auth)
 
     @models.permalink
     def get_absolute_url(self):
