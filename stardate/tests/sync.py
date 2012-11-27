@@ -36,16 +36,20 @@ class MockDropboxClient(object):
         return json.loads(self.data)
 
     def get_file(self, path):
-        f = MockFile()
+        f = MockFile('title: Hello world\npublish: 2012-06-01 6:00 AM\n\n\nThe post content.')
         return f
 
     def put_file(self, full_path, file_obj, overwrite=False, parent_rev=None):
-        return True
+        f = MockFile(file_obj)
+        return f
 
 
 class MockFile(object):
+    def __init__(self, content):
+        self.content = content
+
     def read(self):
-        return 'title: Hello world\npublish: 2012-06-01 6:00 AM\n\n\nThe post content.'
+        return self.content
 
 
 class StardateSyncTestCase(TestCase):

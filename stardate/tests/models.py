@@ -28,7 +28,7 @@ class DropboxFileTestCase(TestCase):
         user = User.objects.get(pk=1)
         auth = user.social_auth.get(provider='dropbox')
         self.dropbox_file.content = 'new content'
-        self.dropbox_file.sync_to_dropbox(auth)
+        self.assertEqual(self.dropbox_file.sync_to_dropbox(auth).read(), 'new content')
 
 
 class BlogTestCase(TestCase):
