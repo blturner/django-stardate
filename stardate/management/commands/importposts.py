@@ -22,6 +22,9 @@ class Command(BaseCommand):
                     print u'User with username %s does not exist.' % username
         else:
             for user in User.objects.all():
-                dropbox_auth = user.social_auth.get(provider='dropbox')
-                sync = StardateSync(dropbox_auth)
-                sync.process_dropbox_entries()
+                try:
+                    dropbox_auth = user.social_auth.get(provider='dropbox')
+                    sync = StardateSync(dropbox_auth)
+                    sync.process_dropbox_entries()
+                except:
+                    pass
