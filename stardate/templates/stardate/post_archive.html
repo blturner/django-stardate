@@ -1,6 +1,7 @@
 {% extends "stardate/base_stardate.html" %}
 
 {% block title %}{{ blog.name }} post list{% endblock %}
+{% block body_class %}{{ block.super }} blog_list{% endblock %}
 
 
 {% block content_title %}
