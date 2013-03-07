@@ -34,9 +34,13 @@ class DropboxCommon(models.Model):
             self.sync_to_dropbox(dropbox_auth)
 
     # SMELLY
-    def sync_to_dropbox(self, dropbox_auth):
-        sync = StardateSync(dropbox_auth)
-        return sync.dropbox_client.put_file(self.path, self.content, overwrite=True)
+    def sync_to_dropbox(self, dropbox_auth, sync_class=StardateSync):
+        """
+        Sync the content of the DropboxFile or DropboxFolder to dropbox.
+        """
+        sync = sync_class(dropbox_auth)
+        return sync.dropbox_client.put_file(self.path, self.content,
+            overwrite=True)
 
 
 class DropboxFolder(DropboxCommon):

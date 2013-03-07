@@ -10,8 +10,9 @@ from stardate.tests.sync import MockDropboxClient
 
 class MockStardateSync(StardateSync):
     def __init__(self, *args, **kwargs):
-        self.client = MockDropboxClient
-        StardateSync.__init__(self, *args, **kwargs)
+        self.client = MockDropboxClient()
+        self.dropbox_client = self.client
+        super(StardateSync, self).__init__()
 
 
 class DropboxFileTestCase(TestCase):
@@ -21,14 +22,12 @@ class DropboxFileTestCase(TestCase):
         super(DropboxFileTestCase, self).setUp()
         self.dropbox_file = DropboxFile.objects.get(pk=1)
 
-    @patch.object(StardateSync, 'get_dropbox_client')
-    def test_sync_to_dropbox(self, mock_method):
-        mock_method.return_value = MockDropboxClient()
-
+    def test_sync_to_dropbox(self):
         user = User.objects.get(pk=1)
         auth = user.social_auth.get(provider='dropbox')
         self.dropbox_file.content = 'new content'
-        self.assertEqual(self.dropbox_file.sync_to_dropbox(auth).read(), 'new content')
+        self.assertEqual(self.dropbox_file.sync_to_dropbox(auth,
+            sync_class=MockStardateSync).read(), 'new content')
 
 
 class BlogTestCase(TestCase):
