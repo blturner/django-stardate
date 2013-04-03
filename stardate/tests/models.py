@@ -1,33 +1,31 @@
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.test import TestCase
-from mock import patch
 
-from stardate.models import Blog, DropboxFile, Post
-from stardate.sync import StardateSync
-from stardate.tests.sync import MockDropboxClient
+from stardate.models import Blog, Post
+from stardate.tests.mock_dropbox import MockDropboxClient
 
 
-class MockStardateSync(StardateSync):
-    def __init__(self, *args, **kwargs):
-        self.client = MockDropboxClient()
-        self.dropbox_client = self.client
-        super(StardateSync, self).__init__()
+# class MockStardateSync(StardateSync):
+#     def __init__(self, *args, **kwargs):
+#         self.client = MockDropboxClient()
+#         self.dropbox_client = self.client
+#         super(StardateSync, self).__init__()
 
 
-class DropboxFileTestCase(TestCase):
-    fixtures = ['stardate_parser_testdata.json']
+# class DropboxFileTestCase(TestCase):
+#     fixtures = ['stardate_parser_testdata.json']
 
-    def setUp(self):
-        super(DropboxFileTestCase, self).setUp()
-        self.dropbox_file = DropboxFile.objects.get(pk=1)
+#     def setUp(self):
+#         super(DropboxFileTestCase, self).setUp()
+#         self.dropbox_file = DropboxFile.objects.get(pk=1)
 
-    def test_sync_to_dropbox(self):
-        user = User.objects.get(pk=1)
-        auth = user.social_auth.get(provider='dropbox')
-        self.dropbox_file.content = 'new content'
-        self.assertEqual(self.dropbox_file.sync_to_dropbox(auth,
-            sync_class=MockStardateSync).read(), 'new content')
+#     def test_sync_to_dropbox(self):
+#         user = User.objects.get(pk=1)
+#         auth = user.social_auth.get(provider='dropbox')
+#         self.dropbox_file.content = 'new content'
+#         self.assertEqual(self.dropbox_file.sync_to_dropbox(auth,
+#             sync_class=MockStardateSync).read(), 'new content')
 
 
 class BlogTestCase(TestCase):
@@ -56,21 +54,21 @@ class BlogTestCase(TestCase):
         p = Post.objects.get(pk=2)
         self.assertFalse(p.get_prev_post())
 
-    @patch.object(StardateSync, 'get_dropbox_client')
-    def test_save_post(self, mock_get_dropbox_client):
-        mock_get_dropbox_client.return_value = MockDropboxClient()
+    # def test_save_stardate_posts_sets_post_deleted(self):
+    #     df = DropboxFile.objects.get(pk=1)
+    #     df.content = "stardate: 9df753dc-c87f-11e1-ba83-b88d120c8298\npublish: 2012-01-02 12:00 AM\ntitle: Tingling of the spine\n\n\nExtraordinary claims require extraordinary evidence!\n"
 
-        data = {
-            'title': 'Test post',
-            'body': 'This is the content.',
-            'blog': Blog.objects.get(pk=1)
-        }
-        p = Post(**data)
-        p.save()
+    #     self.blog.dropbox_file = df
 
-        saved_post = Post.objects.get(title='Test post')
-        self.assertEqual(saved_post.title, 'Test post')
-        self.assertEqual(saved_post.body, 'This is the content.\n')
+    #     parser = Stardate()
+    #     parsed = parser.parse(df.content)
+
+    #     deleted_posts = self.blog.mark_deleted_posts(parsed)
+
+    #     self.assertEqual(deleted_posts.__len__(), 2)
+
+    #     for post in deleted_posts:
+    #         self.assertTrue(post.deleted)
 
     def test_save_invalid_post(self):
         data = {

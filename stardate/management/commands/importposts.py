@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
-from stardate.sync import StardateSync
+from stardate.models import Blog
 
 
 class Command(BaseCommand):
@@ -17,14 +17,14 @@ class Command(BaseCommand):
             for username in args:
                 try:
                     user = User.objects.get(username=username)
-                    print user
+                    for blog in Blog.objects.filter(owner=user.id):
+                        blog.save_post_objects()
                 except User.DoesNotExist:
                     print u'User with username %s does not exist.' % username
         else:
             for user in User.objects.all():
                 try:
-                    dropbox_auth = user.social_auth.get(provider='dropbox')
-                    sync = StardateSync(dropbox_auth)
-                    sync.process_dropbox_entries()
+                    for blog in Blog.objects.filter(owner=user.id):
+                        blog.save_post_objects()
                 except:
                     pass

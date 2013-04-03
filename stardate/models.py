@@ -3,64 +3,21 @@ from django.core import serializers
 from django.db import models
 from django.utils import timezone
 
-from stardate.parser import Stardate
-from stardate.sync import StardateSync
+from social_auth.models import UserSocialAuth
+
+from stardate.backends import get_backend
 
 
-class DropboxCommon(models.Model):
-    bytes = models.IntegerField(blank=True)
-    icon = models.CharField(max_length=255)
-    is_dir = models.BooleanField()
-    modified = models.DateTimeField(blank=True, null=True)
-    path = models.CharField(max_length=255)
-    rev = models.CharField(max_length=255)
-    revision = models.IntegerField(blank=True, null=True)
-    root = models.CharField(max_length=255)
-    size = models.CharField(max_length=255)
-    thumb_exists = models.BooleanField()
-
-    class Meta:
-        abstract = True
-
-    def __unicode__(self):
-        return self.path
-
-    def save(self, *args, **kwargs):
-        dropbox_auth = None
-        if args:
-            dropbox_auth = args[0]
-        super(DropboxCommon, self).save()
-        if dropbox_auth:
-            self.sync_to_dropbox(dropbox_auth)
-
-    # SMELLY
-    def sync_to_dropbox(self, dropbox_auth, sync_class=StardateSync):
-        """
-        Sync the content of the DropboxFile or DropboxFolder to dropbox.
-        """
-        sync = sync_class(dropbox_auth)
-        return sync.dropbox_client.put_file(self.path, self.content,
-            overwrite=True)
-
-
-class DropboxFolder(DropboxCommon):
-    hash = models.CharField(max_length=255)
-    folder = models.ForeignKey('self', blank=True, null=True)
-
-
-class DropboxFile(DropboxCommon):
-    client_mtime = models.DateTimeField(blank=True, null=True)
-    content = models.TextField(blank=True)
-    folder = models.ForeignKey(DropboxFolder, blank=True, null=True)
-    mime_type = models.CharField(max_length=255)
+BACKEND = get_backend()
 
 
 class Blog(models.Model):
     authors = models.ManyToManyField(User, blank=True, null=True)
-    dropbox_file = models.ForeignKey(DropboxFile)
+    backend_file = models.CharField(blank=True, max_length=255)
     name = models.CharField(max_length=255)
     owner = models.ForeignKey(User, related_name="+")
     slug = models.SlugField()
+    social_auth = models.ForeignKey(UserSocialAuth)
 
     def __unicode__(self):
         return self.name
@@ -73,47 +30,56 @@ class Blog(models.Model):
         return serializers.serialize("python", self.post_set.all(),
             fields=('title', 'publish', 'stardate', 'body'))
 
-    def update_dropbox_file(self, dropbox_auth):
-        dropbox_file = self.dropbox_file
-        parser = Stardate()
-        posts = self.get_serialized_posts()
-        dropbox_file.content = parser.parse_for_dropbox(posts)
-        dropbox_file.save(dropbox_auth)
+    def get_backend_posts(self):
+        # FIXME
+        BACKEND.set_social_auth(self.social_auth)
+        files = BACKEND.get_file_list()
+        path = files[int(self.backend_file)][1]
+        return BACKEND.get_posts(path)
 
-    def save_stardate_posts(self):
-        parser = Stardate()
-        parsed = parser.parse(self.dropbox_file.content)
-        for post in parsed:
+    def save_post_objects(self):
+        for post in self.get_backend_posts():
             post['blog_id'] = self.id
             try:
                 p = Post.objects.get(stardate=post.get('stardate'))
             except Post.DoesNotExist:
                 p = Post(**post)
             p.__dict__.update(**post)
-            try:
-                p.save()
-            except:
-                pass
+            p.save()
+
+    def sync_backend(self):
+        post_list = self.get_serialized_posts()
+        BACKEND.set_social_auth(self.social_auth)
+
+        # FIXME
+        files = BACKEND.get_file_list()
+        path = files[int(self.backend_file)][1]
+
+        BACKEND.sync(path, post_list)
 
 
 class PostManager(models.Manager):
 
     def published(self):
-        return self.get_query_set().filter(publish__lte=timezone.now()).order_by('-publish')
+        return self.get_query_set().filter(
+            deleted=False,
+            publish__lte=timezone.now()).order_by('-publish')
 
 
 class Post(models.Model):
     authors = models.ManyToManyField(User, blank=True, null=True)
     blog = models.ForeignKey(Blog)
     body = models.TextField(blank=True)
+    deleted = models.BooleanField()
     objects = PostManager()
     publish = models.DateTimeField(blank=True, null=True, unique=True)
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField()
     stardate = models.CharField(max_length=255)
     title = models.CharField(max_length=255)
 
     class Meta:
         ordering = ['-publish']
+        unique_together = ('slug', 'blog')
 
     def __unicode__(self):
         return self.title
@@ -129,16 +95,19 @@ class Post(models.Model):
         if not self.body.endswith('\n'):
             self.body += '\n'
 
+    def mark_deleted(self):
+        self.deleted = True
+        return self
+
     # On save, a post should parse the dropbox blog file
     # and update the post that was changed.
+    # FIXME
     def save(self, *args, **kwargs):
         self.clean()
         self.clean_fields()
         self.validate_unique()
         super(Post, self).save(*args, **kwargs)
-
-        dropbox_auth = self.blog.owner.social_auth.get(provider='dropbox')
-        self.blog.update_dropbox_file(dropbox_auth)
+        self.blog.sync_backend()
 
     @models.permalink
     def get_absolute_url(self):

@@ -88,7 +88,8 @@
             "blog": 1,
             "stardate": "9df753dc-c87f-11e1-ba83-b88d120c8298",
             "authors": [],
-            "slug": "tingling-of-the-spine"
+            "slug": "tingling-of-the-spine",
+            "deleted": false
         }
     },
     {
@@ -101,7 +102,8 @@
             "blog": 1,
             "stardate": "9eaf38cf-c87f-11e1-b48a-b88d120c8298",
             "authors": [],
-            "slug": "great-turbulent-clouds"
+            "slug": "great-turbulent-clouds",
+            "deleted": false
         }
     }
 ]
