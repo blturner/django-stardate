@@ -76,12 +76,12 @@ class BlogTestCase(TestCase):
 
         self.assertEqual(first_post.get_next_post(), last_post)
 
-    # def test_get_prev_post(self):
-    #     p = Post.objects.get(pk=1)
-    #     self.assertEqual(p.get_prev_post().pk, 2)
+    def test_get_prev_post(self):
+        first_post = Post.objects.get(title="Test post title")
+        last_post = Post.objects.get(title="Test post 2 title")
 
-    #     p = Post.objects.get(pk=2)
-    #     self.assertFalse(p.get_prev_post())
+        self.assertEqual(last_post.get_prev_post(), first_post)
+        self.assertFalse(first_post.get_prev_post())
 
     # def test_save_invalid_post(self):
     #     data = {
