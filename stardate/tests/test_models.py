@@ -83,18 +83,18 @@ class BlogTestCase(TestCase):
         self.assertEqual(last_post.get_prev_post(), first_post)
         self.assertFalse(first_post.get_prev_post())
 
-    # def test_save_invalid_post(self):
-    #     data = {
-    #         'blog': self.blog
-    #     }
-    #     p = Post(**data)
-    #     self.assertRaises(ValidationError, p.save)
+    def test_save_invalid_post(self):
+        data = {
+            'blog': self.blog
+        }
+        p = Post(**data)
+        self.assertRaises(ValidationError, p.save)
 
-    # def test_invalid_publish(self):
-    #     data = {
-    #         'title': 'A duplicate publish date',
-    #         'publish': '2012-01-01T14:00:00Z',
-    #     }
-    #     data['blog_id'] = 1
-    #     p = Post(**data)
-    #     self.assertRaises(ValidationError, p.save)
+    def test_invalid_publish(self):
+        data = {
+            'title': 'A duplicate publish date',
+            'publish': '2012-01-01T14:00:00Z',
+        }
+        data['blog_id'] = 1
+        p = Post(**data)
+        self.assertRaises(ValidationError, p.save)
