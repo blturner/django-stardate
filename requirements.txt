@@ -1,6 +1,6 @@
-dateutil==2.1
 Django==1.4.2
 django-social-auth==0.7.9
 dropbox==1.4
 Markdown==2.0.3
+python-dateutil==2.1
 PyYAML==3.10
