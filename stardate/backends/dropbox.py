@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from django.conf import settings
+from django.core.cache import cache
 
 from dropbox import client, session
 
@@ -64,6 +65,13 @@ class DropboxBackend(StardateBackend):
         """
         Returns a list of iterables: [(1, '/test.md')]
         """
+        key_name = 'dropbox_file_list'
+        timeout = 60 * 5
+
+        file_list = cache.get(key_name)
+        if file_list is not None:
+            return file_list
+
         file_list = []
         try:
             entries = self.delta().get('entries')
@@ -75,6 +83,7 @@ class DropboxBackend(StardateBackend):
                     file_list.append((i, file_path))
         except:
             pass
+        cache.set(key_name, file_list, timeout)
         return file_list
 
     def get_content(self, path):

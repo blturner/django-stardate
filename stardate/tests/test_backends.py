@@ -1,5 +1,6 @@
 import datetime
 
+from django.core.cache import cache
 from django.test import TestCase
 from django.utils import timezone
 
@@ -16,8 +17,11 @@ class DropboxBackendTestCase(TestCase):
         self.assertEqual(self.backend.get_name(), 'dropbox')
 
     def test_get_file_list(self):
+        cache.clear()
+        self.assertEqual(cache.get('dropbox_file_list'), None)
         file_list = self.backend.get_file_list()
 
+        self.assertEqual(len(cache.get('dropbox_file_list')), 1)
         self.assertEqual(file_list, [(0, u'/test_file.md')])
         self.assertEqual(len(file_list), 1)
 
