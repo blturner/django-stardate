@@ -8,9 +8,6 @@ from social_auth.models import UserSocialAuth
 from stardate.backends import get_backend
 
 
-BACKEND = get_backend()
-
-
 class Blog(models.Model):
     authors = models.ManyToManyField(User, blank=True, null=True)
     backend_file = models.CharField(blank=True, max_length=255)
@@ -18,6 +15,10 @@ class Blog(models.Model):
     owner = models.ForeignKey(User, related_name="+")
     slug = models.SlugField()
     social_auth = models.ForeignKey(UserSocialAuth)
+
+    def __init__(self, *args, **kwargs):
+        super(Blog, self).__init__(*args, **kwargs)
+        self.backend = get_backend()
 
     def __unicode__(self):
         return self.name
@@ -32,10 +33,12 @@ class Blog(models.Model):
 
     def get_backend_posts(self):
         # FIXME
-        BACKEND.set_social_auth(self.social_auth)
-        files = BACKEND.get_file_list()
+        backend = self.backend
+
+        backend.set_social_auth(self.social_auth)
+        files = backend.get_file_list()
         path = files[int(self.backend_file)][1]
-        return BACKEND.get_posts(path)
+        return backend.get_posts(path)
 
     def save_post_objects(self):
         for post in self.get_backend_posts():
@@ -48,14 +51,14 @@ class Blog(models.Model):
             p.save()
 
     def sync_backend(self):
+        backend = self.backend
         post_list = self.get_serialized_posts()
-        BACKEND.set_social_auth(self.social_auth)
+        backend.set_social_auth(self.social_auth)
 
         # FIXME
-        files = BACKEND.get_file_list()
+        files = backend.get_file_list()
         path = files[int(self.backend_file)][1]
-
-        BACKEND.sync(path, post_list)
+        backend.sync(path, post_list)
 
 
 class PostManager(models.Manager):
