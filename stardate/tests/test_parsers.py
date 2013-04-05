@@ -15,7 +15,7 @@ class SingleFileParserTestCase(TestCase):
         parsed = self.parser.parse(self.test_string)
 
         self.assertEqual(parsed['title'], 'Tingling of the spine')
-        self.assertEqual(parsed['publish'], datetime.datetime(2012, 1, 2, 0, 0, tzinfo=timezone.utc))
+        self.assertEqual(parsed['publish'], datetime.datetime(2012, 1, 2, 8, 0, tzinfo=timezone.utc))
         self.assertEqual(parsed['body'], 'Extraordinary claims require extraordinary evidence!')
 
     def test_unpack(self):
@@ -25,7 +25,7 @@ class SingleFileParserTestCase(TestCase):
         #The file has one post to unpack
         self.assertEqual(len(post_list), 1)
         self.assertEqual(post_list[0].get('title'), 'Tingling of the spine')
-        self.assertEqual(post_list[0].get('publish'), datetime.datetime(2012, 1, 2, 0, 0, tzinfo=timezone.utc))
+        self.assertEqual(post_list[0].get('publish'), datetime.datetime(2012, 1, 2, 8, 0, tzinfo=timezone.utc))
         self.assertEqual(post_list[0].get('body'), 'Extraordinary claims require extraordinary evidence!')
 
     # def test_get_post_objects(self):

@@ -27,12 +27,13 @@ class DropboxBackendTestCase(TestCase):
 
     def test_sync(self):
         post_list = [{
-            'fields': {'body': u'Do it.\n',
-                    'publish': datetime.datetime(2013, 1, 4, 8, 0, tzinfo=timezone.utc),
-                    'stardate': u'352b967d-87bf-11e2-81f3-b88d120c8298',
-                    'title': u'Fourth post'},
-            'model': u'stardate.post',
-            'pk': 27, }]
+            'fields': {
+                'body': u'Do it.\n',
+                'publish': datetime.datetime(2013, 1, 4, 8, 0, tzinfo=timezone.utc),
+                'stardate': u'352b967d-87bf-11e2-81f3-b88d120c8298',
+                'title': u'Fourth post'},
+            'model': u'stardate.post', 'pk': 27, }]
+
         sync = self.backend.sync('/test_path', post_list)
 
         self.assertEqual(sync.read(), 'stardate: 352b967d-87bf-11e2-81f3-b88d120c8298\npublish: 2013-01-04 12:00 AM\ntitle: Fourth post\n\n\nDo it.\n')
