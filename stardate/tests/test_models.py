@@ -1,6 +1,9 @@
+import datetime
+
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.test import TestCase
+from django.utils import timezone
 
 from social_auth.models import UserSocialAuth
 
@@ -9,6 +12,15 @@ from stardate.tests.mock_dropbox import MockDropboxClient
 
 
 class BlogTestCase(TestCase):
+    def setUp(self):
+        user = self.create_user()
+        self.blog = self.create_blog(name="My test blog", owner=user)
+        self.blog.backend.client_class = MockDropboxClient
+
+        pub_date = datetime.datetime(2012, 1, 3, 8, 0, tzinfo=timezone.utc)
+        self.create_post(blog=self.blog)
+        self.create_post(blog=self.blog, title="Test post 2 title", publish=pub_date)
+
     def create_user(self, **kwargs):
         defaults = {
             "username": "bturner",
@@ -44,27 +56,25 @@ class BlogTestCase(TestCase):
             "blog": kwargs['blog'],
             "body": "Test post body.",
             "title": "Test post title",
+            "publish": datetime.datetime(2012, 1, 2, 8, 0, tzinfo=timezone.utc),
         }
         defaults.update(kwargs)
         return Post.objects.create(**defaults)
 
     def test_get_serialized_posts(self):
-        user = self.create_user()
-        blog = self.create_blog(name="My test blog", owner=user)
-        blog.backend.client_class = MockDropboxClient
-
-        self.create_post(blog=blog)
-        self.create_post(blog=blog, title="Test post 2 title")
-
-        posts = blog.get_serialized_posts()
+        posts = self.blog.get_serialized_posts()
         self.assertEqual(len(posts), 2)
 
-    # def test_get_next_post(self):
-    #     p = Post.objects.get(pk=1)
-    #     self.assertFalse(p.get_next_post())
+    def test_get_next_post(self):
+        first_post = Post.objects.get(title="Test post title")
+        self.assertEqual(first_post.title, "Test post title")
+        self.assertTrue(first_post.get_next_post())
 
-    #     p = Post.objects.get(pk=2)
-    #     self.assertEqual(p.get_next_post().pk, 1)
+        last_post = Post.objects.get(title="Test post 2 title")
+        self.assertEqual(last_post.title, "Test post 2 title")
+        self.assertFalse(last_post.get_next_post())
+
+        self.assertEqual(first_post.get_next_post(), last_post)
 
     # def test_get_prev_post(self):
     #     p = Post.objects.get(pk=1)
