@@ -3,13 +3,31 @@ import datetime
 from django.test import TestCase
 from django.utils import timezone
 
+from stardate.models import Blog
 from stardate.parsers import SingleFileParser
+from stardate.tests.factories import create_blog, create_post
+from stardate.tests.mock_dropbox import MockDropboxClient
 
 
 class SingleFileParserTestCase(TestCase):
     def setUp(self):
         self.parser = SingleFileParser()
         self.test_string = "publish: 2012-01-02 12:00 AM\ntitle: Tingling of the spine\n\n\nExtraordinary claims require extraordinary evidence!"
+
+    def tearDown(self):
+        Blog.objects.all().delete()
+
+    def test_pack(self):
+        blog = create_blog()
+        blog.backend.client_class = MockDropboxClient
+        create_post(title="First post", blog=blog)
+        create_post(title="Second post", blog=blog)
+
+        post_list = blog.get_serialized_posts()
+        packed = self.parser.pack(post_list)
+
+        self.assertIsInstance(post_list, list)
+        self.assertIsInstance(packed, basestring)
 
     def test_parse(self):
         parsed = self.parser.parse(self.test_string)
@@ -27,17 +45,3 @@ class SingleFileParserTestCase(TestCase):
         self.assertEqual(post_list[0].get('title'), 'Tingling of the spine')
         self.assertEqual(post_list[0].get('publish'), datetime.datetime(2012, 1, 2, 8, 0, tzinfo=timezone.utc))
         self.assertEqual(post_list[0].get('body'), 'Extraordinary claims require extraordinary evidence!')
-
-    # def test_get_post_objects(self):
-    #     posts = self.parser.get_post_objects()
-
-    #     self.assertEqual(len(posts), 2)
-    #     self.assertEqual(posts, [
-    #         {
-    #             'body': 'Extraordinary claims require extraordinary evidence!\n',
-    #             'publish': datetime.datetime(2012, 1, 2, 8, 0, tzinfo=timezone.utc),
-    #             'title': 'Tingling of the spine'},
-    #         {
-    #             'body': "With pretty stories for which there's little good evidence.\n",
-    #             'publish': datetime.datetime(2012, 1, 1, 14, 0, tzinfo=timezone.utc),
-    #             'title': 'Great turbulent clouds'}])
