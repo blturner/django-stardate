@@ -86,11 +86,8 @@ class DropboxBackend(StardateBackend):
         cache.set(key_name, file_list, timeout)
         return file_list
 
-    def get_content(self, path):
-        return self.client.get_file(path).read()
-
     def get_posts(self, path):
-        content = self.get_content(path)
+        content = self.get_file(path)
         return self.parser.unpack(content)
 
     def save_cursor(self, cursor):
