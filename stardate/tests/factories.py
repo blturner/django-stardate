@@ -9,6 +9,7 @@ def create_user(**kwargs):
     defaults = {
         "username": "bturner",
     }
+    defaults.update(kwargs)
     return User.objects.create(
         **defaults)
 
