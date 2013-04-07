@@ -14,6 +14,7 @@ class BlogTestCase(TestCase):
     def setUp(self):
         self.blog = create_blog(name="My test blog")
         self.blog.backend.client_class = MockDropboxClient
+        self.blog.backend.client = MockDropboxClient()
 
         pub_date_1 = datetime.datetime(2012, 1, 2, 8, 0, tzinfo=timezone.utc)
         pub_date_2 = datetime.datetime(2012, 1, 3, 8, 0, tzinfo=timezone.utc)
@@ -60,3 +61,16 @@ class BlogTestCase(TestCase):
         data['blog_id'] = 1
         p = Post(**data)
         self.assertRaises(ValidationError, p.save)
+
+    def test_post_marked_deleted_is_removed(self):
+        p = self.blog.post_set.get(title="Test post title")
+        p.mark_deleted()
+        p.save()  # Probably bad
+        self.assertTrue(p.deleted)
+        self.assertTrue(self.blog.post_set.get(title="Test post title").deleted)
+        self.assertTrue(len(self.blog.get_serialized_posts()), 1)
+
+    def test_removed_post_is_deleted(self):
+        post_list = self.blog.get_serialized_posts()
+        post_list.remove(post_list[0])
+        self.assertTrue(len(post_list), 1)

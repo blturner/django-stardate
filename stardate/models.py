@@ -16,9 +16,14 @@ class Blog(models.Model):
     slug = models.SlugField()
     social_auth = models.ForeignKey(UserSocialAuth)
 
+    backend = get_backend()
+
     def __init__(self, *args, **kwargs):
         super(Blog, self).__init__(*args, **kwargs)
-        self.backend = get_backend()
+        try:
+            self.backend.set_social_auth(self.social_auth)
+        except:
+            pass
 
     def __unicode__(self):
         return self.name
@@ -28,14 +33,15 @@ class Blog(models.Model):
         return ('post-archive-index', (), {'blog_slug': self.slug})
 
     def get_serialized_posts(self):
-        return serializers.serialize("python", self.post_set.all(), fields=(
-            'title', 'publish', 'stardate', 'body'))
+        """
+        Returns a list of dictionaries representing post objects on the blog.
+        """
+        return serializers.serialize("python", self.post_set.filter(
+            deleted=False), fields=('title', 'publish', 'stardate', 'body'))
 
     def get_backend_posts(self):
         # FIXME
         backend = self.backend
-
-        backend.set_social_auth(self.social_auth)
         files = backend.get_file_list()
         path = files[int(self.backend_file)][1]
         return backend.get_posts(path)
@@ -53,8 +59,6 @@ class Blog(models.Model):
     def sync_backend(self):
         backend = self.backend
         post_list = self.get_serialized_posts()
-        backend.set_social_auth(self.social_auth)
-
         # FIXME
         files = backend.get_file_list()
         path = files[int(self.backend_file)][1]
