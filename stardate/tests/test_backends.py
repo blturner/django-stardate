@@ -39,7 +39,9 @@ class DropboxBackendTestCase(TestCase):
         self.assertEqual(self.backend.get_name(), 'dropbox')
 
     def test_delta(self):
+        self.assertEqual(self.backend.get_cursor(), None)
         delta = self.backend.delta()
+        self.assertEqual(self.backend.get_cursor(), 'VAU6GZG5NK31AW2YD8H7UDWE0W74VV')
         self.assertTrue(delta.get('entries'))
         self.assertEqual(delta.get('entries')[0][0], '/test_file.md')
 

@@ -19,7 +19,7 @@ class MockDropboxClient(object):
     data = json.dumps({
         'entries': entry_data,
         'reset': False,
-        'cursor': None,
+        'cursor': 'VAU6GZG5NK31AW2YD8H7UDWE0W74VV',
         'has_more': False
     })
 

@@ -56,7 +56,9 @@ class DropboxBackend(StardateBackend):
         return self.name
 
     def delta(self):
-        return self.client.delta(cursor=self.cursor)
+        delta = self.client.delta(cursor=self.cursor)
+        self.save_cursor(delta.get('cursor'))
+        return delta
 
     def get_file(self, path):
         return self.client.get_file(path).read()
