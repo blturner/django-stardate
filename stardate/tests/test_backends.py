@@ -64,6 +64,28 @@ class DropboxBackendTestCase(TestCase):
         self.assertEqual(post_list[0]['title'], 'Tingling of the spine')
         self.assertEqual(post_list[1]['title'], 'Great turbulent clouds')
 
+    def test_get_source_list(self):
+        source_list = self.backend.get_source_list()
+        self.assertEqual(len(source_list), 2)
+        self.assertEqual(source_list[0][1], u'/Sample Folder')
+        self.assertEqual(source_list[1][1], u'/magnum-opus.txt')
+
+        no_dirs = self.backend.get_source_list(include_dirs=False)
+        self.assertEqual(len(no_dirs), 1)
+        self.assertEqual(no_dirs[0][1], u'/magnum-opus.txt')
+        self.assertRaises(IndexError, lambda: no_dirs[1][1])
+
+    def test_has_update(self):
+        self.assertFalse(self.backend.has_update())
+
+    def test_list_directory(self):
+        cache.clear()
+        self.assertIsNone(cache.get('metadata_hash'))
+        listing = self.backend.list_directory()
+        self.assertEqual(cache.get('metadata_hash'), 'efdac89c4da886a9cece1927e6c22977')
+        self.assertTrue(listing['/Sample Folder'].get('is_dir'))
+        self.assertFalse(listing['/magnum-opus.txt'].get('is_dir'))
+
     def test_save_cursor(self):
         self.backend.save_cursor('test_cursor')
         self.assertEqual(self.backend.cursor, 'test_cursor')

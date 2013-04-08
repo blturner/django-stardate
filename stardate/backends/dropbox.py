@@ -63,6 +63,48 @@ class DropboxBackend(StardateBackend):
     def get_file(self, path):
         return self.client.get_file(path).read()
 
+    def has_update(self):
+        """
+        Returns True if new data is available on the server.
+
+        """
+        return self.delta().get('has_more')
+
+    def list_directory(self, path='/'):
+        """
+        List the contents of a path on the backend.
+
+        """
+        hash_key = 'metadata_hash'
+        metadata_hash = cache.get(hash_key)
+
+        directory_list = self.client.metadata(path, hash=metadata_hash)
+        path_dict = {}
+
+        if metadata_hash is not None:
+            metadata_hash = metadata_hash
+        cache.set(hash_key, directory_list['hash'])
+
+        for i, content in enumerate(directory_list['contents']):
+            path = content['path']
+            content.pop('path')
+            path_dict[path] = content
+
+        return path_dict
+
+    def get_source_list(self, include_dirs=True):
+        dir_list = self.list_directory()
+
+        source_list = []
+
+        for i, path in enumerate(dir_list):
+            if dir_list[path].get('is_dir') and not include_dirs:
+                continue
+            else:
+                source_list.append((i, path))
+
+        return source_list
+
     def get_file_list(self):
         """
         Returns a list of iterables: [(1, '/test.md')]
