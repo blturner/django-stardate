@@ -24,4 +24,4 @@ class BlogForm(forms.ModelForm):
         except:
             pass
 
-        self.fields['backend_file'].choices = backend.get_file_list()
+        self.fields['backend_file'].choices = backend.get_source_list()

@@ -32,6 +32,10 @@ class Blog(models.Model):
     def get_absolute_url(self):
         return ('post-archive-index', (), {'blog_slug': self.slug})
 
+    def get_backend_choice(self):
+        choices = self.backend.get_source_list()
+        return choices[int(self.backend_file)][1]
+
     def get_serialized_posts(self):
         """
         Returns a list of dictionaries representing post objects on the blog.
@@ -40,14 +44,11 @@ class Blog(models.Model):
             deleted=False), fields=('title', 'publish', 'stardate', 'body'))
 
     def get_backend_posts(self):
-        # FIXME
-        backend = self.backend
-        files = backend.get_file_list()
-        path = files[int(self.backend_file)][1]
-        return backend.get_posts(path)
+        path = self.get_backend_choice()
+        return self.backend.get_posts(path)
 
-    def save_post_objects(self):
-        for post in self.get_backend_posts():
+    def save_post_objects(self, post_list):
+        for post in post_list:
             post['blog_id'] = self.id
             try:
                 p = Post.objects.get(stardate=post.get('stardate'))
@@ -55,14 +56,12 @@ class Blog(models.Model):
                 p = Post(**post)
             p.__dict__.update(**post)
             p.save()
+            print 'Saved: %s' % p.title
 
     def sync_backend(self):
-        backend = self.backend
         post_list = self.get_serialized_posts()
-        # FIXME
-        files = backend.get_file_list()
-        path = files[int(self.backend_file)][1]
-        backend.sync(path, post_list)
+        path = self.get_backend_choice()
+        # self.backend.do_sync(path, post_list)
 
 
 class PostManager(models.Manager):
@@ -114,7 +113,8 @@ class Post(models.Model):
         self.clean_fields()
         self.validate_unique()
         super(Post, self).save(*args, **kwargs)
-        self.blog.sync_backend()
+
+        # Use a signal to trigger a backend sync
 
     @models.permalink
     def get_absolute_url(self):

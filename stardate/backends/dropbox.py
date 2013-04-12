@@ -5,18 +5,13 @@ from django.core.cache import cache
 
 from dropbox import client, session
 
-from stardate.backends import StardateAdapter, StardateBackend
+from stardate.backends import StardateBackend
 from stardate.parsers import SingleFileParser
 
 
 APP_KEY = getattr(settings, 'DROPBOX_APP_KEY', None)
 APP_SECRET = getattr(settings, 'DROPBOX_APP_SECRET', None)
 ACCESS_TYPE = getattr(settings, 'DROPBOX_ACCESS_TYPE', None)
-
-
-class DropboxAdapter(StardateAdapter):
-    def get_client(self):
-        return self.backend.get_dropbox_client()
 
 
 class DropboxBackend(StardateBackend):
@@ -75,15 +70,12 @@ class DropboxBackend(StardateBackend):
         List the contents of a path on the backend.
 
         """
-        hash_key = 'metadata_hash'
-        metadata_hash = cache.get(hash_key)
+        try:
+            directory_list = self.client.metadata(path)
+        except:
+            return []
 
-        directory_list = self.client.metadata(path, hash=metadata_hash)
         path_dict = {}
-
-        if metadata_hash is not None:
-            metadata_hash = metadata_hash
-        cache.set(hash_key, directory_list['hash'])
 
         for i, content in enumerate(directory_list['contents']):
             path = content['path']
@@ -131,8 +123,23 @@ class DropboxBackend(StardateBackend):
         return file_list
 
     def get_posts(self, path):
+        """
+        Gets a list of dictionaries of posts from the backend.
+
+        """
         content = self.get_file(path)
         return self.parser.unpack(content)
+
+    def put_posts(self, path, post_list):
+        """
+        Puts stringified collections of posts on the backend.
+
+        """
+        if post_list:
+            content = self.parser.pack(post_list)
+            return self.client.put_file(path, content, overwrite=True)
+        else:
+            print u'No post_list'
 
     def save_cursor(self, cursor):
         self.social_auth.extra_data['cursor'] = cursor
@@ -147,6 +154,7 @@ class DropboxBackend(StardateBackend):
         """
         Expects a list of post dictionaries to convert to a string and
         put on the backend.
+
         """
         content = self.parser.pack(post_list)
         return self.client.put_file(path, content, overwrite=True)
