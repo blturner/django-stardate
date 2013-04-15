@@ -65,36 +65,35 @@ class DropboxBackend(StardateBackend):
         """
         return self.delta().get('has_more')
 
-    def list_directory(self, path='/'):
+    def _list_path(self, path='/', hash=None):
         """
-        List the contents of a path on the backend.
+        List the contents of a path on the backend. Each path can be passed
+        a `hash` argument that determines if anything new for the specified
+        path is returned.
+
+        [
+            '/path/file.txt',
+            '/path/folder/file.txt',
+        ]
 
         """
         try:
-            directory_list = self.client.metadata(path)
+            meta = self.client.metadata(path, hash=hash)
         except:
-            return []
+            return
+        path_list = []
 
-        path_dict = {}
+        for content in meta['contents']:
+            if content['is_dir']:
+                path_list += self._list_path(path=content['path'])
+            path_list.append(content['path'])
+        return path_list
 
-        for i, content in enumerate(directory_list['contents']):
-            path = content['path']
-            content.pop('path')
-            path_dict[path] = content
+    def get_source_list(self):
+        source_list = ()
 
-        return path_dict
-
-    def get_source_list(self, include_dirs=True):
-        dir_list = self.list_directory()
-
-        source_list = []
-
-        for i, path in enumerate(dir_list):
-            if dir_list[path].get('is_dir') and not include_dirs:
-                continue
-            else:
-                source_list.append((i, path))
-
+        for index, path in enumerate(self._list_path()):
+            source_list += (index, path),
         return source_list
 
     def get_file_list(self):

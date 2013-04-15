@@ -61,6 +61,32 @@ class MockDropboxClient(object):
         'thumb_exists': False
     })
 
+    metadata_data_2 = json.dumps({
+        'bytes': 0,
+        'contents': [
+            {
+                'bytes': 77,
+                'icon': 'page_white_text',
+                'is_dir': False,
+                'mime_type': 'text/plain',
+                'modified': 'Wed, 20 Jul 2011 22:04:50 +0000',
+                'path': '/Sample Folder/magnum-opus.txt',
+                'rev': '362e2029684fe',
+                'revision': 221922,
+                'root': 'dropbox',
+                'size': '77 bytes',
+                'thumb_exists': False
+            }
+        ],
+        'hash': 'efdac89c4da886a9cece1927e6c22977',
+        'icon': 'folder',
+        'is_dir': True,
+        'path': '/Sample Folder',
+        'root': 'app_folder',
+        'size': '0 bytes',
+        'thumb_exists': False
+    })
+
     def __init__(self, sess=None):
         self.sess = sess
 
@@ -71,7 +97,12 @@ class MockDropboxClient(object):
         return MockFile("publish: 2012-01-02 12:00 AM\ntitle: Tingling of the spine\n\n\nExtraordinary claims require extraordinary evidence!\n\n---\n\npublish: 2012-01-01 06:00 AM\ntitle: Great turbulent clouds\n\n\nWith pretty stories for which there's little good evidence.\n")
 
     def metadata(self, path='/', hash=None):
-        return json.loads(self.metadata_data)
+        data = {}
+        if path == '/Sample Folder':
+            data = json.loads(self.metadata_data_2)
+        if path == '/':
+            data = json.loads(self.metadata_data)
+        return data
 
     def put_file(self, full_path, file_obj, overwrite=False, parent_rev=None):
         return MockFile(file_obj)
