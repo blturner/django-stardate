@@ -90,36 +90,14 @@ class DropboxBackend(StardateBackend):
         return path_list
 
     def get_source_list(self):
-        source_list = ()
+        source_list = ((0, u'---'),)
 
-        for index, path in enumerate(self._list_path()):
-            source_list += (index, path),
-        return source_list
-
-    def get_file_list(self):
-        """
-        Returns a list of iterables: [(1, '/test.md')]
-        """
-        key_name = 'dropbox_file_list'
-        timeout = 60 * 5
-
-        file_list = cache.get(key_name)
-        if file_list is not None:
-            return file_list
-
-        file_list = []
         try:
-            entries = self.delta().get('entries')
-
-            for i, entry in enumerate(entries):
-                file_path = entry[0]
-                metadata = entry[1]
-                if metadata and not metadata.get('is_dir'):
-                    file_list.append((i, file_path))
-        except:
+            for index, path in enumerate(self._list_path()):
+                source_list += ((index + 1), path),
+        except TypeError:
             pass
-        cache.set(key_name, file_list, timeout)
-        return file_list
+        return source_list
 
     def get_posts(self, path):
         """

@@ -49,15 +49,6 @@ class DropboxBackendTestCase(TestCase):
         backend_file = self.backend.get_file('/test_file.md')
         self.assertEqual(backend_file, "publish: 2012-01-02 12:00 AM\ntitle: Tingling of the spine\n\n\nExtraordinary claims require extraordinary evidence!\n\n---\n\npublish: 2012-01-01 06:00 AM\ntitle: Great turbulent clouds\n\n\nWith pretty stories for which there's little good evidence.\n")
 
-    def test_get_file_list(self):
-        cache.clear()
-        self.assertEqual(cache.get('dropbox_file_list'), None)
-        file_list = self.backend.get_file_list()
-
-        self.assertEqual(len(cache.get('dropbox_file_list')), 1)
-        self.assertEqual(file_list, [(0, u'/test_file.md')])
-        self.assertEqual(len(file_list), 1)
-
     def test_get_posts(self):
         post_list = self.backend.get_posts('/test_file.md')
         self.assertEqual(len(post_list), 2)
@@ -66,11 +57,7 @@ class DropboxBackendTestCase(TestCase):
 
     def test_get_source_list(self):
         source_list = self.backend.get_source_list()
-
-        self.assertEqual(len(source_list), 3)
-        self.assertTrue(u'/Sample Folder' in source_list)
-        self.assertTrue(u'/Sample Folder/magnum-opus.txt' in source_list)
-        self.assertTrue(u'/magnum-opus.txt' in source_list)
+        self.assertEqual(len(source_list), 4)
 
     def test_has_update(self):
         self.assertFalse(self.backend.has_update())
