@@ -2,13 +2,7 @@ from django.conf import settings
 from django.utils.importlib import import_module
 
 
-# STARDATE_ADAPTER = getattr(settings, 'STARDATE_ADAPTER', 'stardate.backends.dropbox.DropboxAdapter')
 STARDATE_BACKEND = getattr(settings, 'STARDATE_BACKEND', 'stardate.backends.dropbox.DropboxBackend')
-
-# def get_adapter():
-#     pkg, klass = STARDATE_ADAPTER.rsplit('.', 1)
-#     module = import_module(pkg)
-#     return getattr(module, klass)
 
 
 def get_backend():
@@ -26,19 +20,7 @@ def get_backend():
 
 
 class StardateBackend(object):
-    # def __init__(self, adapter):
-        # self.adapter = get_adapter()
-
-    def get_client(self):
-        return self.adapter.get_client()
-
-
-class StardateAdapter(object):
-    def __init__(self):
-        self.backend = get_backend()
-
-    def get_client(self):
-        return self.backend.get_client()
+    pass
 
 
 class BaseStardateParser(object):
