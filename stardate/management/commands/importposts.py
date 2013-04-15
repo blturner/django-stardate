@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
-from stardate.models import Blog
+from stardate.models import Blog, Post
 
 
 class Command(BaseCommand):
@@ -30,9 +30,18 @@ class Command(BaseCommand):
             for user in User.objects.all():
                 try:
                     for blog in Blog.objects.filter(owner=user.id):
-                        print 'Processing %s, %s' % (blog.name, blog.get_backend_choice())
-                        post_list = blog.backend.do_sync(blog.get_backend_choice())
-                        if post_list:
-                            blog.save_post_objects(post_list)
+                        path = blog.get_backend_choice()
+                        print 'Processing %s, %s' % (blog.name, path)
+                        try:
+                            for post in blog.backend.get_posts(path):
+                                post.update(blog_id=blog.id)
+                                obj, created = Post.objects.get_or_create(
+                                    stardate=post['stardate'])
+                                obj.__dict__.update(**post)
+
+                                if not created:
+                                    obj.save()
+                        except:
+                            raise
                 except:
                     raise

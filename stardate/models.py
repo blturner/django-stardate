@@ -61,7 +61,7 @@ class Blog(models.Model):
     def sync_backend(self):
         post_list = self.get_serialized_posts()
         path = self.get_backend_choice()
-        # self.backend.do_sync(path, post_list)
+        self.backend.sync(path, post_list)
 
 
 class PostManager(models.Manager):
@@ -85,7 +85,6 @@ class Post(models.Model):
 
     class Meta:
         ordering = ['-publish']
-        unique_together = ('slug', 'blog')
 
     def __unicode__(self):
         return self.title
@@ -114,7 +113,8 @@ class Post(models.Model):
         self.validate_unique()
         super(Post, self).save(*args, **kwargs)
 
-        # Use a signal to trigger a backend sync
+        # FIXME: Use a signal to trigger a backend sync
+        self.blog.sync_backend()
 
     @models.permalink
     def get_absolute_url(self):
