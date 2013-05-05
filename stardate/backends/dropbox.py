@@ -1,8 +1,9 @@
 from __future__ import absolute_import
 
 from django.conf import settings
+from django.core.cache import cache
 
-from dropbox import client, session
+from dropbox import client, rest, session
 
 from stardate.backends import StardateBackend
 from stardate.parsers import SingleFileParser
@@ -63,34 +64,36 @@ class DropboxBackend(StardateBackend):
         a `hash` argument that determines if anything new for the specified
         path is returned.
 
-        [
-            '/path/file.txt',
-            '/path/folder/file.txt',
-        ]
-
         """
-        try:
-            meta = self.client.metadata(path, hash=hash)
-        except:
-            return
-        path_list = []
+        paths = cache.get('paths', [])
+        meta_hash = cache.get('hash', None)
 
-        for content in meta['contents']:
-            if content['is_dir']:
-                path_list += self._list_path(path=content['path'])
-            path_list.append(content['path'])
-        return path_list
+        try:
+            meta = self.client.metadata(path, hash=meta_hash)
+            cache.delete('paths')
+            cache.set('hash', meta['hash'])
+        except rest.ErrorResponse, e:
+            if e.status == 304:
+                return paths
+            raise e
+
+        for content in meta.get('contents', []):
+            paths.append(content['path'])
+        cache.set('paths', paths)
+        return paths
 
     def get_source_list(self):
         source_list = ((0, u'---'),)
 
+        #  Instead of using the index, could use slugify
         try:
             for index, path in enumerate(self._list_path()):
                 source_list += ((index + 1), path),
-        except TypeError:
+        except (AttributeError, TypeError):
             pass
         return source_list
 
+    # pull
     def get_posts(self, path):
         """
         Gets a list of dictionaries of posts from the backend.
@@ -99,6 +102,7 @@ class DropboxBackend(StardateBackend):
         content = self.get_file(path)
         return self.parser.unpack(content)
 
+    # push
     def put_posts(self, path, post_list):
         """
         Puts stringified collections of posts on the backend.
