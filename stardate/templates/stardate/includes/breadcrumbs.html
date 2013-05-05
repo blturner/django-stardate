@@ -2,10 +2,10 @@
 {% with post.publish as pub_date %}
 {% with blog.slug as blog_slug %}
 
-{% url blog-list as blog_list_url %}
-{% url post-archive-index blog_slug=blog_slug as post_archive_index_url %}
-{% url post-archive-year blog_slug=blog_slug, year=pub_date|date:"Y" as post_archive_year_url %}
-{% url post-archive-day blog_slug=blog_slug, year=pub_date|date:"Y", month=pub_date|date:"b", day=pub_date|date:"j" as post_archive_day_url %}
+{% url 'blog-list' as blog_list_url %}
+{% url 'post-archive-index' blog_slug=blog_slug as post_archive_index_url %}
+{% url 'post-archive-year' blog_slug=blog_slug year=pub_date|date:"Y" as post_archive_year_url %}
+{% url 'post-archive-day' blog_slug=blog_slug year=pub_date|date:"Y" month=pub_date|date:"b" day=pub_date|date:"j" as post_archive_day_url %}
 
 <ul class="breadcrumbs">
   {% if blog_list_url %}<li><a href="{{ blog_list_url }}">Weblogs</a></li>{% endif %}
