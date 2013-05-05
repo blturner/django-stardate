@@ -38,9 +38,7 @@ class Command(BaseCommand):
                                 obj, created = Post.objects.get_or_create(
                                     stardate=post['stardate'])
                                 obj.__dict__.update(**post)
-
-                                if not created:
-                                    obj.save()
+                                obj.save()
                         except:
                             raise
                 except:
