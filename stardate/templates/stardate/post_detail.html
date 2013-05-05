@@ -1,7 +1,5 @@
 {% extends "stardate/base_stardate.html" %}
 
-{% load markup %}
-
 
 {% block title %}{{ post.title }}{% endblock %}
 
@@ -28,7 +26,7 @@
 
 
     {% block content %}
-        {{ post.body|markdown }}
+        {{ post.body }}
 
         {% if post.get_prev_post %}
             <p><a href="{{ post.get_prev_post.get_absolute_url }}">Previous: {{ post.get_prev_post.title }}</a></p>
