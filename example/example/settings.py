@@ -1,4 +1,15 @@
-# Django settings for example project.
+import os
+
+from django.core.exceptions import ImproperlyConfigured
+
+
+def get_env_variable(var_name):
+    """ Get the environment variable or return an exception. """
+    try:
+        return os.environ[var_name]
+    except KeyError:
+        error_msg = "Set the %s environment variable" % var_name
+        raise ImproperlyConfigured(error_msg)
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -20,7 +31,7 @@ DATABASES = {
     }
 }
 
-TIME_ZONE = 'America/Chicago'
+TIME_ZONE = 'America/Los_Angeles'
 
 LANGUAGE_CODE = 'en-us'
 
@@ -75,7 +86,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
-	'social_auth',
+    'social_auth',
     'stardate',
 )
 
@@ -86,10 +97,10 @@ AUTHENTICATION_BACKENDS = (
 
 STARDATE_BACKEND = 'stardate.backends.dropbox.DropboxBackend'
 
-DROPBOX_APP_KEY = 'h8drk7r728xxb7i'
-DROPBOX_APP_SECRET = '6tqqddh4xgvcl74'
+DROPBOX_APP_KEY = get_env_variable('DROPBOX_APP_KEY')
+DROPBOX_APP_SECRET = get_env_variable('DROPBOX_APP_SECRET')
 DROPBOX_ACCESS_TYPE = 'app_folder'
 
 # DJANGO-SOCIAL-AUTH
-DROPBOX_APP_ID = 'h8drk7r728xxb7i'
-DROPBOX_API_SECRET = '6tqqddh4xgvcl74'
+DROPBOX_APP_ID = DROPBOX_APP_KEY
+DROPBOX_API_SECRET = DROPBOX_APP_SECRET
