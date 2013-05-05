@@ -4,6 +4,7 @@ from django.db import models
 from django.utils import timezone
 
 from social_auth.models import UserSocialAuth
+from markupfield.fields import MarkupField
 
 from stardate.backends import get_backend
 
@@ -75,7 +76,7 @@ class PostManager(models.Manager):
 class Post(models.Model):
     authors = models.ManyToManyField(User, blank=True, null=True)
     blog = models.ForeignKey(Blog)
-    body = models.TextField(blank=True)
+    body = MarkupField(default_markup_type='markdown')
     deleted = models.BooleanField()
     objects = PostManager()
     publish = models.DateTimeField(blank=True, null=True, unique=True)
@@ -97,8 +98,8 @@ class Post(models.Model):
             self.stardate = str(uuid.uuid1())
         if not self.slug:
             self.slug = slugify(self.title)
-        if not self.body.endswith('\n'):
-            self.body += '\n'
+        if not self.body.raw.endswith('\n'):
+            self.body.raw += '\n'
 
     def mark_deleted(self):
         self.deleted = True
