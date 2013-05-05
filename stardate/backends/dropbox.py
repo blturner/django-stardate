@@ -57,13 +57,6 @@ class DropboxBackend(StardateBackend):
     def get_file(self, path):
         return self.client.get_file(path).read()
 
-    def has_update(self):
-        """
-        Returns True if new data is available on the server.
-
-        """
-        return self.delta().get('has_more')
-
     def _list_path(self, path='/', hash=None):
         """
         List the contents of a path on the backend. Each path can be passed
