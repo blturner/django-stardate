@@ -16,45 +16,66 @@ class SingleFileParser(BaseStardateParser):
         self.delimiter = DELIMITER
         self.timeformat = TIMEFORMAT
 
+    def render(self, post):
+        """
+        Turn a post dictionary into a rendered string
+        """
+
+        # FIXME?: this belongs in serialization process
+        try:
+            post['publish'] = post['publish'].astimezone(current_timezone)
+            post['publish'] = datetime.datetime.strftime(post['publish'], self.timeformat)
+        except:
+            pass
+
+        # Body gets processed separately
+        body = post.pop('body')
+
+        # Generate meta data lines
+        # One key/value pair per line
+        meta = []
+        for k, v in post.items():
+            if v:
+                field_string = '{0}: {1}'.format(k, v)
+                meta.append(field_string)
+        meta = '\n'.join(meta)
+
+        # Body is separated from meta by three lines
+        rendered = '{0}\n\n\n{1}'.format(meta, body)
+        return rendered
+
     def pack(self, posts):
         """
-        Packs a list of dictionaries into a single string to be saved
-        into a file.
+        Render a list of post dictionaries to a single string
         """
         post_list = []
 
         for post in posts:
-            p = ['']
-            fields = post.get('fields')
+            post_list.append(self.render(post))
 
-            try:
-                fields['publish'] = fields['publish'].astimezone(current_timezone)
-                fields['publish'] = datetime.datetime.strftime(fields['publish'], self.timeformat)
-            except:
-                pass
-
-            body = fields.pop('body')
-
-            for k, v in fields.items():
-                if v:
-                    p[0] += "%s: %s\n" % (k, v)
-            p.insert(1, body)
-            post_list.append('\n\n'.join(p))
-        return ('%s\n' % self.delimiter).join(post_list)
+        document = self.delimiter.join(post_list)
+        return document
 
     def parse(self, string):
         """
         Parse a single string into a dictionary representing a post object.
         """
         try:
-            # split each string from it's yaml data
+            # split each string from it's meta data
             bits = string.split('\n\n\n')
 
+            # load meta data into post dictionary
             post_data = yaml.load(bits[0])
-            post_data['body'] = bits[1]
+
+            # post body is everything else
+            # Join incase other parts of post are separated
+            # by three return characters \n\n\n
+            post_data['body'] = ''.join(bits[1:])
         except:
             post_data = {}
 
+        # FIXME: this belongs in deserialization, perhaps
+        # on model?
         if post_data.get('publish'):
             if not isinstance(post_data['publish'], datetime.datetime):
                 post_data['publish'] = parse(post_data['publish'])
