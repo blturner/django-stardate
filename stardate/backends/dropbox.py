@@ -83,11 +83,12 @@ class DropboxBackend(StardateBackend):
         return paths
 
     def get_source_list(self):
+        paths = cache.get('paths') or self._list_path()
         source_list = ((0, u'---'),)
 
         #  Instead of using the index, could use slugify
         try:
-            for index, path in enumerate(self._list_path()):
+            for index, path in enumerate(paths):
                 source_list += ((index + 1), path),
         except (AttributeError, TypeError):
             pass
