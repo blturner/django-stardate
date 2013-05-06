@@ -30,6 +30,7 @@ class SingleFileParser(BaseStardateParser):
 
         # Body gets processed separately
         body = post.pop('body')
+        print body
 
         # Generate meta data lines
         # One key/value pair per line

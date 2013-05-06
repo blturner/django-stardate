@@ -116,7 +116,7 @@ class Post(models.Model):
         # Initialize our backend with user's social auth
         self.backend.set_social_auth(self.blog.social_auth)
         # Sync this post with our backend
-        self.backend.sync_posts([self])
+        self.backend.sync([self])
         super(Post, self).save(*args, **kwargs)
 
     @models.permalink

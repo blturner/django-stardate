@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+import os
 
 from django.conf import settings
 from django.core.cache import cache
@@ -109,15 +110,6 @@ class DropboxBackend(StardateBackend):
         self.social_auth = social_auth
         self.client = self.get_dropbox_client()
 
-    def sync(self, path, post_list):
-        """
-        Expects a list of post dictionaries to convert to a string and
-        put on the backend.
-
-        """
-        content = self.parser.pack(post_list)
-        return self.client.put_file(path, content, overwrite=True)
-
     def serialize_posts(self, posts):
         """
         Returns dictionary of individual Post
@@ -132,14 +124,20 @@ class DropboxBackend(StardateBackend):
             posts_as_dicts.append(post['fields'])
         return posts_as_dicts
 
-    def sync_posts(self, posts):
+    def get_post_path(self, folder, post):
         """
-        Sync one or more posts with remote Dropbox
+        Dynamically guess post file path from slug / blog folder
         """
-        # Fetch posts on remote Dropbox acct
-        # All posts should use the same file
-        path = posts[0].blog.get_backend_choice()
-        content = self.client.get_file(path).read()
+        filename = post.slug
+        filename = '{0}.md'.format(filename)
+        path = os.path.join(folder, filename)
+        return path
+
+    def sync_blog_file(self, blog_path, posts):
+        """
+        Update posts in a single blog file
+        """
+        content = self.client.get_file(blog_path).read()
         remote_posts = self.parser.unpack(content)
 
         # Use serialized version of posts to find
@@ -161,6 +159,58 @@ class DropboxBackend(StardateBackend):
 
         # Turn post list back into string
         content = self.parser.pack(remote_posts)
+        return self.client.put_file(blog_path, content, overwrite=True)
 
-        # Write new content string to dropbox document
-        return self.client.put_file(path, content, overwrite=True)
+    def sync_post_files(self, blog_dir, posts):
+        """
+        Update posts in multiple files
+        """
+        responses = []
+        for post in posts:
+            # Generate the post file path dynamically
+            post_path = self.get_post_path(blog_dir, post)
+
+            # Get the existing remote post as a post dict
+            try:
+                remote_post = self.client.get_file(post_path).read()
+            except Exception:
+                remote_post = {}
+            remote_post = self.parser.parse(remote_post)
+
+            # Turn local post into post dict
+            local_post = self.serialize_posts([post])[0]
+
+            print local_post['body']
+
+            # Update the contents of the remote post
+            remote_post.update(local_post)
+            content = self.parser.render(remote_post)
+            print content
+            response = self.client.put_file(post_path, content, overwrite=True)
+
+            # Log the result
+            responses.append(response)
+        return responses
+
+    def sync(self, posts):
+        """
+        Sync one or more posts with remote Dropbox
+
+        posts: List of Post object instances
+        """
+        # Grab the file or folder path associated
+        # with a blog
+        blog_path = posts[0].blog.backend_file
+
+        # Separate blog path into directory and filename
+        blog_dir, blog_file = os.path.split(blog_path)
+
+        # Syncing works differently depending on whether
+        # We are using a single file or a directory of files
+        if blog_file:
+            responses = [self.sync_blog_file(blog_path, posts)]
+
+        else:
+            responses = self.sync_post_files(blog_dir, posts)
+
+        return responses
