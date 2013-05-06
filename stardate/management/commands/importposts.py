@@ -35,10 +35,10 @@ class Command(BaseCommand):
                         try:
                             for post in blog.backend.get_posts(path):
                                 post.update(blog_id=blog.id)
-                                obj, created = Post.objects.get_or_create(
-                                    stardate=post['stardate'])
-                                obj.__dict__.update(**post)
-                                obj.save()
+                                obj, created = Post.objects.get_or_create(**post)
+                                if not created:
+                                    obj.__dict__.update(**post)
+                                    obj.save()
                         except:
                             raise
                 except:

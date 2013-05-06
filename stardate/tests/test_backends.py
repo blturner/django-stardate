@@ -57,7 +57,7 @@ class DropboxBackendTestCase(TestCase):
 
     def test_get_source_list(self):
         source_list = self.backend.get_source_list()
-        self.assertEqual(len(source_list), 4)
+        self.assertEqual(len(source_list), 3)
 
     def test_save_cursor(self):
         self.backend.save_cursor('test_cursor')
