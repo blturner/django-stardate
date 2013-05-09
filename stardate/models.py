@@ -15,7 +15,7 @@ class Blog(models.Model):
     name = models.CharField(max_length=255)
     owner = models.ForeignKey(User, related_name="+")
     slug = models.SlugField()
-    social_auth = models.ForeignKey(UserSocialAuth)
+    social_auth = models.ForeignKey(UserSocialAuth, blank=True, null=True)
 
     backend = get_backend()
 
@@ -84,6 +84,8 @@ class Post(models.Model):
     stardate = models.CharField(max_length=255)
     title = models.CharField(max_length=255)
 
+    backend = get_backend()
+
     class Meta:
         ordering = ['-publish']
 
@@ -105,17 +107,17 @@ class Post(models.Model):
         self.deleted = True
         return self
 
-    # On save, a post should parse the dropbox blog file
-    # and update the post that was changed.
-    # FIXME
     def save(self, *args, **kwargs):
+        # Validate first so things don't break on sync
         self.clean()
         self.clean_fields()
         self.validate_unique()
-        super(Post, self).save(*args, **kwargs)
 
-        # FIXME: Use a signal to trigger a backend sync
-        self.blog.sync_backend()
+        # Initialize our backend with user's social auth
+        self.backend.set_social_auth(self.blog.social_auth)
+        # Sync this post with our backend
+        self.backend.sync([self])
+        super(Post, self).save(*args, **kwargs)
 
     @models.permalink
     def get_absolute_url(self):

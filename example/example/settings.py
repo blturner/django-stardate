@@ -95,7 +95,7 @@ AUTHENTICATION_BACKENDS = (
     'social_auth.backends.contrib.dropbox.DropboxBackend',
 )
 
-STARDATE_BACKEND = 'stardate.backends.dropbox.DropboxBackend'
+STARDATE_BACKEND = 'stardate.backends.local_file.LocalFileBackend'
 
 DROPBOX_APP_KEY = get_env_variable('DROPBOX_APP_KEY')
 DROPBOX_APP_SECRET = get_env_variable('DROPBOX_APP_SECRET')

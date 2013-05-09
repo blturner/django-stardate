@@ -14,7 +14,7 @@ class BlogForm(forms.ModelForm):
     class Meta:
         model = Blog
 
-    backend_file = forms.ChoiceField(required=False)
+    # backend_file = forms.ChoiceField(required=False)
 
     def __init__(self, *args, **kwargs):
         super(BlogForm, self).__init__(*args, **kwargs)
@@ -24,4 +24,4 @@ class BlogForm(forms.ModelForm):
         except:
             pass
 
-        self.fields['backend_file'].choices = backend.get_source_list()
+        # self.fields['backend_file'].choices = backend.get_source_list()
