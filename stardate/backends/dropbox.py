@@ -8,7 +8,7 @@ from django.core.serializers import serialize
 from dropbox import client, rest, session
 
 from stardate.backends import StardateBackend
-from stardate.parsers import SingleFileParser
+from stardate.parsers import FileParser
 
 
 APP_KEY = getattr(settings, 'DROPBOX_APP_KEY', None)
@@ -22,7 +22,7 @@ class DropboxBackend(StardateBackend):
         self.client_class = client_class
         self.cursor = self.get_cursor()
         self.name = u'dropbox'
-        self.parser = SingleFileParser()
+        self.parser = FileParser()
         self.social_auth = None
 
     def get_access_token(self):

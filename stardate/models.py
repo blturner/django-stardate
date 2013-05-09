@@ -15,7 +15,7 @@ class Blog(models.Model):
     name = models.CharField(max_length=255)
     owner = models.ForeignKey(User, related_name="+")
     slug = models.SlugField()
-    social_auth = models.ForeignKey(UserSocialAuth)
+    social_auth = models.ForeignKey(UserSocialAuth, blank=True, null=True)
 
     backend = get_backend()
 

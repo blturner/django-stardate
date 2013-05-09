@@ -11,7 +11,7 @@ TIMEFORMAT = '%Y-%m-%d %I:%M %p'  # 2012-01-01 09:00 AM
 current_timezone = get_current_timezone()
 
 
-class SingleFileParser(BaseStardateParser):
+class FileParser(BaseStardateParser):
     def __init__(self):
         self.delimiter = DELIMITER
         self.timeformat = TIMEFORMAT
