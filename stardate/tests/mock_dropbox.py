@@ -1,7 +1,9 @@
 import json
 
+from stardate.backends.dropbox import DropboxBackend
 
-class MockDropboxClient(object):
+
+class MockDropboxClient(DropboxBackend):
     entry_data = [['/test_file.md', {
         'size': '452 bytes',
         'rev': '7cb07486f6b',
