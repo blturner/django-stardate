@@ -10,8 +10,8 @@ def create_user(**kwargs):
         "username": "bturner",
     }
     defaults.update(kwargs)
-    return User.objects.create(
-        **defaults)
+    user, created = User.objects.get_or_create(**defaults)
+    return user
 
 
 def create_user_social_auth(**kwargs):
@@ -22,13 +22,14 @@ def create_user_social_auth(**kwargs):
         "extra_data": {"access_token": "oauth_token_secret=oauth_token_secret_string&oauth_token=oauth_token_string"}
     }
     defaults.update(kwargs)
-    return UserSocialAuth.objects.create(**defaults)
+    social_auth, created = UserSocialAuth.objects.get_or_create(**defaults)
+    return social_auth
 
 
 def create_blog(**kwargs):
     defaults = {
         "name": "Test blog",
-        "backend_file": "0",
+        "backend_file": "test_backend_file.md",
     }
     defaults.update(kwargs)
 
@@ -38,8 +39,8 @@ def create_blog(**kwargs):
     defaults["social_auth"] = create_user_social_auth(
         user=defaults["owner"])
 
-    return Blog.objects.create(
-        **defaults)
+    blog, created = Blog.objects.get_or_create(**defaults)
+    return blog
 
 
 def create_post(**kwargs):
@@ -49,4 +50,5 @@ def create_post(**kwargs):
         "title": "Test post title",
     }
     defaults.update(kwargs)
-    return Post.objects.create(**defaults)
+    post, created = Post.objects.get_or_create(**defaults)
+    return post
