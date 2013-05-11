@@ -53,11 +53,6 @@ class BlogTestCase(TestCase):
         p = Post(**data)
         self.assertRaises(ValidationError, p.save)
 
-    def test_invalid_publish(self):
-        pub_date = datetime.datetime(2012, 1, 1, 1, 0, tzinfo=timezone.utc)
-        invalid_post = Post({'title': 'Failed post', 'pub_date': pub_date, 'blog_id': self.blog.id})
-        self.assertRaises(ValidationError, invalid_post.save)
-
     def test_post_marked_deleted_is_removed(self):
         p = self.blog.post_set.get(title="Test post title")
         p.mark_deleted()

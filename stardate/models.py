@@ -23,7 +23,7 @@ class Blog(models.Model):
     backend_file = models.CharField(blank=True, max_length=255)
     name = models.CharField(max_length=255)
     user = models.ForeignKey(User, related_name="+")
-    slug = models.SlugField()
+    slug = models.SlugField(unique=True)
     social_auth = models.ForeignKey(UserSocialAuth, blank=True, null=True)
 
     def __init__(self, *args, **kwargs):
@@ -90,8 +90,8 @@ class Post(models.Model):
     body = MarkupField(default_markup_type='markdown')
     deleted = models.BooleanField()
     objects = PostManager()
-    publish = models.DateTimeField(blank=True, null=True, unique=True)
-    slug = models.SlugField()
+    publish = models.DateTimeField(blank=True, null=True)
+    slug = models.SlugField(unique=True)
     stardate = models.CharField(max_length=255)
     title = models.CharField(max_length=255)
 
