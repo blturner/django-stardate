@@ -55,10 +55,6 @@ class Blog(models.Model):
         return serializers.serialize("python", self.post_set.filter(
             deleted=False), fields=('title', 'publish', 'stardate', 'body'))
 
-    def get_backend_posts(self):
-        path = self.get_backend_choice()
-        return self.backend.get_posts(path)
-
     def save_post_objects(self, post_list):
         for post in post_list:
             post['blog_id'] = self.id
@@ -101,7 +97,8 @@ class Post(models.Model):
     def __init__(self, *args, **kwargs):
         super(Post, self).__init__(*args, **kwargs)
         # Post must use the same backend as the Blog
-        self.backend = self.blog.backend
+        if hasattr(self, 'blog'):
+            self.backend = self.blog.backend
 
     def __unicode__(self):
         return self.title
@@ -122,7 +119,10 @@ class Post(models.Model):
         return self
 
     def save(self, push=True, *args, **kwargs):
-        # Validate first so things don't break on pusn
+        if not hasattr(self, 'backend'):
+            self.backend = self.blog.backend
+
+        # Validate first so things don't break on push
         self.clean()
         self.clean_fields()
         self.validate_unique()
