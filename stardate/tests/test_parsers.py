@@ -1,21 +1,26 @@
 import datetime
 
+from django.contrib.auth.models import User
 from django.test import TestCase
 from django.utils import timezone
 
+from social_auth.models import UserSocialAuth
+
 from stardate.models import Blog
-from stardate.parsers import SingleFileParser
+from stardate.parsers import FileParser
 from stardate.tests.factories import create_blog, create_post
 from stardate.tests.mock_dropbox import MockDropboxClient
 
 
-class SingleFileParserTestCase(TestCase):
+class FileParserTestCase(TestCase):
     def setUp(self):
-        self.parser = SingleFileParser()
+        self.parser = FileParser()
         self.test_string = "publish: 2012-01-02 12:00 AM\ntitle: Tingling of the spine\n\n\nExtraordinary claims require extraordinary evidence!"
 
     def tearDown(self):
         Blog.objects.all().delete()
+        User.objects.all().delete()
+        UserSocialAuth.objects.all().delete()
 
     def test_pack(self):
         blog = create_blog()
@@ -24,10 +29,11 @@ class SingleFileParserTestCase(TestCase):
         create_post(title="Second post", blog=blog)
 
         post_list = blog.get_serialized_posts()
-        packed = self.parser.pack(post_list)
+        # packed = self.parser.pack(post_list)
 
         self.assertIsInstance(post_list, list)
-        self.assertIsInstance(packed, basestring)
+        self.assertEqual(len(post_list), 2)
+        # self.assertIsInstance(packed, basestring)
 
     def test_parse(self):
         parsed = self.parser.parse(self.test_string)

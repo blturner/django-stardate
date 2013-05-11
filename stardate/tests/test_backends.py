@@ -1,14 +1,11 @@
-import datetime
-
 from django.contrib.auth.models import User
-from django.core.cache import cache
 from django.test import TestCase
-from django.utils import timezone
 
 from social_auth.models import UserSocialAuth
 
 from stardate.backends.dropbox import DropboxBackend
-from stardate.tests.factories import create_user, create_user_social_auth
+from stardate.models import Blog
+from stardate.tests.factories import create_blog, create_post, create_user, create_user_social_auth
 from stardate.tests.mock_dropbox import MockDropboxClient
 
 
@@ -20,6 +17,15 @@ class DropboxBackendTestCase(TestCase):
 
         social_auth = create_user_social_auth(user=create_user())
         self.backend.set_social_auth(social_auth)
+
+        self.blog = create_blog()
+        self.blog.backend.client_class = MockDropboxClient
+        create_post(blog=self.blog)
+
+    def tearDown(self):
+        Blog.objects.all().delete()
+        UserSocialAuth.objects.all().delete()
+        User.objects.all().delete()
 
     def test_get_access_token(self):
         access_token = self.backend.get_access_token()
@@ -73,15 +79,30 @@ class DropboxBackendTestCase(TestCase):
         self.backend.set_social_auth(social_auth)
         self.assertIsInstance(self.backend.social_auth, UserSocialAuth)
 
-    def test_sync(self):
-        post_list = [{
-            'fields': {
-                'body': u'Do it.\n',
-                'publish': datetime.datetime(2013, 1, 4, 8, 0, tzinfo=timezone.utc),
-                'stardate': u'352b967d-87bf-11e2-81f3-b88d120c8298',
-                'title': u'Fourth post'},
-            'model': u'stardate.post', 'pk': 27, }]
+    def test_get_post_path(self):
+        post_list = self.blog.post_set.all()
 
-        sync = self.backend.sync('/test_path', post_list)
+        post_path = self.backend.get_post_path('posts', post_list[0])
+        self.assertEqual(post_path, u'posts/test-post-title.md')
 
-        self.assertEqual(sync.read(), 'stardate: 352b967d-87bf-11e2-81f3-b88d120c8298\npublish: 2013-01-04 12:00 AM\ntitle: Fourth post\n\n\nDo it.\n')
+        # Try with no folder
+        post_path = self.backend.get_post_path('', post_list[0])
+        self.assertEqual(post_path, u'test-post-title.md')
+
+    def test_serialize_posts(self):
+        serialized_posts = self.backend.serialize_posts(self.blog.post_set.all())
+        self.assertIn('title', serialized_posts[0])
+        self.assertIn('stardate', serialized_posts[0])
+        self.assertIn('publish', serialized_posts[0])
+        self.assertIn('body', serialized_posts[0])
+
+    # def test_sync(self):
+    #     user = User.objects.get(username='bturner')
+    #     blog = create_blog(owner=user)
+    #     blog.backend.client_class = MockDropboxClient
+    #     create_post(blog=blog)
+    #     post_list = blog.post_set.all()
+
+    #     sync = self.backend.sync(post_list)
+
+    #     self.assertEqual(sync.read(), 'stardate: 352b967d-87bf-11e2-81f3-b88d120c8298\npublish: 2013-01-04 12:00 AM\ntitle: Fourth post\n\n\nDo it.\n')
