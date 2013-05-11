@@ -193,7 +193,7 @@ class DropboxBackend(StardateBackend):
             responses.append(response)
         return responses
 
-    def sync(self, posts):
+    def push(self, posts):
         """
         Sync one or more posts with remote Dropbox
 

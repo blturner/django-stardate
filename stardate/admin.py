@@ -5,16 +5,17 @@ from stardate.forms import BlogForm
 
 
 class BlogAdmin(admin.ModelAdmin):
-    exclude = ['owner', ]
+    exclude = ['user', ]
     fields = ('social_auth', 'backend_file', 'name', 'slug', 'authors')
     form = BlogForm
     prepopulated_fields = {'slug': ('name',)}
 
     def save_model(self, request, obj, form, change):
-        """When creating a new object, set the owner field.
+        """
+        When creating a new object, set the user field.
         """
         if not change:
-            obj.owner = request.user
+            obj.user = request.user
         obj.save()
 
 
