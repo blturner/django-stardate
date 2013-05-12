@@ -34,4 +34,4 @@ class Command(BaseCommand):
         for user in users:
             for blog in Blog.objects.filter(user=user):
                 print u'Updating posts for {0}'.format(blog)
-                blog.backend.pull(self)
+                blog.backend.pull(blog)
