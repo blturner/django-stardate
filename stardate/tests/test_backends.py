@@ -3,23 +3,20 @@ from django.test import TestCase
 
 from social_auth.models import UserSocialAuth
 
-from stardate.backends.dropbox import DropboxBackend
 from stardate.models import Blog
 from stardate.tests.factories import create_blog, create_post, create_user, create_user_social_auth
-from stardate.tests.mock_dropbox import MockDropboxClient
+from stardate.tests.mock_dropbox import MockDropboxClient, MockDropboxBackend
 
 
 class DropboxBackendTestCase(TestCase):
     def setUp(self):
-        self.backend = DropboxBackend()
-        self.backend.client = MockDropboxClient()
-        self.backend.client_class = MockDropboxClient
-
+        self.backend = MockDropboxBackend()
         social_auth = create_user_social_auth(user=create_user())
         self.backend.set_social_auth(social_auth)
 
-        self.blog = create_blog()
-        self.blog.backend.client_class = MockDropboxClient
+        self.blog = create_blog(
+            backend_class="stardate.tests.mock_dropbox.MockDropboxBackend"
+        )
         create_post(blog=self.blog)
 
     def tearDown(self):
