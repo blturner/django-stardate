@@ -7,14 +7,14 @@ from django.utils import timezone
 
 from stardate.models import Blog, Post
 from stardate.tests.factories import create_blog, create_post
-from stardate.tests.mock_dropbox import MockDropboxClient
 
 
 class BlogTestCase(TestCase):
     def setUp(self):
-        self.blog = create_blog(name="My test blog")
-        self.blog.backend.client_class = MockDropboxClient
-        self.blog.backend.client = MockDropboxClient()
+        self.blog = create_blog(
+            name="My test blog",
+            backend_class="stardate.tests.mock_dropbox.MockDropboxBackend"
+        )
 
         pub_date_1 = datetime.datetime(2012, 1, 2, 8, 0, tzinfo=timezone.utc)
         pub_date_2 = datetime.datetime(2012, 1, 3, 8, 0, tzinfo=timezone.utc)
@@ -52,11 +52,6 @@ class BlogTestCase(TestCase):
         }
         p = Post(**data)
         self.assertRaises(ValidationError, p.save)
-
-    def test_invalid_publish(self):
-        pub_date = datetime.datetime(2012, 1, 1, 1, 0, tzinfo=timezone.utc)
-        invalid_post = Post({'title': 'Failed post', 'pub_date': pub_date, 'blog_id': self.blog.id})
-        self.assertRaises(ValidationError, invalid_post.save)
 
     def test_post_marked_deleted_is_removed(self):
         p = self.blog.post_set.get(title="Test post title")

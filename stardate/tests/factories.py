@@ -33,11 +33,11 @@ def create_blog(**kwargs):
     }
     defaults.update(kwargs)
 
-    if "owner" not in defaults:
-        defaults["owner"] = create_user()
+    if "user" not in defaults:
+        defaults["user"] = create_user()
 
     defaults["social_auth"] = create_user_social_auth(
-        user=defaults["owner"])
+        user=defaults["user"])
 
     blog, created = Blog.objects.get_or_create(**defaults)
     return blog

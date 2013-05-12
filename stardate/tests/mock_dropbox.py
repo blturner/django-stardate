@@ -3,7 +3,7 @@ import json
 from stardate.backends.dropbox import DropboxBackend
 
 
-class MockDropboxClient(DropboxBackend):
+class MockDropboxClient(object):
     entry_data = [['/test_file.md', {
         'size': '452 bytes',
         'rev': '7cb07486f6b',
@@ -116,3 +116,8 @@ class MockFile(object):
 
     def read(self):
         return self.content
+
+
+class MockDropboxBackend(DropboxBackend):
+    def __init__(self, client_class=MockDropboxClient):
+        return super(MockDropboxBackend, self).__init__(client_class=client_class)

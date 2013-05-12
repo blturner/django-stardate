@@ -7,20 +7,31 @@ from social_auth.models import UserSocialAuth
 from markupfield.fields import MarkupField
 
 from stardate.backends import get_backend
+from django.conf import settings
 
 
 class Blog(models.Model):
     authors = models.ManyToManyField(User, blank=True, null=True)
+    # Dot notation path to backend Class
+    backend_class = models.CharField(
+        max_length=255,
+        blank=True,
+        default=settings.STARDATE_BACKEND
+    )
+    # Path to file or directory used by backend to determine
+    # how and where to store / retrieve posts
     backend_file = models.CharField(blank=True, max_length=255)
     name = models.CharField(max_length=255)
-    owner = models.ForeignKey(User, related_name="+")
-    slug = models.SlugField()
+    user = models.ForeignKey(User, related_name="+")
+    slug = models.SlugField(unique=True)
     social_auth = models.ForeignKey(UserSocialAuth, blank=True, null=True)
-
-    backend = get_backend()
 
     def __init__(self, *args, **kwargs):
         super(Blog, self).__init__(*args, **kwargs)
+        # Instantiate the backend
+        self.backend = get_backend(self.backend_class)
+        # If backend uses a social auth to connect,
+        # initialize it here
         try:
             self.backend.set_social_auth(self.social_auth)
         except:
@@ -43,10 +54,6 @@ class Blog(models.Model):
         """
         return serializers.serialize("python", self.post_set.filter(
             deleted=False), fields=('title', 'publish', 'stardate', 'body'))
-
-    def get_backend_posts(self):
-        path = self.get_backend_choice()
-        return self.backend.get_posts(path)
 
     def save_post_objects(self, post_list):
         for post in post_list:
@@ -79,15 +86,19 @@ class Post(models.Model):
     body = MarkupField(default_markup_type='markdown')
     deleted = models.BooleanField()
     objects = PostManager()
-    publish = models.DateTimeField(blank=True, null=True, unique=True)
-    slug = models.SlugField()
+    publish = models.DateTimeField(blank=True, null=True)
+    slug = models.SlugField(unique=True)
     stardate = models.CharField(max_length=255)
     title = models.CharField(max_length=255)
 
-    backend = get_backend()
-
     class Meta:
         ordering = ['-publish']
+
+    def __init__(self, *args, **kwargs):
+        super(Post, self).__init__(*args, **kwargs)
+        # Post must use the same backend as the Blog
+        if hasattr(self, 'blog'):
+            self.backend = self.blog.backend
 
     def __unicode__(self):
         return self.title
@@ -107,16 +118,20 @@ class Post(models.Model):
         self.deleted = True
         return self
 
-    def save(self, *args, **kwargs):
-        # Validate first so things don't break on sync
+    def save(self, push=True, *args, **kwargs):
+        if not hasattr(self, 'backend'):
+            self.backend = self.blog.backend
+
+        # Validate first so things don't break on push
         self.clean()
         self.clean_fields()
         self.validate_unique()
 
-        # Initialize our backend with user's social auth
-        self.backend.set_social_auth(self.blog.social_auth)
-        # Sync this post with our backend
-        self.backend.sync([self])
+        if push:
+            # Initialize our backend with user's social auth
+            self.backend.set_social_auth(self.blog.social_auth)
+            # Sync this post with our backend
+            self.backend.push([self])
         super(Post, self).save(*args, **kwargs)
 
     @models.permalink

@@ -1,12 +1,11 @@
 from __future__ import absolute_import
 import os
 
-from django.conf import settings
-from django.core.cache import cache
 from django.core.serializers import serialize
 
 from stardate.backends import StardateBackend
 from stardate.parsers import FileParser
+from stardate.models import Post
 
 
 class LocalFileBackend(StardateBackend):
@@ -21,14 +20,6 @@ class LocalFileBackend(StardateBackend):
     def set_social_auth(self, *args, **kwargs):
         return
 
-    def get_posts(self, path):
-        """
-        Gets a list of dictionaries of posts from the backend.
-
-        """
-        content = self.get_file(path)
-        return self.parser.unpack(content)
-
     def serialize_posts(self, posts):
         """
         Returns dictionary of individual Post
@@ -37,31 +28,75 @@ class LocalFileBackend(StardateBackend):
         serialized = serialize(
             'python',
             posts,
-            fields=('title', 'publish', 'stardate', 'body')
+            fields=('title', 'slug', 'publish', 'stardate', 'body')
         )
         for post in serialized:
             posts_as_dicts.append(post['fields'])
         return posts_as_dicts
 
-    def get_post_path(self, folder, post):
+    def _get_post_path(self, folder, post):
         """
         Dynamically guess post file path from slug / blog folder
         """
-        filename = post.slug
+        filename = post['slug']
         filename = '{0}.md'.format(filename)
         path = os.path.join(folder, filename)
         return path
 
-    def sync_blog_file(self, blog_path, posts):
+    def _posts_from_file(self, file_path):
+        """
+        Return list of post dictionaries from file
+        """
+        if os.path.exists(file_path):
+            with open(file_path, 'r') as f:
+                content = f.read()
+            posts = self.parser.unpack(content)
+        else:
+            posts = []
+        return posts
+
+    def _posts_from_dir(self, folder, posts=[]):
+        """
+        Get posts dicts from files in a directory
+        """
+        files = os.listdir(folder)
+        remote_posts = []
+        for filename in files:
+            with open(filename, 'r') as f:
+                remote_post = f.read()
+            remote_post = self.parser.parse(remote_post)
+            remote_posts.append(remote_post)
+
+        return remote_posts
+
+    def push(self, posts):
+        """
+        Render posts to files
+
+        posts: List of Post object instances
+        """
+        # Grab the file or folder path associated
+        # with a blog
+        blog_path = posts[0].blog.backend_file
+
+        # Separate blog path into directory and filename
+        blog_dir, blog_file = os.path.split(blog_path)
+
+        # pushing works differently depending on whether
+        # We are using a single file or a directory of files
+        if blog_file:
+            responses = [self._push_blog_file(blog_path, posts)]
+
+        else:
+            responses = self._push_post_files(blog_dir, posts)
+
+        return responses
+
+    def _push_blog_file(self, file_path, posts):
         """
         Update posts in a single blog file
         """
-        if os.path.exists(blog_path):
-            with open(blog_path, 'r') as f:
-                content = f.read()
-            remote_posts = self.parser.unpack(content)
-        else:
-            remote_posts = []
+        remote_posts = self._posts_from_file(file_path)
 
         # Use serialized version of posts to find
         # and update
@@ -73,26 +108,37 @@ class LocalFileBackend(StardateBackend):
         for local_post in local_posts:
             exists = False
             for remote_post in remote_posts:
-                if local_post['stardate'] == remote_post['stardate']:
-                    exists = True
-                    remote_post.update(local_post)
+                if remote_post['stardate']:
+                    if local_post['stardate'] == remote_post['stardate']:
+                        exists = True
+                        remote_post.update(local_post)
+                # Post may exist on backend with uuid, but
+                # also exist in local from last pull where
+                # uuid was assigned. Use 'title' field as
+                # backup
+                else:
+                    if local_post['title'] == remote_post['title']:
+                        exists = True
+                        remote_post.update(local_post)
             # Add new remote post if it does not exist yet
             if not exists:
                 remote_posts.append(local_post)
 
         # Turn post list back into string
         content = self.parser.pack(remote_posts)
-        with open(blog_path, 'w') as f:
+        with open(file_path, 'w') as f:
             f.write(content)
         return
 
-    def sync_post_files(self, blog_dir, posts):
+    def _push_post_files(self, folder, posts):
         """
         Update posts in multiple files
         """
-        for post in posts:
+        local_posts = self.serialized_posts(posts)
+
+        for local_post in local_posts:
             # Generate the post file path dynamically
-            post_path = self.get_post_path(blog_dir, post)
+            post_path = self._get_post_path(folder, local_post)
 
             # Get the existing remote post as a post dict
             if os.path.exists(post_path):
@@ -102,9 +148,6 @@ class LocalFileBackend(StardateBackend):
             else:
                 remote_post = {}
 
-            # Turn local post into post dict
-            local_post = self.serialize_posts([post])[0]
-
             # Update the contents of the remote post
             remote_post.update(local_post)
             content = self.parser.render(remote_post)
@@ -112,25 +155,47 @@ class LocalFileBackend(StardateBackend):
                 f.write(content)
         return
 
-    def sync(self, posts):
+    def _update_from_dict(self, blog, post_dict, post=None):
         """
-        Render posts to local files
-
-        posts: List of Post object instances
+        Create or update a Post from a dictionary
         """
-        # Grab the file or folder path associated
-        # with a blog
-        blog_path = posts[0].blog.backend_file
+        # If a post is not provided, try an fetch it
+        if not post:
+            if 'stardate' in post_dict:
+                post = Post.objects.filter(
+                    blog=blog,
+                    stardate=post_dict['stardate']
+                )
+                if post:
+                    post = post[0]
+            if not post:
+                post = Post(blog=blog)
 
-        # Separate blog path into directory and filename
+        # Update from dict values
+        for att, value in post_dict.items():
+            setattr(post, att, value)
+        post.save(push=False)
+        return post
+
+    def pull(self, blog):
+        """
+        Update local posts from remote source
+
+        blog: Blog instance
+        """
+        blog_path = blog.backend_file
         blog_dir, blog_file = os.path.split(blog_path)
 
-        # Syncing works differently depending on whether
-        # We are using a single file or a directory of files
+        # Extract remote posts from single file
         if blog_file:
-            responses = [self.sync_blog_file(blog_path, posts)]
-
+            remote_posts = self._posts_from_file(blog_path)
+        # Extract posts from multiple files
         else:
-            responses = self.sync_post_files(blog_dir, posts)
+            remote_posts = self._posts_from_dir(blog_dir)
 
-        return responses
+        updated_list = []
+        for remote_post in remote_posts:
+            updated = self._update_from_dict(blog, remote_post)
+            updated_list.append(updated)
+
+        return updated_list

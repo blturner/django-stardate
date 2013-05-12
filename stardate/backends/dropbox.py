@@ -7,6 +7,7 @@ from django.core.serializers import serialize
 
 from dropbox import client, rest, session
 
+from stardate.models import Post
 from stardate.backends import StardateBackend
 from stardate.parsers import FileParser
 
@@ -93,15 +94,6 @@ class DropboxBackend(StardateBackend):
             pass
         return source_list
 
-    # pull
-    def get_posts(self, path):
-        """
-        Gets a list of dictionaries of posts from the backend.
-
-        """
-        content = self.get_file(path)
-        return self.parser.unpack(content)
-
     def save_cursor(self, cursor):
         self.social_auth.extra_data['cursor'] = cursor
         self.social_auth.save()
@@ -134,12 +126,15 @@ class DropboxBackend(StardateBackend):
         path = os.path.join(folder, filename)
         return path
 
-    def sync_blog_file(self, blog_path, posts):
+    def push_blog_file(self, blog_path, posts):
         """
         Update posts in a single blog file
         """
-        content = self.client.get_file(blog_path).read()
-        remote_posts = self.parser.unpack(content)
+        try:
+            content = self.client.get_file(blog_path).read()
+            remote_posts = self.parser.unpack(content)
+        except Exception:
+            remote_posts = []
 
         # Use serialized version of posts to find
         # and update
@@ -150,10 +145,25 @@ class DropboxBackend(StardateBackend):
         ## in dicts instead of lists?
         for local_post in local_posts:
             exists = False
+            # First we try to see if match by stardate exists
             for remote_post in remote_posts:
-                if local_post['stardate'] == remote_post['stardate']:
-                    exists = True
-                    remote_post.update(local_post)
+                if 'stardate' in remote_post:
+                    if local_post['stardate'] == remote_post['stardate']:
+                        exists = True
+                        remote_post.update(local_post)
+                        break
+
+            # If post was created remotely and was pulled in
+            # then it has a stardate, but remote post does not.
+            # Try to match up using title
+            if not exists:
+                for remote_post in remote_posts:
+                    if 'title' in remote_post:
+                        if local_post['title'] == remote_post['title']:
+                            exists = True
+                            remote_post.update(local_post)
+                            break
+
             # Add new remote post if it does not exist yet
             if not exists:
                 remote_posts.append(local_post)
@@ -162,7 +172,7 @@ class DropboxBackend(StardateBackend):
         content = self.parser.pack(remote_posts)
         return self.client.put_file(blog_path, content, overwrite=True)
 
-    def sync_post_files(self, blog_dir, posts):
+    def push_post_files(self, blog_dir, posts):
         """
         Update posts in multiple files
         """
@@ -181,19 +191,17 @@ class DropboxBackend(StardateBackend):
             # Turn local post into post dict
             local_post = self.serialize_posts([post])[0]
 
-            print local_post['body']
 
             # Update the contents of the remote post
             remote_post.update(local_post)
             content = self.parser.render(remote_post)
-            print content
             response = self.client.put_file(post_path, content, overwrite=True)
 
             # Log the result
             responses.append(response)
         return responses
 
-    def sync(self, posts):
+    def push(self, posts):
         """
         Sync one or more posts with remote Dropbox
 
@@ -209,9 +217,64 @@ class DropboxBackend(StardateBackend):
         # Syncing works differently depending on whether
         # We are using a single file or a directory of files
         if blog_file:
-            responses = [self.sync_blog_file(blog_path, posts)]
+            responses = [self.push_blog_file(blog_path, posts)]
 
         else:
-            responses = self.sync_post_files(blog_dir, posts)
+            responses = self.push_post_files(blog_dir, posts)
 
         return responses
+
+    def get_posts(self, path):
+        """
+        Fetch posts from single file or directory
+        """
+        folder, filename = os.path.split(path)
+
+        if filename:
+            content = self.get_file(path)
+            posts = self.parser.unpack(content)
+        else:
+            posts = []
+            file_list = self._list_path(path)
+            for filename in file_list:
+                content = self.get_file(path)
+                post = self.parser.parse(content)
+                posts.append(post)
+        return posts
+
+    def _update_from_dict(self, blog, post_dict, post=None):
+        """
+        Create or update a Post from a dictionary
+        """
+        # If a post is not provided, try an fetch it
+        if not post:
+            if 'stardate' in post_dict:
+                post = Post.objects.filter(
+                    blog=blog,
+                    stardate=post_dict['stardate']
+                )
+                if post:
+                    post = post[0]
+            if not post:
+                post = Post(blog=blog)
+
+        # Update from dict values
+        for att, value in post_dict.items():
+            setattr(post, att, value)
+        post.save(push=False)
+        return post
+
+    def pull(self, blog):
+        """
+        Update local posts from remote source
+
+        blog: Blog instance
+        """
+        remote_posts = self.get_posts(blog.backend_file)
+
+        updated_list = []
+        for remote_post in remote_posts:
+            updated = self._update_from_dict(blog, remote_post)
+            updated_list.append(updated)
+
+        return updated_list

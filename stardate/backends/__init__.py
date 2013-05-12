@@ -5,9 +5,9 @@ from django.utils.importlib import import_module
 STARDATE_BACKEND = getattr(settings, 'STARDATE_BACKEND', 'stardate.backends.dropbox.DropboxBackend')
 
 
-def get_backend():
-    i = STARDATE_BACKEND.rfind('.')
-    module, attr = STARDATE_BACKEND[:i], STARDATE_BACKEND[i + 1:]
+def get_backend(backend=STARDATE_BACKEND):
+    i = backend.rfind('.')
+    module, attr = backend[:i], backend[i + 1:]
     try:
         mod = import_module(module)
     except ImportError, e:
