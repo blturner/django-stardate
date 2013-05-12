@@ -5,7 +5,7 @@ from social_auth.models import UserSocialAuth
 
 from stardate.models import Blog
 from stardate.tests.factories import create_blog, create_post, create_user, create_user_social_auth
-from stardate.tests.mock_dropbox import MockDropboxClient, MockDropboxBackend
+from stardate.tests.mock_backends import MockDropboxClient, MockDropboxBackend
 
 
 class DropboxBackendTestCase(TestCase):
@@ -15,7 +15,7 @@ class DropboxBackendTestCase(TestCase):
         self.backend.set_social_auth(social_auth)
 
         self.blog = create_blog(
-            backend_class="stardate.tests.mock_dropbox.MockDropboxBackend"
+            backend_class="stardate.tests.mock_backends.MockDropboxBackend"
         )
         create_post(blog=self.blog)
 

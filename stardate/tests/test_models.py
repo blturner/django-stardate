@@ -13,7 +13,7 @@ class BlogTestCase(TestCase):
     def setUp(self):
         self.blog = create_blog(
             name="My test blog",
-            backend_class="stardate.tests.mock_dropbox.MockDropboxBackend"
+            backend_class="stardate.tests.mock_backends.MockDropboxBackend"
         )
 
         pub_date_1 = datetime.datetime(2012, 1, 2, 8, 0, tzinfo=timezone.utc)

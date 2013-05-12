@@ -9,7 +9,7 @@ from social_auth.models import UserSocialAuth
 from stardate.models import Blog
 from stardate.parsers import FileParser
 from stardate.tests.factories import create_blog, create_post
-from stardate.tests.mock_dropbox import MockDropboxClient
+from stardate.tests.mock_backends import MockDropboxClient
 
 
 class FileParserTestCase(TestCase):
