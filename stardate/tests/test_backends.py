@@ -1,11 +1,15 @@
+import os
+import tempfile
+
 from django.contrib.auth.models import User
 from django.test import TestCase
 
 from social_auth.models import UserSocialAuth
 
-from stardate.models import Blog
+from stardate.models import Blog, Post
+from stardate.parsers import FileParser
 from stardate.tests.factories import create_blog, create_post, create_user, create_user_social_auth
-from stardate.tests.mock_backends import MockDropboxClient, MockDropboxBackend
+from stardate.tests.mock_backends import MockDropboxClient, MockDropboxBackend, MockLocalFileBackend
 
 
 class DropboxBackendTestCase(TestCase):
@@ -103,3 +107,100 @@ class DropboxBackendTestCase(TestCase):
     #     sync = self.backend.sync(post_list)
 
     #     self.assertEqual(sync.read(), 'stardate: 352b967d-87bf-11e2-81f3-b88d120c8298\npublish: 2013-01-04 12:00 AM\ntitle: Fourth post\n\n\nDo it.\n')
+
+
+class LocalFileBackendTestCase(TestCase):
+    def setUp(self):
+        fd, file_path = tempfile.mkstemp()
+        self.blog = create_blog(
+            backend_class="stardate.tests.mock_backends.MockLocalFileBackend",
+            backend_file=file_path)
+        create_post(title="Hello world", blog=self.blog)
+
+        self.post_list = self.blog.post_set.all()
+
+    def tearDown(self):
+        Blog.objects.all().delete()
+        Post.objects.all().delete()
+        User.objects.all().delete()
+        UserSocialAuth.objects.all().delete()
+
+    def test_is_mock_local_file_backend(self):
+        self.assertIsInstance(self.blog.backend, MockLocalFileBackend)
+
+    def test_get_name(self):
+        self.assertEqual(self.blog.backend.get_name(), 'localfile')
+
+    def test_get_post_path(self):
+        serialized_posts = self.blog.backend.serialize_posts(
+            self.post_list)
+        path = self.blog.backend._get_post_path('', serialized_posts[0])
+        self.assertEqual(path, 'hello-world.md')
+        path = self.blog.backend._get_post_path('posts', serialized_posts[0])
+        self.assertEqual(path, 'posts/hello-world.md')
+
+    def test_posts_from_file(self):
+        temp_file = tempfile.mkstemp()[1]
+        f = open(temp_file, 'w')
+        f.write('title: Test post\n\n\nThe body content.')
+        f.close()
+
+        posts = self.blog.backend._posts_from_file(temp_file)
+        self.assertEqual(posts, [{'title': 'Test post', 'body': 'The body content.'}])
+
+    def test_posts_from_dir(self):
+        temp_dir = tempfile.mkdtemp()
+
+        fd, file_path = tempfile.mkstemp(dir=temp_dir)
+        f = open(file_path, 'w')
+        f.write('title: Test post\n\n\nThe body content.')
+        f.close()
+
+        fd, file_path = tempfile.mkstemp(dir=temp_dir)
+        f = open(file_path, 'w')
+        f.write('title: Another test post\n\n\nA different body.')
+        f.close()
+
+        posts = self.blog.backend._posts_from_dir(temp_dir)
+        self.assertEqual(len(posts), 2)
+        self.assertTrue('title' in posts[0])
+        self.assertTrue('title' in posts[1])
+        self.assertTrue('body' in posts[0])
+        self.assertTrue('body' in posts[1])
+
+        # cleanup temp files
+        for f in os.listdir(temp_dir):
+            f = os.path.join(temp_dir, f)
+            os.remove(f)
+        os.removedirs(temp_dir)
+
+    def test_pull(self):
+        # Fix me
+        self.assertEqual(1, 2)
+
+    def test_push(self):
+        fd, file_path = tempfile.mkstemp()
+        blog = create_blog(name='Push',
+                           backend_class='stardate.tests.mock_backends.MockLocalFileBackend',
+                           backend_file=file_path,
+                           slug='push')
+
+        # creating a post calls `push`
+        create_post(title='A test push post', blog=blog, body='Testing a push post.')
+
+        f = open(file_path, 'r')
+        content = f.read()
+        parser = FileParser()
+        parsed = parser.unpack(content)
+        self.assertEqual(parsed[0]['title'], u'A test push post')
+        self.assertEqual(parsed[0]['slug'], u'a-test-push-post')
+        self.assertEqual(parsed[0]['body'], u'Testing a push post.\n')
+        self.assertTrue('stardate' in parsed[0])
+
+    def test_serialize_posts(self):
+        serialized_posts = self.blog.backend.serialize_posts(
+            self.post_list)
+        self.assertIn('title', serialized_posts[0])
+        self.assertIn('stardate', serialized_posts[0])
+        self.assertIn('publish', serialized_posts[0])
+        self.assertIn('body', serialized_posts[0])
