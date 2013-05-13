@@ -1,6 +1,7 @@
 import json
 
 from stardate.backends.dropbox import DropboxBackend
+from stardate.backends.local_file import LocalFileBackend
 
 
 class MockDropboxClient(object):
@@ -121,3 +122,7 @@ class MockFile(object):
 class MockDropboxBackend(DropboxBackend):
     def __init__(self, client_class=MockDropboxClient):
         return super(MockDropboxBackend, self).__init__(client_class=client_class)
+
+
+class MockLocalFileBackend(LocalFileBackend):
+    pass
