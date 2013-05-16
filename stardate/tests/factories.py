@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.template.defaultfilters import slugify
 
 from social_auth.models import UserSocialAuth
 
@@ -50,5 +51,6 @@ def create_post(**kwargs):
         "title": "Test post title",
     }
     defaults.update(kwargs)
+    defaults["slug"] = slugify(defaults["title"])
     post, created = Post.objects.get_or_create(**defaults)
     return post

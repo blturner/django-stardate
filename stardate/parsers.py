@@ -76,7 +76,7 @@ class FileParser(BaseStardateParser):
 
         # FIXME: this belongs in deserialization, perhaps
         # on model?
-        if post_data.get('publish'):
+        if 'publish' in post_data:
             if not isinstance(post_data['publish'], datetime.datetime):
                 post_data['publish'] = parse(post_data['publish'])
                 post_data['publish'] = make_aware(post_data['publish'], current_timezone).astimezone(utc)
@@ -89,5 +89,6 @@ class FileParser(BaseStardateParser):
         self.parsed_list = []
 
         for post in string.split(self.delimiter):
-            self.parsed_list.append(self.parse(post))
+            if self.parse(post):
+                self.parsed_list.append(self.parse(post))
         return self.parsed_list

@@ -62,7 +62,7 @@ class LocalFileBackend(StardateBackend):
         files = os.listdir(folder)
         remote_posts = []
         for filename in files:
-            with open(filename, 'r') as f:
+            with open(os.path.join(folder, filename), 'r') as f:
                 remote_post = f.read()
             remote_post = self.parser.parse(remote_post)
             remote_posts.append(remote_post)
@@ -108,7 +108,7 @@ class LocalFileBackend(StardateBackend):
         for local_post in local_posts:
             exists = False
             for remote_post in remote_posts:
-                if remote_post['stardate']:
+                if 'stardate' in remote_post:
                     if local_post['stardate'] == remote_post['stardate']:
                         exists = True
                         remote_post.update(local_post)
@@ -117,9 +117,12 @@ class LocalFileBackend(StardateBackend):
                 # uuid was assigned. Use 'title' field as
                 # backup
                 else:
-                    if local_post['title'] == remote_post['title']:
-                        exists = True
-                        remote_post.update(local_post)
+                    try:
+                        if local_post['title'] == remote_post['title']:
+                            exists = True
+                            remote_post.update(local_post)
+                    except KeyError:
+                        pass
             # Add new remote post if it does not exist yet
             if not exists:
                 remote_posts.append(local_post)
