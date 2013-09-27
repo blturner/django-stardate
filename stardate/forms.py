@@ -1,7 +1,9 @@
 from django import forms
 
+from markupfield.widgets import AdminMarkupTextareaWidget
+
 from stardate.backends import get_backend
-from stardate.models import Blog
+from stardate.models import Blog, Post
 
 
 backend = get_backend()
@@ -25,3 +27,10 @@ class BlogForm(forms.ModelForm):
             pass
 
         # self.fields['backend_file'].choices = backend.get_source_list()
+
+
+class PostForm(forms.ModelForm):
+    body = forms.CharField(widget=AdminMarkupTextareaWidget)
+
+    class Meta:
+        model = Post
