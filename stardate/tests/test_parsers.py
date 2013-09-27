@@ -25,15 +25,16 @@ class FileParserTestCase(TestCase):
     def test_pack(self):
         blog = create_blog()
         blog.backend.client_class = MockDropboxClient
-        create_post(title="First post", blog=blog)
-        create_post(title="Second post", blog=blog)
-
-        post_list = blog.get_serialized_posts()
-        # packed = self.parser.pack(post_list)
+        post_list = [
+            {'title': 'My first post', 'body': 'This is the first post.'},
+            {'title': 'My second post', 'body': 'This is the second post.'},
+        ]
+        packed_string = self.parser.pack(post_list)
 
         self.assertIsInstance(post_list, list)
         self.assertEqual(len(post_list), 2)
-        # self.assertIsInstance(packed, basestring)
+        self.assertIsInstance(packed_string, basestring)
+        self.assertEqual(packed_string, "title: My first post\n\n\nThis is the first post.\n---\ntitle: My second post\n\n\nThis is the second post.")
 
     def test_parse(self):
         parsed = self.parser.parse(self.test_string)
