@@ -1,4 +1,5 @@
 import json
+import mimetypes
 
 from stardate.backends.dropbox import DropboxBackend
 from stardate.backends.local_file import LocalFileBackend
@@ -97,7 +98,8 @@ class MockDropboxClient(object):
         return json.loads(self.data)
 
     def get_file(self, path):
-        return MockFile("publish: 2012-01-02 12:00 AM\ntitle: Tingling of the spine\n\n\nExtraordinary claims require extraordinary evidence!\n\n---\n\npublish: 2012-01-01 06:00 AM\ntitle: Great turbulent clouds\n\n\nWith pretty stories for which there's little good evidence.\n")
+        f = open(path, 'r')
+        return f
 
     def metadata(self, path='/', hash=None):
         data = {}
@@ -108,15 +110,14 @@ class MockDropboxClient(object):
         return data
 
     def put_file(self, full_path, file_obj, overwrite=False, parent_rev=None):
-        return MockFile(file_obj)
-
-
-class MockFile(object):
-    def __init__(self, content):
-        self.content = content
-
-    def read(self):
-        return self.content
+        f = open(full_path, 'w')
+        f.write(file_obj)
+        f.close()
+        resp = {
+            'path': full_path,
+            'mime_type': mimetypes.guess_type(full_path),
+        }
+        return resp
 
 
 class MockDropboxBackend(DropboxBackend):

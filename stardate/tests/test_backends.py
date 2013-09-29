@@ -16,12 +16,14 @@ from stardate.tests.mock_backends import MockDropboxClient, MockDropboxBackend, 
 
 class DropboxBackendTestCase(TestCase):
     def setUp(self):
+        backend_file, backend_file_path = tempfile.mkstemp(suffix='.txt')
         self.backend = MockDropboxBackend()
         social_auth = create_user_social_auth(user=create_user())
         self.backend.set_social_auth(social_auth)
 
         self.blog = create_blog(
-            backend_class="stardate.tests.mock_backends.MockDropboxBackend"
+            backend_class="stardate.tests.mock_backends.MockDropboxBackend",
+            backend_file=backend_file_path
         )
         create_post(blog=self.blog)
 
@@ -55,14 +57,20 @@ class DropboxBackendTestCase(TestCase):
         self.assertEqual(delta.get('entries')[0][0], '/test_file.md')
 
     def test_get_file(self):
-        backend_file = self.backend.get_file('/test_file.md')
-        self.assertEqual(backend_file, "publish: 2012-01-02 12:00 AM\ntitle: Tingling of the spine\n\n\nExtraordinary claims require extraordinary evidence!\n\n---\n\npublish: 2012-01-01 06:00 AM\ntitle: Great turbulent clouds\n\n\nWith pretty stories for which there's little good evidence.\n")
+        backend_file = self.backend.get_file(self.blog.backend_file)
+        serialized_posts = self.backend.serialize_posts(self.blog.post_set.all())
+        packed = self.backend.parser.pack(serialized_posts)
+        self.assertEqual(backend_file, packed)
+
+    def test_get_file_changed(self):
+        backend_file_path = self.blog.backend_file
+        self.backend.client.put_file(backend_file_path, 'new string')
+        self.assertEqual(self.backend.get_file(backend_file_path), 'new string')
 
     def test_get_posts(self):
-        post_list = self.backend.get_posts('/test_file.md')
-        self.assertEqual(len(post_list), 2)
-        self.assertEqual(post_list[0]['title'], 'Tingling of the spine')
-        self.assertEqual(post_list[1]['title'], 'Great turbulent clouds')
+        post_list = self.backend.get_posts(self.blog.backend_file)
+        self.assertEqual(len(post_list), 1)
+        self.assertEqual(post_list[0]['title'], 'Test post title')
 
     def test_get_source_list(self):
         source_list = self.backend.get_source_list()
