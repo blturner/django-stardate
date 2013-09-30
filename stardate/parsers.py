@@ -1,4 +1,5 @@
 import datetime
+import uuid
 import yaml
 
 from dateutil.parser import parse
@@ -28,16 +29,22 @@ class FileParser(BaseStardateParser):
         except:
             pass
 
+        meta_order = ['stardate', 'title', 'publish']
+
         # Body gets processed separately
         body = post.pop('body')
 
         # Generate meta data lines
         # One key/value pair per line
         meta = []
-        for k, v in post.items():
-            if v:
-                field_string = '{0}: {1}'.format(k, v)
-                meta.append(field_string)
+        for key in meta_order:
+            try:
+                value = post[key]
+                if value:
+                    field_string = '{0}: {1}'.format(key, value)
+                    meta.append(field_string)
+            except KeyError:
+                pass
         meta = '\n'.join(meta)
 
         # Body is separated from meta by three lines
@@ -49,8 +56,9 @@ class FileParser(BaseStardateParser):
         Render a list of post dictionaries to a single string
         """
         post_list = []
+        sorted_posts = sorted(posts, key=lambda k: k['stardate'])
 
-        for post in posts:
+        for post in sorted_posts:
             post_list.append(self.render(post))
 
         document = self.delimiter.join(post_list)
