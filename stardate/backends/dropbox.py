@@ -246,6 +246,7 @@ class DropboxBackend(StardateBackend):
         """
         Create or update a Post from a dictionary
         """
+        created = False
         # If a post is not provided, try an fetch it
         if not post:
             if 'stardate' in post_dict:
@@ -256,12 +257,14 @@ class DropboxBackend(StardateBackend):
                 if post:
                     post = post[0]
             if not post:
-                post = Post(blog=blog)
+                post_dict['blog'] = blog
+                post, created = Post.objects.get_or_create(**post_dict)
 
         # Update from dict values
-        for att, value in post_dict.items():
-            setattr(post, att, value)
-        post.save(push=False)
+        if not created:
+            for att, value in post_dict.items():
+                setattr(post, att, value)
+            post.save(push=False)
         return post
 
     def pull(self, blog):
