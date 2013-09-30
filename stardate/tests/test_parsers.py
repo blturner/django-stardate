@@ -1,4 +1,5 @@
 import datetime
+import uuid
 
 from django.contrib.auth.models import User
 from django.test import TestCase
@@ -8,7 +9,7 @@ from social_auth.models import UserSocialAuth
 
 from stardate.models import Blog
 from stardate.parsers import FileParser
-from stardate.tests.factories import create_blog, create_post
+from stardate.tests.factories import create_blog
 from stardate.tests.mock_backends import MockDropboxClient
 
 
@@ -26,15 +27,23 @@ class FileParserTestCase(TestCase):
         blog = create_blog()
         blog.backend.client_class = MockDropboxClient
         post_list = [
-            {'title': 'My first post', 'body': 'This is the first post.'},
-            {'title': 'My second post', 'body': 'This is the second post.'},
+            {
+                'title': 'My first post',
+                'stardate': uuid.uuid1(),
+                'body': 'This is the first post.'
+            },
+            {
+                'title': 'My second post',
+                'stardate': uuid.uuid1(),
+                'body': 'This is the second post.'
+            },
         ]
         packed_string = self.parser.pack(post_list)
 
         self.assertIsInstance(post_list, list)
         self.assertEqual(len(post_list), 2)
         self.assertIsInstance(packed_string, basestring)
-        self.assertEqual(packed_string, "title: My first post\n\n\nThis is the first post.\n---\ntitle: My second post\n\n\nThis is the second post.")
+        self.assertEqual(packed_string, "stardate: %s\ntitle: My first post\n\n\nThis is the first post.\n---\nstardate: %s\ntitle: My second post\n\n\nThis is the second post." % (post_list[0]['stardate'], post_list[1]['stardate']))
 
     def test_parse(self):
         parsed = self.parser.parse(self.test_string)
