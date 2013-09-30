@@ -76,6 +76,64 @@ class DropboxBackendTestCase(TestCase):
         source_list = self.backend.get_source_list()
         self.assertEqual(len(source_list), 3)
 
+    def test_pull(self):
+        blog = self.blog
+        pulled_posts = blog.backend.pull(blog)
+        self.assertEqual(len(pulled_posts), 1)
+        self.assertEqual(pulled_posts[0].title, 'Test post title')
+
+    def test_push(self):
+        create_post(blog=self.blog, title="Test one")
+        create_post(blog=self.blog, title="Test two")
+        self.blog.backend.push(self.blog.post_set.all())
+
+        backend_file = self.backend.get_file(self.blog.backend_file)
+        packed_string = self.backend.parser.pack(
+            self.backend.serialize_posts(self.blog.post_set.all()))
+        self.assertEqual(backend_file, packed_string)
+
+    def test_pull_then_push(self):
+        test_string = 'title: My test post\npublish: June 1, 2013\n\n\nPost body.\n'
+        self.backend.client.put_file(self.blog.backend_file, test_string)
+        self.assertEqual(
+            self.backend.client.get_file(self.blog.backend_file).read(),
+            test_string)
+        for post in self.blog.post_set.all():
+            post.delete()
+        self.assertFalse(self.blog.post_set.all())
+        self.backend.pull(self.blog)
+        self.assertEqual(len(self.blog.post_set.all()), 1)
+        self.backend.push(self.blog.post_set.all())
+        # After push, file should have stardate metadata
+        packed_string = self.backend.parser.pack(
+            self.backend.serialize_posts(self.blog.post_set.all()))
+        self.assertEqual(
+            self.backend.client.get_file(self.blog.backend_file).read(),
+            packed_string)
+
+    def test_pull_then_pull(self):
+        test_string = 'title: Title\n\n\nBody.\n'
+        self.backend.client.put_file(self.blog.backend_file, test_string)
+        for post in self.blog.post_set.all():
+            post.delete()
+        self.backend.pull(self.blog)
+        self.backend.pull(self.blog)
+
+    def test_push_then_pull(self):
+        pass
+
+    def test_push_blog_file(self):
+        posts = self.blog.post_set.all()
+        self.backend.push_blog_file(self.blog.backend_file, posts)
+        f = open(self.blog.backend_file, 'r')
+        packed_string = self.backend.parser.pack(
+            self.backend.serialize_posts(self.blog.post_set.all()))
+        self.assertEqual(f.read(), packed_string)
+
+    # def test_push_blog_files(self):
+    #     self.assertEqual(1, 2)
+
+
     def test_save_cursor(self):
         self.backend.save_cursor('test_cursor')
         self.assertEqual(self.backend.cursor, 'test_cursor')
@@ -197,6 +255,7 @@ class LocalFileBackendTestCase(TestCase):
 
         pulled_posts = blog.backend.pull(blog)
 
+        self.assertIsNotNone(pulled_posts[0].stardate)
         self.assertEqual(pulled_posts[0].title, 'Post title')
         self.assertEqual(pulled_posts[0].body.raw, 'A post for pulling in.\n')
         self.assertEqual(pulled_posts[0].publish, datetime.datetime(2013, 1, 1, 14, 0, tzinfo=timezone.utc))
@@ -216,7 +275,6 @@ class LocalFileBackendTestCase(TestCase):
         parser = FileParser()
         parsed = parser.unpack(content)
         self.assertEqual(parsed[0]['title'], u'A test push post')
-        self.assertEqual(parsed[0]['slug'], u'a-test-push-post')
         self.assertEqual(parsed[0]['body'], u'Testing a push post.\n')
         self.assertTrue('stardate' in parsed[0])
 
