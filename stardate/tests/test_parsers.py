@@ -43,6 +43,25 @@ class FileParserTestCase(TestCase):
         self.assertEqual(parsed['publish'], datetime.datetime(2012, 1, 2, 8, 0, tzinfo=timezone.utc))
         self.assertEqual(parsed['body'], 'Extraordinary claims require extraordinary evidence!')
 
+    def test_render(self):
+        test_stardate = uuid.uuid1()
+        dict_to_render = {
+            'body': 'The body.',
+            'publish': datetime.datetime(2013, 6, 1, 0, 0),
+            'stardate': test_stardate,
+            'title': 'Test title',
+        }
+        dict_without_publish = dict_to_render.copy()
+        dict_without_publish.pop('publish', None)
+
+        string = 'stardate: %s\ntitle: Test title\npublish: 2013-06-01 00:00:00\n\n\nThe body.' % test_stardate
+        rendered = self.parser.render(dict_to_render)
+        self.assertEqual(rendered, string)
+
+        string = 'stardate: %s\ntitle: Test title\n\n\nThe body.' % test_stardate
+        rendered = self.parser.render(dict_without_publish)
+        self.assertEqual(rendered, string)
+
     def test_unpack(self):
         content = self.test_string
         post_list = self.parser.unpack(content)
