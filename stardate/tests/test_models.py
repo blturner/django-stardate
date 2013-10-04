@@ -1,4 +1,5 @@
 import datetime
+import tempfile
 
 from django.core.exceptions import ValidationError
 from django.test import TestCase
@@ -11,9 +12,11 @@ from stardate.tests.factories import create_blog, create_post
 
 class BlogTestCase(TestCase):
     def setUp(self):
+        backend_file, backend_file_path = tempfile.mkstemp(suffix='.txt')
         self.blog = create_blog(
             name="My test blog",
-            backend_class="stardate.tests.mock_backends.MockDropboxBackend"
+            backend_class="stardate.tests.mock_backends.MockDropboxBackend",
+            backend_file=backend_file_path,
         )
 
         pub_date_1 = datetime.datetime(2012, 1, 2, 8, 0, tzinfo=timezone.utc)
