@@ -111,7 +111,7 @@ class DropboxBackendTestCase(TestCase):
 
 class LocalFileBackendTestCase(TestCase):
     def setUp(self):
-        fd, file_path = tempfile.mkstemp()
+        fd, file_path = tempfile.mkstemp(suffix='.md')
         self.blog = create_blog(
             backend_class="stardate.tests.mock_backends.MockLocalFileBackend",
             backend_file=file_path)
@@ -140,29 +140,30 @@ class LocalFileBackendTestCase(TestCase):
         self.assertEqual(path, 'posts/hello-world.md')
 
     def test_posts_from_file(self):
-        temp_file = tempfile.mkstemp()[1]
+        temp_file = tempfile.mkstemp(suffix='.md')[1]
         f = open(temp_file, 'w')
         f.write('title: Test post\n\n\nThe body content.')
         f.close()
 
-        posts = self.blog.backend._posts_from_file(temp_file)
+        posts = self.blog.backend.get_posts(temp_file)
         self.assertEqual(posts, [{'title': 'Test post', 'body': 'The body content.'}])
 
     def test_posts_from_dir(self):
         temp_dir = tempfile.mkdtemp()
 
-        fd, file_path = tempfile.mkstemp(dir=temp_dir)
+        fd, file_path = tempfile.mkstemp(dir=temp_dir, suffix='.md')
         f = open(file_path, 'w')
         f.write('title: Test post\n\n\nThe body content.')
         f.close()
 
-        fd, file_path = tempfile.mkstemp(dir=temp_dir)
+        fd, file_path = tempfile.mkstemp(dir=temp_dir, suffix='.md')
         f = open(file_path, 'w')
         f.write('title: Another test post\n\n\nA different body.')
         f.close()
 
-        posts = self.blog.backend._posts_from_dir(temp_dir)
+        posts = self.blog.backend.get_posts(temp_dir)
         self.assertEqual(len(posts), 2)
+        print posts
         self.assertTrue('title' in posts[0])
         self.assertTrue('title' in posts[1])
         self.assertTrue('body' in posts[0])
@@ -179,7 +180,7 @@ class LocalFileBackendTestCase(TestCase):
         self.assertEqual(1, 2)
 
     def test_push(self):
-        fd, file_path = tempfile.mkstemp()
+        fd, file_path = tempfile.mkstemp(suffix='.md')
         blog = create_blog(name='Push',
                            backend_class='stardate.tests.mock_backends.MockLocalFileBackend',
                            backend_file=file_path,
