@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+import logging
 import os
 
 from django.conf import settings
@@ -15,6 +16,8 @@ from stardate.parsers import FileParser
 APP_KEY = getattr(settings, 'DROPBOX_APP_KEY', None)
 APP_SECRET = getattr(settings, 'DROPBOX_APP_SECRET', None)
 ACCESS_TYPE = getattr(settings, 'DROPBOX_ACCESS_TYPE', None)
+
+logger = logging.getLogger(__name__)
 
 
 class DropboxBackend(StardateBackend):
@@ -265,6 +268,7 @@ class DropboxBackend(StardateBackend):
             for att, value in post_dict.items():
                 setattr(post, att, value)
             post.save(push=False)
+        logger.info('Blog: %s, Post: %s, created=%s', post.blog, post, created)
         return post
 
     def pull(self, blog):
