@@ -28,7 +28,7 @@ class LocalFileBackend(StardateBackend):
         serialized = serialize(
             'python',
             posts,
-            fields=('title', 'slug', 'publish', 'stardate', 'body')
+            fields=('title', 'slug', 'created', 'publish', 'stardate', 'body')
         )
         for post in serialized:
             posts_as_dicts.append(post['fields'])

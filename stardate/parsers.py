@@ -29,7 +29,7 @@ class FileParser(BaseStardateParser):
         except:
             pass
 
-        meta_order = ['stardate', 'title', 'publish']
+        meta_order = ['stardate', 'created', 'title', 'publish']
 
         # Body gets processed separately
         body = post.pop('body')

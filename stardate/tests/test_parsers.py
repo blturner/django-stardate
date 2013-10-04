@@ -29,11 +29,13 @@ class FileParserTestCase(TestCase):
         post_list = [
             {
                 'title': 'My first post',
+                'created': datetime.datetime.now(),
                 'stardate': uuid.uuid1(),
                 'body': 'This is the first post.'
             },
             {
                 'title': 'My second post',
+                'created': datetime.datetime.now(),
                 'stardate': uuid.uuid1(),
                 'body': 'This is the second post.'
             },
@@ -43,7 +45,7 @@ class FileParserTestCase(TestCase):
         self.assertIsInstance(post_list, list)
         self.assertEqual(len(post_list), 2)
         self.assertIsInstance(packed_string, basestring)
-        self.assertEqual(packed_string, "stardate: %s\ntitle: My first post\n\n\nThis is the first post.\n---\nstardate: %s\ntitle: My second post\n\n\nThis is the second post." % (post_list[0]['stardate'], post_list[1]['stardate']))
+        self.assertEqual(packed_string, "stardate: %s\ncreated: %s\ntitle: My first post\n\n\nThis is the first post.\n---\nstardate: %s\ncreated: %s\ntitle: My second post\n\n\nThis is the second post." % (post_list[0]['stardate'], post_list[0]['created'], post_list[1]['stardate'], post_list[1]['created']))
 
     def test_parse(self):
         parsed = self.parser.parse(self.test_string)

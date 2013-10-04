@@ -111,7 +111,7 @@ class DropboxBackend(StardateBackend):
         serialized = serialize(
             'python',
             posts,
-            fields=('title', 'publish', 'stardate', 'body')
+            fields=('title', 'created', 'publish', 'stardate', 'body')
         )
         for post in serialized:
             posts_as_dicts.append(post['fields'])
