@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from stardate.models import Blog, Post
-from stardate.forms import BlogForm
+from stardate.forms import BlogForm, PostForm
 
 
 class BlogAdmin(admin.ModelAdmin):
@@ -22,6 +22,7 @@ class BlogAdmin(admin.ModelAdmin):
 class PostAdmin(admin.ModelAdmin):
     date_hierarchy = 'publish'
     fields = ('blog', 'title', 'slug', 'deleted', 'body', 'publish', 'authors')
+    form = PostForm
     list_display = ('title', 'publish', 'blog', 'deleted')
     list_filter = ('blog', 'publish',)
     prepopulated_fields = {'slug': ('title',)}

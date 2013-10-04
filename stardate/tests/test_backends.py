@@ -1,8 +1,10 @@
+import datetime
 import os
 import tempfile
 
 from django.contrib.auth.models import User
 from django.test import TestCase
+from django.utils import timezone
 
 from social_auth.models import UserSocialAuth
 
@@ -176,8 +178,21 @@ class LocalFileBackendTestCase(TestCase):
         os.removedirs(temp_dir)
 
     def test_pull(self):
-        # Fix me
-        self.assertEqual(1, 2)
+        fd, file_path = tempfile.mkstemp()
+        blog = create_blog(name='Pull',
+                           backend_class='stardate.tests.mock_backends.MockLocalFileBackend',
+                           backend_file=file_path,
+                           slug='pull')
+
+        f = open(file_path, 'w')
+        f.write('title: Post title\npublish: 2013-01-01 6:00 AM\n\n\nA post for pulling in.')
+        f.close()
+
+        pulled_posts = blog.backend.pull(blog)
+
+        self.assertEqual(pulled_posts[0].title, 'Post title')
+        self.assertEqual(pulled_posts[0].body.raw, 'A post for pulling in.\n')
+        self.assertEqual(pulled_posts[0].publish, datetime.datetime(2013, 1, 1, 14, 0, tzinfo=timezone.utc))
 
     def test_push(self):
         fd, file_path = tempfile.mkstemp(suffix='.md')
