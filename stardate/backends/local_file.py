@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 import os
 
+
+
 from stardate.backends import StardateBackend
 from stardate.parsers import FileParser
 
@@ -17,27 +19,11 @@ class LocalFileBackend(StardateBackend):
 
     def get_file(self, path):
         if os.path.exists(path):
-            print 'got here'
             with open(path, 'r') as f:
                 content = f.read()
-                print content
         else:
             content = None
         return content
-
-    def serialize_posts(self, posts):
-        """
-        Returns dictionary of individual Post
-        """
-        posts_as_dicts = []
-        serialized = serialize(
-            'python',
-            posts,
-            fields=('title', 'slug', 'created', 'publish', 'stardate', 'body')
-        )
-        for post in serialized:
-            posts_as_dicts.append(post['fields'])
-        return posts_as_dicts
 
     def get_post(self, path):
         if os.path.exists(path):
@@ -53,18 +39,19 @@ class LocalFileBackend(StardateBackend):
         """
         # First try to parse it as a directory
         # If we fail, parse it as a file
-        root, ext = os.path.splitext(path)
-        if ext:
+        if os.path.isfile(path):
             content = self.get_file(path)
             posts = self.parser.unpack(content)
-        else:
+        elif os.path.isdir(path):
             posts = []
             file_list = self._list_path(path)
-            print file_list
             for filename in file_list:
-                content = self.get_file(filename)
+                file_path = os.path.join(path, filename)
+                content = self.get_file(file_path)
                 post = self.parser.parse(content)
                 posts.append(post)
+        else:
+            raise Exception('File does not exist')
         return posts
 
     def _list_path(self, path):

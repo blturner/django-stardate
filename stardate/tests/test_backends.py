@@ -218,7 +218,6 @@ class LocalFileBackendTestCase(TestCase):
 
     def test_posts_from_dir(self):
         temp_dir = tempfile.mkdtemp()
-
         fd, file_path = tempfile.mkstemp(dir=temp_dir, suffix='.md')
         f = open(file_path, 'w')
         f.write('title: Test post\n\n\nThe body content.')

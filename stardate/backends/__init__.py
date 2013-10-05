@@ -3,6 +3,9 @@ from django.utils.importlib import import_module
 from django.core.serializers import serialize
 from stardate.models import Post
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 STARDATE_BACKEND = getattr(settings, 'STARDATE_BACKEND', 'stardate.backends.dropbox.DropboxBackend')
 
@@ -41,7 +44,7 @@ class StardateBackend(object):
         serialized = serialize(
             'python',
             posts,
-            fields=('title', 'slug', 'publish', 'stardate', 'body')
+            fields=('title', 'created', 'slug', 'publish', 'stardate', 'body')
         )
         for post in serialized:
             posts_as_dicts.append(post['fields'])
@@ -51,6 +54,7 @@ class StardateBackend(object):
         """
         Create or update a Post from a dictionary
         """
+        created = False
         # If a post is not provided, try an fetch it
         if not post:
             if 'stardate' in post_dict:
@@ -61,12 +65,15 @@ class StardateBackend(object):
                 if post:
                     post = post[0]
             if not post:
-                post = Post(blog=blog)
+                post_dict['blog'] = blog
+                post, created = Post.objects.get_or_create(**post_dict)
 
         # Update from dict values
-        for att, value in post_dict.items():
-            setattr(post, att, value)
-        post.save(push=False)
+        if not created:
+            for att, value in post_dict.items():
+                setattr(post, att, value)
+            post.save(push=False)
+        logger.info('Blog: %s, Post: %s, created=%s', post.blog, post, created)
         return post
 
     def push_blog_file(self, file_path, posts):

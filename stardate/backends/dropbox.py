@@ -15,7 +15,7 @@ APP_KEY = getattr(settings, 'DROPBOX_APP_KEY', None)
 APP_SECRET = getattr(settings, 'DROPBOX_APP_SECRET', None)
 ACCESS_TYPE = getattr(settings, 'DROPBOX_ACCESS_TYPE', None)
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('stardate')
 
 
 class DropboxBackend(StardateBackend):
@@ -111,20 +111,6 @@ class DropboxBackend(StardateBackend):
     def set_social_auth(self, social_auth):
         self.social_auth = social_auth
         self.client = self.get_dropbox_client()
-
-    def serialize_posts(self, posts):
-        """
-        Returns dictionary of individual Post
-        """
-        posts_as_dicts = []
-        serialized = serialize(
-            'python',
-            posts,
-            fields=('title', 'created', 'publish', 'stardate', 'body')
-        )
-        for post in serialized:
-            posts_as_dicts.append(post['fields'])
-        return posts_as_dicts
 
     def get_post_path(self, folder, post):
         """
@@ -250,32 +236,6 @@ class DropboxBackend(StardateBackend):
                 post = self.parser.parse(content)
                 posts.append(post)
         return posts
-
-    def _update_from_dict(self, blog, post_dict, post=None):
-        """
-        Create or update a Post from a dictionary
-        """
-        created = False
-        # If a post is not provided, try an fetch it
-        if not post:
-            if 'stardate' in post_dict:
-                post = Post.objects.filter(
-                    blog=blog,
-                    stardate=post_dict['stardate']
-                )
-                if post:
-                    post = post[0]
-            if not post:
-                post_dict['blog'] = blog
-                post, created = Post.objects.get_or_create(**post_dict)
-
-        # Update from dict values
-        if not created:
-            for att, value in post_dict.items():
-                setattr(post, att, value)
-            post.save(push=False)
-        logger.info('Blog: %s, Post: %s, created=%s', post.blog, post, created)
-        return post
 
     def pull(self, blog):
         """
