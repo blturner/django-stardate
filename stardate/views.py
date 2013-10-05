@@ -37,3 +37,8 @@ class PostDayArchive(PostViewMixin, generic.DayArchiveView):
 class PostDetail(PostViewMixin, generic.DateDetailView):
     context_object_name = 'post'
     slug_url_kwarg = 'post_slug'
+
+
+class PostEdit(PostViewMixin, generic.UpdateView):
+    context_object_name = 'post'
+    slug_url_kwarg = 'post_slug'
