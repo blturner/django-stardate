@@ -5,7 +5,7 @@ from stardate.models import Post
 import os
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('stardate')
 
 STARDATE_BACKEND = getattr(settings, 'STARDATE_BACKEND', 'stardate.backends.dropbox.DropboxBackend')
 
