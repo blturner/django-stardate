@@ -45,6 +45,7 @@ def create_blog(**kwargs):
 
 
 def create_post(**kwargs):
+    push = kwargs.pop('push', True)
     defaults = {
         "blog": kwargs['blog'],
         "body": "Test post body.",
@@ -52,5 +53,6 @@ def create_post(**kwargs):
     }
     defaults.update(kwargs)
     defaults["slug"] = slugify(defaults["title"])
-    post, created = Post.objects.get_or_create(**defaults)
+    post = Post(**defaults)
+    post.save(push=push)
     return post

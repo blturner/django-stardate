@@ -4,20 +4,30 @@ import os
 
 from django.conf import settings
 from django.core.cache import cache
-from django.core.serializers import serialize
 
 from dropbox import client, rest, session
 
-from stardate.models import Post
 from stardate.backends import StardateBackend
 from stardate.parsers import FileParser
 
+def get_settings_or_env(var_name):
+    """
+    Get a setting from the settings file or an env variable
+    """
+    value = getattr(settings, var_name, None)
+    if not value:
+        try:
+            return os.environ[var_name]
+        except KeyError:
+            error_msg = "Could not find setting or ENV variable {0}".format(var_name)
+            raise ImproperlyConfigured(error_msg)
+    return value
 
-APP_KEY = getattr(settings, 'DROPBOX_APP_KEY', None)
-APP_SECRET = getattr(settings, 'DROPBOX_APP_SECRET', None)
-ACCESS_TYPE = getattr(settings, 'DROPBOX_ACCESS_TYPE', None)
+APP_KEY = get_settings_or_env('DROPBOX_APP_KEY')
+APP_SECRET = get_settings_or_env('DROPBOX_APP_SECRET')
+ACCESS_TYPE = get_settings_or_env('DROPBOX_ACCESS_TYPE')
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('stardate')
 
 
 class DropboxBackend(StardateBackend):
@@ -28,6 +38,20 @@ class DropboxBackend(StardateBackend):
         self.name = u'dropbox'
         self.parser = FileParser()
         self.social_auth = None
+
+    def get_file(self, path):
+        return self.client.get_file(path).read()
+
+    def write_file(self, file_path, content):
+        return self.client.put_file(file_path, content, overwrite=True)
+
+    def get_post(self, path):
+        try:
+            content = self.get_file(path)
+            post = self.parser.parser(post)
+        except Exception:
+            post = {}
+        return post
 
     def get_access_token(self):
         bits = {}
@@ -50,16 +74,10 @@ class DropboxBackend(StardateBackend):
         sess.set_token(token['oauth_token'], token['oauth_token_secret'])
         return self.client_class(sess)
 
-    def get_name(self):
-        return self.name
-
     def delta(self):
         delta = self.client.delta(cursor=self.cursor)
         self.save_cursor(delta.get('cursor'))
         return delta
-
-    def get_file(self, path):
-        return self.client.get_file(path).read()
 
     def _list_path(self, path='/', hash=None):
         """
@@ -105,20 +123,6 @@ class DropboxBackend(StardateBackend):
     def set_social_auth(self, social_auth):
         self.social_auth = social_auth
         self.client = self.get_dropbox_client()
-
-    def serialize_posts(self, posts):
-        """
-        Returns dictionary of individual Post
-        """
-        posts_as_dicts = []
-        serialized = serialize(
-            'python',
-            posts,
-            fields=('title', 'created', 'publish', 'stardate', 'body')
-        )
-        for post in serialized:
-            posts_as_dicts.append(post['fields'])
-        return posts_as_dicts
 
     def get_post_path(self, folder, post):
         """
@@ -244,32 +248,6 @@ class DropboxBackend(StardateBackend):
                 post = self.parser.parse(content)
                 posts.append(post)
         return posts
-
-    def _update_from_dict(self, blog, post_dict, post=None):
-        """
-        Create or update a Post from a dictionary
-        """
-        created = False
-        # If a post is not provided, try an fetch it
-        if not post:
-            if 'stardate' in post_dict:
-                post = Post.objects.filter(
-                    blog=blog,
-                    stardate=post_dict['stardate']
-                )
-                if post:
-                    post = post[0]
-            if not post:
-                post_dict['blog'] = blog
-                post, created = Post.objects.get_or_create(**post_dict)
-
-        # Update from dict values
-        if not created:
-            for att, value in post_dict.items():
-                setattr(post, att, value)
-            post.save(push=False)
-        logger.info('Blog: %s, Post: %s, created=%s', post.blog, post, created)
-        return post
 
     def pull(self, blog):
         """
