@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+import logging
 import os
 
 from django.conf import settings
@@ -13,6 +14,8 @@ from stardate.parsers import FileParser
 APP_KEY = getattr(settings, 'DROPBOX_APP_KEY', None)
 APP_SECRET = getattr(settings, 'DROPBOX_APP_SECRET', None)
 ACCESS_TYPE = getattr(settings, 'DROPBOX_ACCESS_TYPE', None)
+
+logger = logging.getLogger(__name__)
 
 
 class DropboxBackend(StardateBackend):
@@ -108,6 +111,20 @@ class DropboxBackend(StardateBackend):
     def set_social_auth(self, social_auth):
         self.social_auth = social_auth
         self.client = self.get_dropbox_client()
+
+    def serialize_posts(self, posts):
+        """
+        Returns dictionary of individual Post
+        """
+        posts_as_dicts = []
+        serialized = serialize(
+            'python',
+            posts,
+            fields=('title', 'created', 'publish', 'stardate', 'body')
+        )
+        for post in serialized:
+            posts_as_dicts.append(post['fields'])
+        return posts_as_dicts
 
     def get_post_path(self, folder, post):
         """
@@ -257,6 +274,7 @@ class DropboxBackend(StardateBackend):
             for att, value in post_dict.items():
                 setattr(post, att, value)
             post.save(push=False)
+        logger.info('Blog: %s, Post: %s, created=%s', post.blog, post, created)
         return post
 
     def pull(self, blog):

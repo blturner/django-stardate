@@ -25,6 +25,20 @@ class LocalFileBackend(StardateBackend):
             content = None
         return content
 
+    def serialize_posts(self, posts):
+        """
+        Returns dictionary of individual Post
+        """
+        posts_as_dicts = []
+        serialized = serialize(
+            'python',
+            posts,
+            fields=('title', 'slug', 'created', 'publish', 'stardate', 'body')
+        )
+        for post in serialized:
+            posts_as_dicts.append(post['fields'])
+        return posts_as_dicts
+
     def get_post(self, path):
         if os.path.exists(path):
             content = self.get_file(path)

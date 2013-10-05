@@ -1,3 +1,5 @@
+import datetime
+
 from django.contrib.auth.models import User
 from django.core import serializers
 from django.db import models
@@ -84,6 +86,7 @@ class Post(models.Model):
     authors = models.ManyToManyField(User, blank=True, null=True)
     blog = models.ForeignKey(Blog)
     body = MarkupField(default_markup_type='markdown')
+    created = models.DateTimeField(auto_now=True)
     deleted = models.BooleanField()
     objects = PostManager()
     publish = models.DateTimeField(blank=True, null=True)
@@ -121,6 +124,9 @@ class Post(models.Model):
     def save(self, push=True, *args, **kwargs):
         if not hasattr(self, 'backend'):
             self.backend = self.blog.backend
+
+        if not self.created:
+            self.created = datetime.datetime.now()
 
         # Validate first so things don't break on push
         self.clean()

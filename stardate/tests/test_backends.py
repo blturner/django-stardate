@@ -57,10 +57,10 @@ class DropboxBackendTestCase(TestCase):
         self.assertEqual(delta.get('entries')[0][0], '/test_file.md')
 
     def test_get_file(self):
-        backend_file = self.backend.get_file(self.blog.backend_file)
         serialized_posts = self.backend.serialize_posts(self.blog.post_set.all())
         packed = self.backend.parser.pack(serialized_posts)
-        self.assertEqual(backend_file, packed)
+        string = 'stardate: %s\ncreated: %s\ntitle: Test post title\n\n\nTest post body.\n' % (serialized_posts[0]['stardate'], serialized_posts[0]['created'])
+        self.assertEqual(string, packed)
 
     def test_get_file_changed(self):
         backend_file_path = self.blog.backend_file
@@ -280,9 +280,9 @@ class LocalFileBackendTestCase(TestCase):
         self.assertTrue('stardate' in parsed[0])
 
     def test_serialize_posts(self):
-        serialized_posts = self.blog.backend.serialize_posts(
-            self.post_list)
+        serialized_posts = self.blog.backend.serialize_posts(self.post_list)
         self.assertIn('title', serialized_posts[0])
+        self.assertIn('created', serialized_posts[0])
         self.assertIn('stardate', serialized_posts[0])
         self.assertIn('publish', serialized_posts[0])
         self.assertIn('body', serialized_posts[0])
