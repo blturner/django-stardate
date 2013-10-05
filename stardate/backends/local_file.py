@@ -17,8 +17,10 @@ class LocalFileBackend(StardateBackend):
 
     def get_file(self, path):
         if os.path.exists(path):
+            print 'got here'
             with open(path, 'r') as f:
                 content = f.read()
+                print content
         else:
             content = None
         return content
@@ -30,6 +32,26 @@ class LocalFileBackend(StardateBackend):
         else:
             post = {}
         return post
+
+    def get_posts(self, path):
+        """
+        Fetch post dictionaries from single file or directory
+        """
+        # First try to parse it as a directory
+        # If we fail, parse it as a file
+        root, ext = os.path.splitext(path)
+        if ext:
+            content = self.get_file(path)
+            posts = self.parser.unpack(content)
+        else:
+            posts = []
+            file_list = self._list_path(path)
+            print file_list
+            for filename in file_list:
+                content = self.get_file(filename)
+                post = self.parser.parse(content)
+                posts.append(post)
+        return posts
 
     def _list_path(self, path):
         return os.listdir(path)

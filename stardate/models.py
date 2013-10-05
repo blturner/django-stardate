@@ -6,7 +6,6 @@ from django.utils import timezone
 from social_auth.models import UserSocialAuth
 from markupfield.fields import MarkupField
 
-from stardate.backends import get_backend
 from django.conf import settings
 
 
@@ -29,6 +28,7 @@ class Blog(models.Model):
     def __init__(self, *args, **kwargs):
         super(Blog, self).__init__(*args, **kwargs)
         # Instantiate the backend
+        from stardate.backends import get_backend
         self.backend = get_backend(self.backend_class)
         # If backend uses a social auth to connect,
         # initialize it here

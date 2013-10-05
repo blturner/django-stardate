@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.utils.importlib import import_module
 from django.core.serializers import serialize
+from stardate.models import Post
 import os
 
 STARDATE_BACKEND = getattr(settings, 'STARDATE_BACKEND', 'stardate.backends.dropbox.DropboxBackend')
@@ -67,27 +68,6 @@ class StardateBackend(object):
             setattr(post, att, value)
         post.save(push=False)
         return post
-
-    def get_posts(self, path):
-        """
-        Fetch post dictionaries from single file or directory
-        """
-        # First try to parse it as a directory
-        # If we fail, parse it as a file
-        root, ext = os.path.splitext(path)
-        if ext:
-            content = self.get_file(path)
-            posts = self.parser.unpack(content)
-        else:
-            posts = []
-            file_list = self._list_path(path)
-            print file_list
-            for filename in file_list:
-                content = self.get_file(filename)
-                post = self.parser.parse(content)
-                posts.append(post)
-
-        return posts
 
     def push_blog_file(self, file_path, posts):
         """
@@ -175,7 +155,6 @@ class StardateBackend(object):
             responses = self.push_post_files(blog_dir, posts)
 
         return responses
-
 
     def pull(self, blog):
         """

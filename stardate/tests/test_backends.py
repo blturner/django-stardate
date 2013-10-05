@@ -231,7 +231,6 @@ class LocalFileBackendTestCase(TestCase):
 
         posts = self.blog.backend.get_posts(temp_dir)
         self.assertEqual(len(posts), 2)
-        print posts
         self.assertTrue('title' in posts[0])
         self.assertTrue('title' in posts[1])
         self.assertTrue('body' in posts[0])
@@ -244,7 +243,8 @@ class LocalFileBackendTestCase(TestCase):
         os.removedirs(temp_dir)
 
     def test_pull(self):
-        fd, file_path = tempfile.mkstemp()
+        temp_dir = tempfile.mkdtemp()
+        fd, file_path = tempfile.mkstemp(dir=temp_dir, suffix='.md')
         blog = create_blog(name='Pull',
                            backend_class='stardate.tests.mock_backends.MockLocalFileBackend',
                            backend_file=file_path,

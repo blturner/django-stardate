@@ -8,8 +8,9 @@ def get_env_variable(var_name):
     try:
         return os.environ[var_name]
     except KeyError:
-        error_msg = "Set the %s environment variable" % var_name
-        raise ImproperlyConfigured(error_msg)
+        pass
+        # error_msg = "Set the %s environment variable" % var_name
+        # raise ImproperlyConfigured(error_msg)
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
