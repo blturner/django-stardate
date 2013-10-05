@@ -1,8 +1,6 @@
 from __future__ import absolute_import
 import os
 
-
-
 from stardate.backends import StardateBackend
 from stardate.parsers import FileParser
 
