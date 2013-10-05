@@ -10,10 +10,22 @@ from dropbox import client, rest, session
 from stardate.backends import StardateBackend
 from stardate.parsers import FileParser
 
+def get_settings_or_env(var_name):
+    """
+    Get a setting from the settings file or an env variable
+    """
+    value = getattr(settings, var_name, None)
+    if not value:
+        try:
+            return os.environ[var_name]
+        except KeyError:
+            error_msg = "Could not find setting or ENV variable {0}".format(var_name)
+            raise ImproperlyConfigured(error_msg)
+    return value
 
-APP_KEY = getattr(settings, 'DROPBOX_APP_KEY', None)
-APP_SECRET = getattr(settings, 'DROPBOX_APP_SECRET', None)
-ACCESS_TYPE = getattr(settings, 'DROPBOX_ACCESS_TYPE', None)
+APP_KEY = get_settings_or_env('DROPBOX_APP_KEY')
+APP_SECRET = get_settings_or_env('DROPBOX_APP_SECRET')
+ACCESS_TYPE = get_settings_or_env('DROPBOX_ACCESS_TYPE')
 
 logger = logging.getLogger('stardate')
 
