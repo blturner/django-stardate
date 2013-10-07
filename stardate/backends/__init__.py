@@ -1,9 +1,13 @@
 from django.conf import settings
 from django.utils.importlib import import_module
 from django.core.serializers import serialize
-from stardate.models import Post
 import os
 import logging
+
+from stardate.utils import get_post_model
+
+
+Post = get_post_model()
 
 logger = logging.getLogger('stardate')
 

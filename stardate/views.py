@@ -1,7 +1,12 @@
+from django.conf import settings
+from django.db.models.loading import get_model
 from django.shortcuts import get_object_or_404
 from django.views import generic
 
-from stardate.models import Blog, Post
+from stardate.models import Blog
+from stardate.utils import get_post_model
+
+Post = get_post_model()
 
 
 class PostViewMixin(object):

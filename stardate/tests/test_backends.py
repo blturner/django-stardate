@@ -8,10 +8,13 @@ from django.utils import timezone
 
 from social_auth.models import UserSocialAuth
 
-from stardate.models import Blog, Post
+from stardate.models import Blog
 from stardate.parsers import FileParser
 from stardate.tests.factories import create_blog, create_post, create_user, create_user_social_auth
 from stardate.tests.mock_backends import MockDropboxClient, MockDropboxBackend, MockLocalFileBackend
+from stardate.utils import get_post_model
+
+Post = get_post_model()
 
 
 class DropboxBackendTestCase(TestCase):
@@ -57,7 +60,7 @@ class DropboxBackendTestCase(TestCase):
         self.assertEqual(delta.get('entries')[0][0], '/test_file.md')
 
     def test_get_file(self):
-        serialized_posts = self.backend.serialize_posts(self.blog.post_set.all())
+        serialized_posts = self.backend.serialize_posts(self.blog.get_posts().all())
         packed = self.backend.parser.pack(serialized_posts)
         string = 'stardate: %s\ncreated: %s\ntitle: Test post title\n\n\nTest post body.\n' % (serialized_posts[0]['stardate'], serialized_posts[0]['created'])
         self.assertEqual(string, packed)
@@ -85,11 +88,11 @@ class DropboxBackendTestCase(TestCase):
     def test_push(self):
         create_post(blog=self.blog, title="Test one")
         create_post(blog=self.blog, title="Test two")
-        self.blog.backend.push(self.blog.post_set.all())
+        self.blog.backend.push(self.blog.get_posts().all())
 
         backend_file = self.backend.get_file(self.blog.backend_file)
         packed_string = self.backend.parser.pack(
-            self.backend.serialize_posts(self.blog.post_set.all()))
+            self.backend.serialize_posts(self.blog.get_posts().all()))
         self.assertEqual(backend_file, packed_string)
 
     def test_pull_then_push(self):
@@ -98,15 +101,15 @@ class DropboxBackendTestCase(TestCase):
         self.assertEqual(
             self.backend.client.get_file(self.blog.backend_file).read(),
             test_string)
-        for post in self.blog.post_set.all():
+        for post in self.blog.get_posts().all():
             post.delete()
-        self.assertFalse(self.blog.post_set.all())
+        self.assertFalse(self.blog.get_posts().all())
         self.backend.pull(self.blog)
-        self.assertEqual(len(self.blog.post_set.all()), 1)
-        self.backend.push(self.blog.post_set.all())
+        self.assertEqual(len(self.blog.get_posts().all()), 1)
+        self.backend.push(self.blog.get_posts().all())
         # After push, file should have stardate metadata
         packed_string = self.backend.parser.pack(
-            self.backend.serialize_posts(self.blog.post_set.all()))
+            self.backend.serialize_posts(self.blog.get_posts().all()))
         self.assertEqual(
             self.backend.client.get_file(self.blog.backend_file).read(),
             packed_string)
@@ -114,7 +117,7 @@ class DropboxBackendTestCase(TestCase):
     def test_pull_then_pull(self):
         test_string = 'title: Title\n\n\nBody.\n'
         self.backend.client.put_file(self.blog.backend_file, test_string)
-        for post in self.blog.post_set.all():
+        for post in self.blog.get_posts().all():
             post.delete()
         self.backend.pull(self.blog)
         self.backend.pull(self.blog)
@@ -123,11 +126,11 @@ class DropboxBackendTestCase(TestCase):
         pass
 
     def test_push_blog_file(self):
-        posts = self.blog.post_set.all()
+        posts = self.blog.get_posts().all()
         self.backend.push_blog_file(self.blog.backend_file, posts)
         f = open(self.blog.backend_file, 'r')
         packed_string = self.backend.parser.pack(
-            self.backend.serialize_posts(self.blog.post_set.all()))
+            self.backend.serialize_posts(self.blog.get_posts().all()))
         self.assertEqual(f.read(), packed_string)
 
     # def test_push_blog_files(self):
@@ -149,7 +152,7 @@ class DropboxBackendTestCase(TestCase):
         self.assertIsInstance(self.backend.social_auth, UserSocialAuth)
 
     def test_get_post_path(self):
-        post_list = self.blog.post_set.all()
+        post_list = self.blog.get_posts().all()
 
         post_path = self.backend.get_post_path('posts', post_list[0])
         self.assertEqual(post_path, u'posts/test-post-title.md')
@@ -159,7 +162,7 @@ class DropboxBackendTestCase(TestCase):
         self.assertEqual(post_path, u'test-post-title.md')
 
     def test_serialize_posts(self):
-        serialized_posts = self.backend.serialize_posts(self.blog.post_set.all())
+        serialized_posts = self.backend.serialize_posts(self.blog.get_posts().all())
         self.assertIn('title', serialized_posts[0])
         self.assertIn('stardate', serialized_posts[0])
         self.assertIn('publish', serialized_posts[0])
@@ -185,7 +188,7 @@ class LocalFileBackendTestCase(TestCase):
             backend_file=file_path)
         create_post(title="Hello world", blog=self.blog)
 
-        self.post_list = self.blog.post_set.all()
+        self.post_list = self.blog.get_posts().all()
 
     def tearDown(self):
         Blog.objects.all().delete()

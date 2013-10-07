@@ -1,7 +1,3 @@
-import os
-
-from django.core.exceptions import ImproperlyConfigured
-
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
@@ -77,6 +73,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
+    'core',
     'social_auth',
     'stardate',
 )
@@ -88,6 +85,7 @@ AUTHENTICATION_BACKENDS = (
 
 STARDATE_BACKEND = 'stardate.backends.dropbox.DropboxBackend'
 # STARDATE_BACKEND = 'stardate.backends.local_file.LocalFileBackend'
+STARDATE_POST_MODEL = 'stardate.Post'
 
 DROPBOX_APP_KEY = 'ChangeMe'
 DROPBOX_APP_SECRET = 'ChangeMe'

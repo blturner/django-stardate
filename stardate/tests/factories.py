@@ -3,7 +3,10 @@ from django.template.defaultfilters import slugify
 
 from social_auth.models import UserSocialAuth
 
-from stardate.models import Blog, Post
+from stardate.models import Blog
+from stardate.utils import get_post_model
+
+Post = get_post_model()
 
 
 def create_user(**kwargs):
