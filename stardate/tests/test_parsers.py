@@ -40,12 +40,20 @@ class FileParserTestCase(TestCase):
                 'body': 'This is the second post.'
             },
         ]
-        packed_string = self.parser.pack(post_list)
+        packed = self.parser.pack(post_list)
 
         self.assertIsInstance(post_list, list)
         self.assertEqual(len(post_list), 2)
-        self.assertIsInstance(packed_string, basestring)
-        self.assertEqual(packed_string, "stardate: %s\ncreated: %s\ntitle: My first post\n\n\nThis is the first post.\n---\nstardate: %s\ncreated: %s\ntitle: My second post\n\n\nThis is the second post." % (post_list[0]['stardate'], post_list[0]['created'], post_list[1]['stardate'], post_list[1]['created']))
+        self.assertIsInstance(packed, basestring)
+
+        self.assertTrue(u'title: {0}'.format(post_list[0]['title']) in packed)
+        self.assertTrue(u'title: {0}'.format(post_list[1]['title']) in packed)
+        self.assertTrue(u'created: {0}'.format(post_list[0]['created']) in packed)
+        self.assertTrue(u'created: {0}'.format(post_list[1]['created']) in packed)
+        self.assertTrue(u'stardate: {0}'.format(post_list[0]['stardate']) in packed)
+        self.assertTrue(u'stardate: {0}'.format(post_list[1]['stardate']) in packed)
+        self.assertTrue(u'\n\n\n{0}'.format(post_list[0]['body']) in packed)
+        self.assertTrue(u'\n\n\n{0}'.format(post_list[1]['body']) in packed)
 
     def test_parse(self):
         parsed = self.parser.parse(self.test_string)
@@ -53,6 +61,12 @@ class FileParserTestCase(TestCase):
         self.assertEqual(parsed['title'], 'Tingling of the spine')
         self.assertEqual(parsed['publish'], datetime.datetime(2012, 1, 2, 8, 0, tzinfo=timezone.utc))
         self.assertEqual(parsed['body'], 'Extraordinary claims require extraordinary evidence!')
+
+        # Check that extra_field is parsed
+        string = u"title: My title\nextra_field: Something arbitrary\n\n\nThe body.\n"
+        parsed = self.parser.parse(string)
+        self.assertTrue(parsed.has_key('title'))
+        self.assertTrue(parsed.has_key('extra_field'))
 
     def test_render(self):
         test_stardate = uuid.uuid1()
@@ -65,13 +79,19 @@ class FileParserTestCase(TestCase):
         dict_without_publish = dict_to_render.copy()
         dict_without_publish.pop('publish', None)
 
-        string = 'stardate: %s\ntitle: Test title\npublish: 2013-06-01 00:00:00\n\n\nThe body.' % test_stardate
+        packed = self.parser.pack([dict_to_render])
         rendered = self.parser.render(dict_to_render)
-        self.assertEqual(rendered, string)
+        self.assertEqual(packed, rendered)
 
-        string = 'stardate: %s\ntitle: Test title\n\n\nThe body.' % test_stardate
+        packed = self.parser.pack([dict_without_publish])
         rendered = self.parser.render(dict_without_publish)
-        self.assertEqual(rendered, string)
+        self.assertEqual(packed, rendered)
+
+        dict_to_render['extra_field'] = u'Something arbitrary'
+        rendered = self.parser.render(dict_to_render)
+        packed = self.parser.pack([dict_to_render])
+        self.assertEqual(rendered, packed)
+        self.assertTrue('extra_field: Something arbitrary\n' in rendered)
 
     def test_unpack(self):
         content = self.test_string

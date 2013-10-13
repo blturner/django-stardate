@@ -20,6 +20,7 @@ Post = get_post_model()
 class DropboxBackendTestCase(TestCase):
     def setUp(self):
         backend_file, backend_file_path = tempfile.mkstemp(suffix='.txt')
+        self.file_path = backend_file_path
         self.backend = MockDropboxBackend()
         social_auth = create_user_social_auth(user=create_user())
         self.backend.set_social_auth(social_auth)
@@ -60,10 +61,9 @@ class DropboxBackendTestCase(TestCase):
         self.assertEqual(delta.get('entries')[0][0], '/test_file.md')
 
     def test_get_file(self):
-        serialized_posts = self.backend.serialize_posts(self.blog.get_posts().all())
-        packed = self.backend.parser.pack(serialized_posts)
-        string = 'stardate: %s\ncreated: %s\ntitle: Test post title\n\n\nTest post body.\n' % (serialized_posts[0]['stardate'], serialized_posts[0]['created'])
-        self.assertEqual(string, packed)
+        backend_file = self.backend.get_file(self.blog.backend_file)
+        packed = self.backend.parser.pack(self.backend.get_posts(self.file_path))
+        self.assertEqual(backend_file, packed)
 
     def test_get_file_changed(self):
         backend_file_path = self.blog.backend_file
