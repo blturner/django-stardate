@@ -11,4 +11,4 @@ install:
   - pip install -q Django==$DJANGO_VERSION
   - python setup.py -q install
 # command to run tests, e.g. python setup.py test
-script: django-admin.py test stardate
+script: django-admin.py test stardate --settings=example.example.settings
