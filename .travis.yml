@@ -8,7 +8,7 @@ env:
   - DJANGO_VERSION=1.4.8
 # command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install:
-  - pip install -r requirements.txt
   - pip install -q Django==$DJANGO_VERSION
+  - python setup.py -q install
 # command to run tests, e.g. python setup.py test
-script: django-admin.py test stardate --settings="example.settings"
+script: django-admin.py test stardate
