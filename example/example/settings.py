@@ -73,10 +73,10 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
 )
 
-ROOT_URLCONF = 'example.urls'
+ROOT_URLCONF = 'example.example.urls'
 
 # Python dotted path to the WSGI application used by Django's runserver.
-WSGI_APPLICATION = 'example.wsgi.application'
+WSGI_APPLICATION = 'example.example.wsgi.application'
 
 INSTALLED_APPS = (
     'django.contrib.auth',

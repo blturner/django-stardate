@@ -11,6 +11,7 @@ setup(
         'example.example',
         'stardate',
         'stardate.backends',
+        'stardate.management.commands',
         'stardate.tests',
         'stardate.urls',
     ],
