@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-from distutils.core import setup
+from setuptools import setup
 
 setup(
     name='stardate',
@@ -7,12 +6,27 @@ setup(
     author=u'Benjamin Turner',
     author_email='benturn@gmail.com',
     packages=[
+        'example',
+        'example.core',
+        'example.example',
         'stardate',
+        'stardate.backends',
+        'stardate.tests',
         'stardate.urls',
     ],
-    # url='https://github.com/blturner/stitch',
-    # license='BSD licence, see LICENCE.txt',
-    # description='A tool for managing django settings.',
+    url='https://github.com/blturner/django-stardate',
+    license='BSD',
+    description='Another django blog app.',
     # long_description=open('README').read(),
     zip_safe=False,
+    install_requires=[
+        'Django',
+        'django-social-auth',
+        'django-markupfield',
+        'dropbox',
+        'Markdown',
+        'PyYAML',
+        'python-dateutil',
+    ],
+    test_suite='stardate.tests'
 )

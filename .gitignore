@@ -1,2 +1,5 @@
 # Test database
 *.db
+build/
+dist/
+stardate.egg-info/
