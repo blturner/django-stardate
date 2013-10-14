@@ -1,3 +1,16 @@
+import os
+
+from django.core.exceptions import ImproperlyConfigured
+
+
+def get_env_variable(var_name):
+    """ Get the environment variable or return an exception. """
+    try:
+        return os.environ[var_name]
+    except KeyError:
+        error_msg = "Set the %s environment variable" % var_name
+        raise ImproperlyConfigured(error_msg)
+
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
@@ -87,8 +100,9 @@ STARDATE_BACKEND = 'stardate.backends.dropbox.DropboxBackend'
 # STARDATE_BACKEND = 'stardate.backends.local_file.LocalFileBackend'
 STARDATE_POST_MODEL = 'stardate.Post'
 
-DROPBOX_APP_KEY = 'ChangeMe'
-DROPBOX_APP_SECRET = 'ChangeMe'
+DROPBOX_APP_KEY = get_env_variable('DROPBOX_APP_KEY')
+DROPBOX_APP_SECRET = get_env_variable('DROPBOX_APP_SECRET')
+
 DROPBOX_ACCESS_TYPE = 'app_folder'
 
 # DJANGO-SOCIAL-AUTH
