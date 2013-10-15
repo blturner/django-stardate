@@ -73,10 +73,10 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
 )
 
-ROOT_URLCONF = 'example.urls'
+ROOT_URLCONF = 'example.example.urls'
 
 # Python dotted path to the WSGI application used by Django's runserver.
-WSGI_APPLICATION = 'example.wsgi.application'
+WSGI_APPLICATION = 'example.example.wsgi.application'
 
 INSTALLED_APPS = (
     'django.contrib.auth',
@@ -86,6 +86,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
+    'example.core',
     'social_auth',
     'stardate',
 )
@@ -95,13 +96,18 @@ AUTHENTICATION_BACKENDS = (
     'social_auth.backends.contrib.dropbox.DropboxBackend',
 )
 
-STARDATE_BACKEND = 'stardate.backends.dropbox.DropboxBackend'
-# STARDATE_BACKEND = 'stardate.backends.local_file.LocalFileBackend'
+# STARDATE_BACKEND = 'stardate.backends.dropbox.DropboxBackend'
+STARDATE_BACKEND = 'stardate.backends.local_file.LocalFileBackend'
+STARDATE_POST_MODEL = 'stardate.Post'
 
-DROPBOX_APP_KEY = get_env_variable('DROPBOX_APP_KEY')
-DROPBOX_APP_SECRET = get_env_variable('DROPBOX_APP_SECRET')
+# DROPBOX_APP_KEY = get_env_variable('DROPBOX_APP_KEY')
+# DROPBOX_APP_SECRET = get_env_variable('DROPBOX_APP_SECRET')
+
+DROPBOX_APP_KEY = 'foo'
+DROPBOX_APP_SECRET = 'bar'
+
 DROPBOX_ACCESS_TYPE = 'app_folder'
 
 # DJANGO-SOCIAL-AUTH
-DROPBOX_APP_ID = DROPBOX_APP_KEY
-DROPBOX_API_SECRET = DROPBOX_APP_SECRET
+# DROPBOX_APP_ID = DROPBOX_APP_KEY
+# DROPBOX_API_SECRET = DROPBOX_APP_SECRET

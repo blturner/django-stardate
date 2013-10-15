@@ -1,7 +1,10 @@
 from django.contrib import admin
 
-from stardate.models import Blog, Post
+from stardate.utils import get_post_model
+from stardate.models import Blog
 from stardate.forms import BlogForm, PostForm
+
+Post = get_post_model()
 
 
 class BlogAdmin(admin.ModelAdmin):
@@ -21,7 +24,7 @@ class BlogAdmin(admin.ModelAdmin):
 
 class PostAdmin(admin.ModelAdmin):
     date_hierarchy = 'publish'
-    fields = ('blog', 'title', 'slug', 'deleted', 'body', 'publish', 'authors')
+    fields = ('blog', 'title', 'slug', 'body', 'publish', 'authors')
     form = PostForm
     list_display = ('title', 'publish', 'blog', 'deleted')
     list_filter = ('blog', 'publish',)

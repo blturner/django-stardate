@@ -1,8 +1,12 @@
+import logging
+
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from optparse import make_option
 
 from stardate.models import Blog
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -33,5 +37,5 @@ class Command(BaseCommand):
 
         for user in users:
             for blog in Blog.objects.filter(user=user):
-                print u'Updating posts for {0}'.format(blog)
+                logger.info(u'Updating posts for {0}'.format(blog))
                 blog.backend.pull(blog)

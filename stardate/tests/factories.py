@@ -3,7 +3,10 @@ from django.template.defaultfilters import slugify
 
 from social_auth.models import UserSocialAuth
 
-from stardate.models import Blog, Post
+from stardate.models import Blog
+from stardate.utils import get_post_model
+
+Post = get_post_model()
 
 
 def create_user(**kwargs):
@@ -45,6 +48,7 @@ def create_blog(**kwargs):
 
 
 def create_post(**kwargs):
+    push = kwargs.pop('push', True)
     defaults = {
         "blog": kwargs['blog'],
         "body": "Test post body.",
@@ -52,5 +56,6 @@ def create_post(**kwargs):
     }
     defaults.update(kwargs)
     defaults["slug"] = slugify(defaults["title"])
-    post, created = Post.objects.get_or_create(**defaults)
+    post = Post(**defaults)
+    post.save(push=push)
     return post

@@ -1,4 +1,5 @@
 import datetime
+import uuid
 import yaml
 
 from dateutil.parser import parse
@@ -20,6 +21,7 @@ class FileParser(BaseStardateParser):
         """
         Turn a post dictionary into a rendered string
         """
+        post = post.copy()
 
         # FIXME?: this belongs in serialization process
         try:
@@ -34,10 +36,14 @@ class FileParser(BaseStardateParser):
         # Generate meta data lines
         # One key/value pair per line
         meta = []
-        for k, v in post.items():
-            if v:
-                field_string = '{0}: {1}'.format(k, v)
-                meta.append(field_string)
+        for key in sorted(post.keys()):
+            try:
+                value = post[key]
+                if value:
+                    field_string = '{0}: {1}'.format(key, value)
+                    meta.append(field_string)
+            except KeyError:
+                pass
         meta = '\n'.join(meta)
 
         # Body is separated from meta by three lines

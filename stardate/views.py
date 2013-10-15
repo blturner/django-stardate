@@ -1,7 +1,12 @@
+from django.conf import settings
+from django.db.models.loading import get_model
 from django.shortcuts import get_object_or_404
 from django.views import generic
 
-from stardate.models import Blog, Post
+from stardate.models import Blog
+from stardate.utils import get_post_model
+
+Post = get_post_model()
 
 
 class PostViewMixin(object):
@@ -35,5 +40,10 @@ class PostDayArchive(PostViewMixin, generic.DayArchiveView):
 
 
 class PostDetail(PostViewMixin, generic.DateDetailView):
+    context_object_name = 'post'
+    slug_url_kwarg = 'post_slug'
+
+
+class PostEdit(PostViewMixin, generic.UpdateView):
     context_object_name = 'post'
     slug_url_kwarg = 'post_slug'

@@ -3,10 +3,12 @@ from django import forms
 from markupfield.widgets import AdminMarkupTextareaWidget
 
 from stardate.backends import get_backend
-from stardate.models import Blog, Post
+from stardate.models import Blog
+from stardate.utils import get_post_model
 
 
 backend = get_backend()
+Post = get_post_model()
 
 
 class BlogForm(forms.ModelForm):
