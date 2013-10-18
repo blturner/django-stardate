@@ -3,12 +3,15 @@ import datetime
 from django.contrib.auth.models import User
 from django.core import serializers
 from django.db import models
+from django.db.models.query import QuerySet
 from django.utils import timezone
 
 from social_auth.models import UserSocialAuth
 from markupfield.fields import MarkupField
 
 from django.conf import settings
+
+from stardate.utils import get_post_model
 
 
 class Blog(models.Model):
@@ -54,10 +57,21 @@ class Blog(models.Model):
         """
         Returns a list of dictionaries representing post objects on the blog.
         """
-        return serializers.serialize("python", self.post_set.filter(
+        return serializers.serialize("python", self.get_posts().filter(
             deleted=False), fields=('title', 'publish', 'stardate', 'body'))
 
+    def get_posts(self):
+        """
+        returns a queryset of related posts based on the installed
+        ``Post`` model
+        """
+        Post = get_post_model()
+        qs = QuerySet(model=Post).filter(blog=self)
+        return qs
+
     def save_post_objects(self, post_list):
+        Post = get_post_model()
+
         for post in post_list:
             post['blog_id'] = self.id
             try:
@@ -82,9 +96,9 @@ class PostManager(models.Manager):
             publish__lte=timezone.now()).order_by('-publish')
 
 
-class Post(models.Model):
-    authors = models.ManyToManyField(User, blank=True, null=True)
-    blog = models.ForeignKey(Blog)
+class BasePost(models.Model):
+    authors = models.ManyToManyField(User, blank=True, null=True, related_name="%(app_label)s_%(class)s_related")
+    blog = models.ForeignKey(Blog, related_name="%(app_label)s_%(class)s_related")
     body = MarkupField(default_markup_type='markdown')
     created = models.DateTimeField(auto_now=True)
     deleted = models.BooleanField()
@@ -95,10 +109,12 @@ class Post(models.Model):
     title = models.CharField(max_length=255)
 
     class Meta:
+        abstract = True
+        app_label = 'stardate'
         ordering = ['-publish']
 
     def __init__(self, *args, **kwargs):
-        super(Post, self).__init__(*args, **kwargs)
+        super(BasePost, self).__init__(*args, **kwargs)
         # Post must use the same backend as the Blog
         if hasattr(self, 'blog'):
             self.backend = self.blog.backend
@@ -138,7 +154,7 @@ class Post(models.Model):
             self.backend.set_social_auth(self.blog.social_auth)
             # Sync this post with our backend
             self.backend.push([self])
-        super(Post, self).save(*args, **kwargs)
+        super(BasePost, self).save(*args, **kwargs)
 
     @models.permalink
     def get_absolute_url(self):
@@ -151,16 +167,14 @@ class Post(models.Model):
             'post_slug': self.slug})
 
     def get_next_post(self):
-        next = Post.objects.published().filter(
-            publish__gt=self.publish, blog__exact=self.blog.id).exclude(
-                id__exact=self.id).order_by('publish')
+        next = self.blog.get_posts().filter(publish__gt=self.publish).exclude(
+            id__exact=self.id).order_by('publish')
         if next:
             return next[0]
         return False
 
     def get_prev_post(self):
-        prev = Post.objects.published().filter(
-            publish__lt=self.publish, blog__exact=self.blog.id).exclude(
+        prev = self.blog.get_posts().filter(publish__lt=self.publish).exclude(
                 id__exact=self.id).order_by('-publish')
         if prev:
             return prev[0]

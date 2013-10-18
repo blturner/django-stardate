@@ -21,6 +21,7 @@ class FileParser(BaseStardateParser):
         """
         Turn a post dictionary into a rendered string
         """
+        post = post.copy()
 
         # FIXME?: this belongs in serialization process
         try:
@@ -29,15 +30,13 @@ class FileParser(BaseStardateParser):
         except:
             pass
 
-        meta_order = ['stardate', 'created', 'title', 'publish']
-
         # Body gets processed separately
         body = post.pop('body')
 
         # Generate meta data lines
         # One key/value pair per line
         meta = []
-        for key in meta_order:
+        for key in sorted(post.keys()):
             try:
                 value = post[key]
                 if value:
@@ -56,9 +55,8 @@ class FileParser(BaseStardateParser):
         Render a list of post dictionaries to a single string
         """
         post_list = []
-        sorted_posts = sorted(posts, key=lambda k: k['stardate'])
 
-        for post in sorted_posts:
+        for post in posts:
             post_list.append(self.render(post))
 
         document = self.delimiter.join(post_list)
