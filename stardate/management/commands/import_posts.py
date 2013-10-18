@@ -37,5 +37,7 @@ class Command(BaseCommand):
 
         for user in users:
             for blog in Blog.objects.filter(user=user):
+                blog.backend.set_social_auth(blog.social_auth)
+                print blog.backend.social_auth
                 logger.info(u'Updating posts for {0}'.format(blog))
                 blog.backend.pull(blog)

@@ -86,7 +86,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
-    'example.core',
+    'example',
     'social_auth',
     'stardate',
 )
@@ -94,6 +94,7 @@ INSTALLED_APPS = (
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'social_auth.backends.contrib.dropbox.DropboxBackend',
+    'social_auth.backends.contrib.github.GithubBackend',
 )
 
 # STARDATE_BACKEND = 'stardate.backends.dropbox.DropboxBackend'
@@ -109,5 +110,8 @@ DROPBOX_APP_SECRET = 'bar'
 DROPBOX_ACCESS_TYPE = 'app_folder'
 
 # DJANGO-SOCIAL-AUTH
-# DROPBOX_APP_ID = DROPBOX_APP_KEY
-# DROPBOX_API_SECRET = DROPBOX_APP_SECRET
+DROPBOX_APP_ID = DROPBOX_APP_KEY
+DROPBOX_API_SECRET = DROPBOX_APP_SECRET
+GITHUB_APP_ID = ''
+GITHUB_API_SECRET = ''
+GITHUB_EXTENDED_PERMISSIONS = ['gist']

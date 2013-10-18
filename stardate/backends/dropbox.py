@@ -40,10 +40,18 @@ class DropboxBackend(StardateBackend):
         self.parser = FileParser()
         self.social_auth = None
 
+    def directory_or_file(self, backend_file):
+        if os.path.isdir(backend_file):
+            return 'directory'
+        else:
+            return 'file'
+
     def get_file(self, path):
         return self.client.get_file(path).read()
 
-    def write_file(self, file_path, content):
+    def write_file(self, file_path, remote_posts):
+        ## Turn posts into single string
+        content = self.parser.pack(remote_posts)
         return self.client.put_file(file_path, content, overwrite=True)
 
     def get_post(self, path):

@@ -2,6 +2,7 @@ import json
 import mimetypes
 
 from stardate.backends.dropbox import DropboxBackend
+from stardate.backends.gist import GistBackend
 from stardate.backends.local_file import LocalFileBackend
 
 
@@ -124,6 +125,54 @@ class MockDropboxBackend(DropboxBackend):
     def __init__(self, client_class=MockDropboxClient):
         return super(MockDropboxBackend, self).__init__(client_class=client_class)
 
+
+## Mock Gist objects
+class MockGistFile(object):
+    def __init__(self, content):
+        self.content = content
+
+class MockGist(object):
+    def __init__(self, files=None):
+        """
+        Mocks Gist object api 
+
+        files: List of dicts representing gist files
+
+            [{
+                'filename': 'Test Post',
+                'content': 'stardate: ...'
+            }]
+        """
+        self.files = {}
+        for gist_file in files:
+            self.files[gist_file['filename']] = MockGistFile(gist_file['content'])
+
+    def edit(self, description='', files=None):
+        """
+        Mocks Gist edit
+
+        description: Edit commit description
+
+        files: Dict of InputFileContents
+        """
+        for name, fileobj in files.items():
+            gist_file = self.files.get('name')
+            gist_file.content = fileobj._identify.get('content')
+
+class MockGithubClient(object):
+    def __init__(self):
+        from github import InputFileContent
+        self._gists = {
+            '1234567890': MockGist()
+        }
+
+    def get_gist(self, gist_id):
+        return self._gists[gist_id]
+
+
+class MockGistBackend(GistBackend):
+    def __init__(self, client_class=MockGithubClient):
+        return super(MockGistBackend, self).__init__(client_class=client_class)
 
 class MockLocalFileBackend(LocalFileBackend):
     pass

@@ -30,11 +30,11 @@ class BlogTestCase(TestCase):
         Blog.objects.all().delete()
 
     def test_get_post_model(self):
-        from example.core.models import Post as PostClass
+        from example.models import Post as PostClass
         self.assertIsInstance(Post(), PostClass)
 
         with self.settings(STARDATE_POST_MODEL='stardate.CustomPost'):
-            from example.core.models import CustomPost
+            from example.models import CustomPost
             p = get_post_model()
             self.assertIsInstance(p(), CustomPost)
 

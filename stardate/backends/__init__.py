@@ -48,7 +48,7 @@ class StardateBackend(object):
         serialized = serialize(
             'python',
             posts,
-            fields=('title', 'created', 'slug', 'publish', 'stardate', 'body')
+            fields=('title', 'created', 'slug', 'publish', 'stardate', 'body', 'backend_file')
         )
         for post in serialized:
             posts_as_dicts.append(post['fields'])
@@ -118,17 +118,14 @@ class StardateBackend(object):
             if not exists:
                 remote_posts.append(local_post)
 
-        # Turn post list back into string
-        content = self.parser.pack(remote_posts)
-        self.write_file(file_path, content)
+        self.write_file(file_path, remote_posts)
         return
-
 
     def push_post_files(self, folder, posts):
         """
         Update posts in multiple files
         """
-        local_posts = self.serialized_posts(posts)
+        local_posts = self.serialize_posts(posts)
 
         for local_post in local_posts:
             # Generate the post file path dynamically
@@ -139,10 +136,11 @@ class StardateBackend(object):
 
             # Update the contents of the remote post
             remote_post.update(local_post)
-            content = self.parser.render(remote_post)
-            self.write_file(content)
+            self.write_file(post_path, [remote_post])
         return
 
+    def directory_or_file(self, backend_file):
+        raise NotImplementedError
 
     def push(self, posts):
         """
@@ -154,17 +152,13 @@ class StardateBackend(object):
         # with a blog
         blog_path = posts[0].blog.backend_file
 
-        # Separate blog path into directory and filename
-        blog_dir, blog_file = os.path.split(blog_path)
-
         # pushing works differently depending on whether
         # We are using a single file or a directory of files
-        if blog_file:
+        blog_type = self.directory_or_file(blog_path)
+        if blog_type == 'file':
             responses = [self.push_blog_file(blog_path, posts)]
-
         else:
-            responses = self.push_post_files(blog_dir, posts)
-
+            responses = self.push_post_files(blog_path, posts)
         return responses
 
     def pull(self, blog):
@@ -174,7 +168,6 @@ class StardateBackend(object):
         blog: Blog instance
         """
         remote_posts = self.get_posts(blog.backend_file)
-
         updated_list = []
         for remote_post in remote_posts:
             updated = self._update_from_dict(blog, remote_post)

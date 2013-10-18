@@ -59,3 +59,7 @@ def create_post(**kwargs):
     post = Post(**defaults)
     post.save(push=push)
     return post
+
+def create_mock_gist(**kwargs):
+    from github import InputFileContent
+    from mock_backends import MockGist

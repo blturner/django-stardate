@@ -11,7 +11,16 @@ class LocalFileBackend(StardateBackend):
         self.parser = FileParser()
         self.social_auth = None
 
-    def write_file(self, file_path, content):
+    def directory_or_file(self, backend_file):
+        if os.path.isdir(backend_file):
+            return 'directory'
+        else:
+            return 'file'
+
+
+    def write_file(self, file_path, remote_posts):
+        ## Turn posts into single string
+        content = self.parser.pack(remote_posts)
         with open(file_path, 'w') as f:
             f.write(content)
 
@@ -26,7 +35,7 @@ class LocalFileBackend(StardateBackend):
     def get_post(self, path):
         if os.path.exists(path):
             content = self.get_file(path)
-            post = self.parser.parser(post)
+            post = self.parser.parse(post)
         else:
             post = {}
         return post
@@ -62,7 +71,5 @@ class LocalFileBackend(StardateBackend):
         """
         Dynamically guess post file path from slug / blog folder
         """
-        filename = post['slug']
-        filename = '{0}.md'.format(filename)
-        path = os.path.join(folder, filename)
+        path = os.path.join(folder, post.get('backend_file'))
         return path

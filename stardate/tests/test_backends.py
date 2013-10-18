@@ -11,10 +11,15 @@ from social_auth.models import UserSocialAuth
 from stardate.models import Blog
 from stardate.parsers import FileParser
 from stardate.tests.factories import create_blog, create_post, create_user, create_user_social_auth
-from stardate.tests.mock_backends import MockDropboxClient, MockDropboxBackend, MockLocalFileBackend
 from stardate.utils import get_post_model
 
 Post = get_post_model()
+from stardate.tests.mock_backends import (
+    MockDropboxClient,
+    MockDropboxBackend,
+    MockLocalFileBackend,
+    MockGistBackend,
+)
 
 
 class DropboxBackendTestCase(TestCase):
@@ -206,9 +211,9 @@ class LocalFileBackendTestCase(TestCase):
         serialized_posts = self.blog.backend.serialize_posts(
             self.post_list)
         path = self.blog.backend._get_post_path('', serialized_posts[0])
-        self.assertEqual(path, 'hello-world.md')
+        self.assertEqual(path, 'hello-world')
         path = self.blog.backend._get_post_path('posts', serialized_posts[0])
-        self.assertEqual(path, 'posts/hello-world.md')
+        self.assertEqual(path, 'posts/hello-world')
 
     def test_posts_from_file(self):
         temp_file = tempfile.mkstemp(suffix='.md')[1]
@@ -288,3 +293,10 @@ class LocalFileBackendTestCase(TestCase):
         self.assertIn('stardate', serialized_posts[0])
         self.assertIn('publish', serialized_posts[0])
         self.assertIn('body', serialized_posts[0])
+
+
+class GistBackendTestCase(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.backend = MockGithubClient
+

@@ -107,6 +107,8 @@ class BasePost(models.Model):
     slug = models.SlugField(unique=True)
     stardate = models.CharField(max_length=255)
     title = models.CharField(max_length=255)
+    ## Optional Identifier for Multiple File Backends
+    backend_file = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         abstract = True
@@ -132,6 +134,8 @@ class BasePost(models.Model):
             self.slug = slugify(self.title)
         if not self.body.raw.endswith('\n'):
             self.body.raw += '\n'
+        if not self.backend_file:
+            self.backend_file = self.slug
 
     def mark_deleted(self):
         self.deleted = True
