@@ -1,8 +1,13 @@
+import os
+
 from setuptools import setup
+
+version_file = open(os.path.join(__file__, 'VERSION'))
+version = version_file.read().strip()
 
 setup(
     name='stardate',
-    version='0.1',
+    version=version,
     author=u'Benjamin Turner',
     author_email='benturn@gmail.com',
     packages=[
