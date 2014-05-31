@@ -5,7 +5,7 @@ admin.autodiscover()
 
 urlpatterns = patterns(
     '',
+    url(r'^social/', include('social_auth.urls')),
     url(r'^admin/', include(admin.site.urls)),
-    url(r'', include('social_auth.urls')),
-    url(r'^blog/', include('stardate.urls.index_urls')),
+    url(r'^', include('stardate.urls.index_urls')),
 )
