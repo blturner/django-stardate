@@ -1,5 +1,6 @@
 # Test database
 *.db
+.tox
 build/
 dist/
 stardate.egg-info/
