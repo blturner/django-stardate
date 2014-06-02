@@ -1,4 +1,4 @@
-Django==1.5.4
+Django==1.5.8
 Markdown==2.3.1
 PyYAML==3.10
 django-markupfield==1.2.0
