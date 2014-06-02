@@ -1,6 +1,6 @@
 # Test database
 *.db
+*.egg-info
 .tox
 build/
 dist/
-stardate.egg-info/
