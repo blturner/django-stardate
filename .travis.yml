@@ -1,14 +1,12 @@
 language: python
-python:
-  # - "3.3"
-  - "2.7"
-  - "2.6"
 env:
-  - DJANGO_VERSION=1.5.4
-  - DJANGO_VERSION=1.4.8
-# command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
+  - TOXENV=py26-django14
+  - TOXENV=py27-django14
+  - TOXENV=py26-django15
+  - TOXENV=py27-django15
+  - TOXENV=py26-django16
+  - TOXENV=py27-django16
 install:
-  - pip install -q Django==$DJANGO_VERSION
-  - python setup.py -q install
-# command to run tests, e.g. python setup.py test
-script: django-admin.py test stardate --settings=example.example.settings
+  - pip install tox
+script:
+  - tox
