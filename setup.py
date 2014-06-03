@@ -11,9 +11,6 @@ setup(
     author=u'Benjamin Turner',
     author_email='benturn@gmail.com',
     packages=[
-        'example',
-        'example.core',
-        'example.example',
         'stardate',
         'stardate.backends',
         'stardate.management.commands',
