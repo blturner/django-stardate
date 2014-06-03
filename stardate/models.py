@@ -101,7 +101,7 @@ class BasePost(models.Model):
     blog = models.ForeignKey(Blog, related_name="%(app_label)s_%(class)s_related")
     body = MarkupField(default_markup_type='markdown')
     created = models.DateTimeField(auto_now=True)
-    deleted = models.BooleanField()
+    deleted = models.BooleanField(default=False)
     objects = PostManager()
     publish = models.DateTimeField(blank=True, null=True)
     slug = models.SlugField(unique=True)
