@@ -106,13 +106,14 @@ STARDATE_BACKEND = 'stardate.backends.dropbox.DropboxBackend'
 STARDATE_POST_MODEL = 'stardate.Post'
 
 try:
-    DROPBOX_APP_KEY = get_env_variable('DROPBOX_APP_KEY')
-    DROPBOX_APP_SECRET = get_env_variable('DROPBOX_APP_SECRET')
-    DROPBOX_ACCESS_TYPE = 'app_folder'
+    DROPBOX_APP_KEY = get_env_variable('DROPBOX_APP_KEY') or 'fake_key'
+    DROPBOX_APP_SECRET = get_env_variable('DROPBOX_APP_SECRET') or 'fake_secret'
 except:
-    pass
+    DROPBOX_APP_KEY = 'fake_key'
+    DROPBOX_APP_SECRET = 'fake_key'
+
+DROPBOX_ACCESS_TYPE = 'app_folder'
 
 # DJANGO-SOCIAL-AUTH
-if DROPBOX_APP_KEY and DROPBOX_APP_SECRET:
-    DROPBOX_APP_ID = DROPBOX_APP_KEY
-    DROPBOX_API_SECRET = DROPBOX_APP_SECRET
+DROPBOX_APP_ID = DROPBOX_APP_KEY
+DROPBOX_API_SECRET = DROPBOX_APP_SECRET
