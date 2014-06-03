@@ -1,13 +1,8 @@
-import os
-
 from setuptools import setup
 
-version_file = open(os.path.join(__file__, 'VERSION'))
-version = version_file.read().strip()
-
 setup(
-    version=version,
     name='django-stardate',
+    version='0.1.0.a1',
     author=u'Benjamin Turner',
     author_email='benturn@gmail.com',
     packages=[
@@ -23,10 +18,10 @@ setup(
     # long_description=open('README').read(),
     zip_safe=False,
     install_requires=[
-        'Django',
-        'django-social-auth',
+        'Django>=1.4',
+        'django-social-auth>=0.7,<0.8',
         'django-markupfield',
-        'dropbox',
+        'dropbox>1.4',
         'Markdown',
         'PyYAML',
         'python-dateutil',
