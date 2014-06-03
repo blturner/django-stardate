@@ -10,8 +10,10 @@ from social_auth.models import UserSocialAuth
 
 from stardate.models import Blog
 from stardate.parsers import FileParser
-from stardate.tests.factories import create_blog, create_post, create_user, create_user_social_auth
-from stardate.tests.mock_backends import MockDropboxClient, MockDropboxBackend, MockLocalFileBackend
+from stardate.tests.factories import create_blog, create_post, create_user, \
+    create_user_social_auth
+from stardate.tests.mock_backends import MockDropboxClient, \
+    MockDropboxBackend, MockLocalFileBackend
 from stardate.utils import get_post_model
 
 Post = get_post_model()
