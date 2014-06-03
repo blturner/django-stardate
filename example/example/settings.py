@@ -1,5 +1,7 @@
 import os
 
+import django
+
 from django.core.exceptions import ImproperlyConfigured
 
 
@@ -99,6 +101,8 @@ AUTHENTICATION_BACKENDS = (
 # STARDATE_BACKEND = 'stardate.backends.dropbox.DropboxBackend'
 STARDATE_BACKEND = 'stardate.backends.local_file.LocalFileBackend'
 STARDATE_POST_MODEL = 'stardate.Post'
+if django.VERSION[:2] < (1, 6):
+    TEST_RUNNER = 'django.test.simple.DjangoTestSuiteRunner'
 
 # DROPBOX_APP_KEY = get_env_variable('DROPBOX_APP_KEY')
 # DROPBOX_APP_SECRET = get_env_variable('DROPBOX_APP_SECRET')
