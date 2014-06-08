@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.utils import timezone
 
-from social_auth.models import UserSocialAuth
+from social.apps.django_app.default.models import UserSocialAuth
 
 from stardate.models import Blog
 from stardate.parsers import FileParser

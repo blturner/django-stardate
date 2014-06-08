@@ -92,12 +92,12 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.admin',
     'core',
-    'social_auth',
+    'social.apps.django_app.default',
     'stardate',
 )
 
 AUTHENTICATION_BACKENDS = (
-    'social_auth.backends.contrib.dropbox.DropboxBackend',
+    'social.backends.dropbox.DropboxOAuth',
     'django.contrib.auth.backends.ModelBackend',
 )
 
@@ -105,7 +105,6 @@ if django.VERSION[:2] < (1, 6):
     TEST_RUNNER = 'django.test.simple.DjangoTestSuiteRunner'
 
 STARDATE_BACKEND = 'stardate.backends.dropbox.DropboxBackend'
-# STARDATE_BACKEND = 'stardate.backends.local_file.LocalFileBackend'
 STARDATE_POST_MODEL = 'stardate.Post'
 
 try:
@@ -118,5 +117,5 @@ except:
 DROPBOX_ACCESS_TYPE = 'app_folder'
 
 # DJANGO-SOCIAL-AUTH
-DROPBOX_APP_ID = DROPBOX_APP_KEY
-DROPBOX_API_SECRET = DROPBOX_APP_SECRET
+SOCIAL_AUTH_DROPBOX_KEY = DROPBOX_APP_KEY
+SOCIAL_AUTH_DROPBOX_SECRET = DROPBOX_APP_SECRET

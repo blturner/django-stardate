@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.template.defaultfilters import slugify
 
-from social_auth.models import UserSocialAuth
+from social.apps.django_app.default.models import UserSocialAuth
 
 from stardate.models import Blog
 from stardate.utils import get_post_model
@@ -23,7 +23,13 @@ def create_user_social_auth(**kwargs):
         "provider": "dropbox",
         "uid": "1234",
         "user": kwargs['user'],
-        "extra_data": {"access_token": "oauth_token_secret=oauth_token_secret_string&oauth_token=oauth_token_string"}
+        "extra_data": {
+            "access_token": {
+                u'oauth_token_secret': u'oauth_token_secret_string',
+                u'oauth_token': u'oauth_token_string',
+                u'uid': u'123'
+            }
+        }
     }
     defaults.update(kwargs)
     social_auth, created = UserSocialAuth.objects.get_or_create(**defaults)

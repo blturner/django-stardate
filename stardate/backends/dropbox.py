@@ -55,12 +55,7 @@ class DropboxBackend(StardateBackend):
         return post
 
     def get_access_token(self):
-        bits = {}
-        token = self.social_auth.extra_data['access_token']
-        for bit in token.split('&'):
-            b = bit.split('=')
-            bits[b[0]] = b[1]
-        return bits
+        return self.social_auth.extra_data['access_token']
 
     def get_cursor(self):
         try:
