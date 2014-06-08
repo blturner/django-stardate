@@ -5,6 +5,9 @@ import django
 from django.core.exceptions import ImproperlyConfigured
 
 
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+
+
 def get_env_variable(var_name):
     """ Get the environment variable or return an exception. """
     try:
@@ -24,12 +27,12 @@ MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'example.db',                      # Or path to database file if using sqlite3.
-        'USER': '',                      # Not used with sqlite3.
-        'PASSWORD': '',                  # Not used with sqlite3.
-        'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
-        'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'example.db'),
+        'USER': '',
+        'PASSWORD': '',
+        'HOST': '',
+        'PORT': '',
     }
 }
 
@@ -89,12 +92,12 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.admin',
     'core',
-    'social_auth',
+    'social.apps.django_app.default',
     'stardate',
 )
 
 AUTHENTICATION_BACKENDS = (
-    'social_auth.backends.contrib.dropbox.DropboxBackend',
+    'social.backends.dropbox.DropboxOAuth',
     'django.contrib.auth.backends.ModelBackend',
 )
 
@@ -102,7 +105,6 @@ if django.VERSION[:2] < (1, 6):
     TEST_RUNNER = 'django.test.simple.DjangoTestSuiteRunner'
 
 STARDATE_BACKEND = 'stardate.backends.dropbox.DropboxBackend'
-# STARDATE_BACKEND = 'stardate.backends.local_file.LocalFileBackend'
 STARDATE_POST_MODEL = 'stardate.Post'
 
 try:
@@ -115,5 +117,5 @@ except:
 DROPBOX_ACCESS_TYPE = 'app_folder'
 
 # DJANGO-SOCIAL-AUTH
-DROPBOX_APP_ID = DROPBOX_APP_KEY
-DROPBOX_API_SECRET = DROPBOX_APP_SECRET
+SOCIAL_AUTH_DROPBOX_KEY = DROPBOX_APP_KEY
+SOCIAL_AUTH_DROPBOX_SECRET = DROPBOX_APP_SECRET

@@ -18,13 +18,13 @@ setup(
     # long_description=open('README').read(),
     zip_safe=False,
     install_requires=[
-        'Django>=1.4',
-        'django-social-auth>=0.7,<0.8',
+        'Django>=1.4,<1.7',
         'django-markupfield',
-        'dropbox>1.4',
+        'dropbox>1.4,<2.1.0',
         'Markdown',
         'PyYAML',
         'python-dateutil',
+        'python-social-auth>=0.1',
     ],
     test_suite='stardate.tests'
 )

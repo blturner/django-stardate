@@ -6,7 +6,7 @@ from django.db import models
 from django.db.models.query import QuerySet
 from django.utils import timezone
 
-from social_auth.models import UserSocialAuth
+from social.apps.django_app.default.models import UserSocialAuth
 from markupfield.fields import MarkupField
 
 from django.conf import settings
@@ -39,7 +39,7 @@ class Blog(models.Model):
         # initialize it here
         try:
             self.backend.set_social_auth(self.social_auth)
-        except:
+        except AttributeError:
             pass
 
     def __unicode__(self):
