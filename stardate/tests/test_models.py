@@ -26,6 +26,10 @@ class BlogTestCase(TestCase):
     def tearDown(self):
         Blog.objects.all().delete()
 
+    def test_blog_has_slug(self):
+        self.assertTrue(self.blog.slug)
+        self.assertEqual(self.blog.slug, 'test-blog')
+
     def test_get_post_model(self):
         from core.models import Post as PostClass
         self.assertIsInstance(Post(), PostClass)

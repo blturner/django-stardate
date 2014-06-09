@@ -44,6 +44,7 @@ def create_blog(**kwargs):
         "name": "Test blog",
         "backend_file": backend_file_path,
     }
+    defaults['slug'] = slugify(defaults['name'])
     defaults.update(kwargs)
 
     if "user" not in defaults:
