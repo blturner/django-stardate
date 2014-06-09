@@ -1,3 +1,5 @@
+import tempfile
+
 from django.contrib.auth.models import User
 from django.template.defaultfilters import slugify
 
@@ -37,9 +39,10 @@ def create_user_social_auth(**kwargs):
 
 
 def create_blog(**kwargs):
+    backend_file, backend_file_path = tempfile.mkstemp(suffix='.txt')
     defaults = {
         "name": "Test blog",
-        "backend_file": "test_backend_file.md",
+        "backend_file": backend_file_path,
     }
     defaults.update(kwargs)
 
