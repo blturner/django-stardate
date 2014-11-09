@@ -12,6 +12,12 @@ setup(
         'stardate.tests',
         'stardate.urls',
     ],
+    package_data={
+        'stardate': [
+            'templates/stardate/includes/*.html',
+            'templates/stardate/*.html',
+        ],
+    },
     url='https://github.com/blturner/django-stardate',
     license='BSD',
     description='Another django blog app.',
@@ -19,12 +25,13 @@ setup(
     zip_safe=False,
     install_requires=[
         'Django>=1.4,<1.7',
-        'django-markupfield',
-        'dropbox>1.4,<2.1.0',
-        'Markdown',
-        'PyYAML',
-        'python-dateutil',
-        'python-social-auth>=0.1',
+        'django-markupfield==1.1.1',
+        'dropbox>=1.4,<2.0',
+        'Markdown==2.0.3',
+        'PyYAML==3.11',
+        'python-dateutil==2.1',
+        'python-social-auth>=0.1,<0.2',
+        'pytz<2014.4',
     ],
     test_suite='stardate.tests'
 )
