@@ -8,6 +8,7 @@ setup(
     packages=[
         'stardate',
         'stardate.backends',
+        'stardate.management',
         'stardate.management.commands',
         'stardate.tests',
         'stardate.urls',
