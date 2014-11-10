@@ -20,7 +20,7 @@ setup(
         ],
     },
     url='https://github.com/blturner/django-stardate',
-    download_url='https://github.com/blturner/django-stardate/archive/v0.1.0.a1.tar.gz',
+    download_url='https://github.com/blturner/django-stardate/archive/v0.1.0.a2.tar.gz',
     license='BSD',
     description='Another django blog app.',
     # long_description=open('README').read(),
