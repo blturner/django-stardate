@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='django-stardate',
-    version='0.1.0.a1',
+    version='0.1.0.a2',
     author=u'Benjamin Turner',
     author_email='benturn@gmail.com',
     packages=[
