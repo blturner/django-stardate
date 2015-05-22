@@ -1,8 +1,12 @@
+import json
+
 from django.conf import settings
 from django.db.models.loading import get_model
+from django.http import HttpResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.views import generic
 
+from stardate.backends.dropbox import DropboxBackend
 from stardate.models import Blog
 from stardate.utils import get_post_model
 
@@ -47,3 +51,21 @@ class PostDetail(PostViewMixin, generic.DateDetailView):
 class PostEdit(PostViewMixin, generic.UpdateView):
     context_object_name = 'post'
     slug_url_kwarg = 'post_slug'
+
+
+def get_file_list(request):
+    if not request.user.is_authenticated():
+        raise Http404
+
+    user = request.user
+    # backend = user.social_auth.all()[0].provider
+    backend = DropboxBackend()
+    backend.set_social_auth(user.social_auth.all()[0])
+
+    files = []
+    source_list = backend.get_source_list()
+
+    for source in source_list:
+        files.append({'name': source[1]})
+
+    return HttpResponse(json.dumps(files), content_type='application/json')
