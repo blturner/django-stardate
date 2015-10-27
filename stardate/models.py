@@ -100,7 +100,7 @@ class BasePost(models.Model):
     authors = models.ManyToManyField(User, blank=True, null=True, related_name="%(app_label)s_%(class)s_related")
     blog = models.ForeignKey(Blog, related_name="%(app_label)s_%(class)s_related")
     body = MarkupField(default_markup_type='markdown')
-    created = models.DateTimeField(auto_now=True)
+    created = models.DateTimeField(default=timezone.now())
     deleted = models.BooleanField(default=False)
     objects = PostManager()
     publish = models.DateTimeField(blank=True, null=True)
@@ -142,7 +142,7 @@ class BasePost(models.Model):
             self.backend = self.blog.backend
 
         if not self.created:
-            self.created = datetime.datetime.now()
+            self.created = timezone.now()
 
         # Validate first so things don't break on push
         self.clean()

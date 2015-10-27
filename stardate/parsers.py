@@ -3,12 +3,12 @@ import uuid
 import yaml
 
 from dateutil.parser import parse
-from django.utils.timezone import get_current_timezone, make_aware, utc
+from django.utils.timezone import get_current_timezone, is_aware, make_aware, utc
 
 from stardate.backends import BaseStardateParser
 
 DELIMITER = "\n---\n"
-TIMEFORMAT = '%Y-%m-%d %I:%M %p'  # 2012-01-01 09:00 AM
+TIMEFORMAT = '%Y-%m-%d %I:%M %p%z'  # 2012-01-01 09:00 AM +HHMM
 current_timezone = get_current_timezone()
 
 
@@ -24,6 +24,12 @@ class FileParser(BaseStardateParser):
         post = post.copy()
 
         # FIXME?: this belongs in serialization process
+        try:
+            post['created'] = post['created'].astimezone(current_timezone)
+            post['created'] = datetime.datetime.strftime(post['created'], self.timeformat)
+        except:
+            pass
+
         try:
             post['publish'] = post['publish'].astimezone(current_timezone)
             post['publish'] = datetime.datetime.strftime(post['publish'], self.timeformat)
@@ -85,7 +91,8 @@ class FileParser(BaseStardateParser):
         if 'publish' in post_data:
             if not isinstance(post_data['publish'], datetime.datetime):
                 post_data['publish'] = parse(post_data['publish'])
-                post_data['publish'] = make_aware(post_data['publish'], current_timezone).astimezone(utc)
+                if not is_aware(post_data['publish']):
+                    post_data['publish'] = make_aware(post_data['publish'], current_timezone).astimezone(utc)
         return post_data
 
     def unpack(self, string):
