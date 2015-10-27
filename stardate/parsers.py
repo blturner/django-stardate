@@ -8,7 +8,7 @@ from django.utils.timezone import get_current_timezone, is_aware, make_aware, ut
 from stardate.backends import BaseStardateParser
 
 DELIMITER = "\n---\n"
-TIMEFORMAT = '%Y-%m-%d %I:%M %p%z'  # 2012-01-01 09:00 AM +HHMM
+TIMEFORMAT = '%Y-%m-%d %I:%M %p'  # 2012-01-01 09:00 AM
 current_timezone = get_current_timezone()
 
 
@@ -25,9 +25,8 @@ class FileParser(BaseStardateParser):
 
         # FIXME?: this belongs in serialization process
         try:
-            post['created'] = post['created'].astimezone(current_timezone)
-            post['created'] = datetime.datetime.strftime(post['created'], self.timeformat)
-        except:
+            del post['created']
+        except KeyError:
             pass
 
         try:

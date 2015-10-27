@@ -29,13 +29,11 @@ class FileParserTestCase(TestCase):
         post_list = [
             {
                 'title': 'My first post',
-                'created': datetime.datetime.now(),
                 'stardate': uuid.uuid1(),
                 'body': 'This is the first post.'
             },
             {
                 'title': 'My second post',
-                'created': datetime.datetime.now(),
                 'stardate': uuid.uuid1(),
                 'body': 'This is the second post.'
             },
@@ -48,8 +46,6 @@ class FileParserTestCase(TestCase):
 
         self.assertTrue(u'title: {0}'.format(post_list[0]['title']) in packed)
         self.assertTrue(u'title: {0}'.format(post_list[1]['title']) in packed)
-        self.assertTrue(u'created: {0}'.format(post_list[0]['created']) in packed)
-        self.assertTrue(u'created: {0}'.format(post_list[1]['created']) in packed)
         self.assertTrue(u'stardate: {0}'.format(post_list[0]['stardate']) in packed)
         self.assertTrue(u'stardate: {0}'.format(post_list[1]['stardate']) in packed)
         self.assertTrue(u'\n\n\n{0}'.format(post_list[0]['body']) in packed)
