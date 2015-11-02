@@ -17,6 +17,13 @@ class BlogForm(forms.ModelForm):
     """
     class Meta:
         model = Blog
+        fields = [
+            'name',
+            'slug',
+            'social_auth',
+            'backend_file',
+            'authors',
+        ]
 
     # backend_file = forms.ChoiceField(required=False)
 
@@ -36,3 +43,11 @@ class PostForm(forms.ModelForm):
 
     class Meta:
         model = Post
+        fields = [
+            'blog',
+            'title',
+            'slug',
+            'body',
+            'publish',
+            'authors'
+        ]

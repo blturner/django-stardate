@@ -4,13 +4,19 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils import timezone
 
-from stardate.models import Blog
+try:
+    from django.test.utils import override_settings
+except ImportError:
+    from django.test import override_settings
+
+from stardate.models import Blog, Post
 from stardate.tests.factories import create_blog, create_post
 from stardate.utils import get_post_model
 
-Post = get_post_model()
+from core.models import CustomPost
 
 
+@override_settings(STARDATE_POST_MODEL='stardate.Post')
 class BlogTestCase(TestCase):
     def setUp(self):
         self.blog = create_blog(
@@ -30,14 +36,12 @@ class BlogTestCase(TestCase):
         self.assertTrue(self.blog.slug)
         self.assertEqual(self.blog.slug, 'test-blog')
 
+    @override_settings(STARDATE_POST_MODEL='stardate.Post')
     def test_get_post_model(self):
-        from core.models import Post as PostClass
-        self.assertIsInstance(Post(), PostClass)
+        self.assertIsInstance(get_post_model()(), Post)
 
-        with self.settings(STARDATE_POST_MODEL='stardate.CustomPost'):
-            from core.models import CustomPost
-            p = get_post_model()
-            self.assertIsInstance(p(), CustomPost)
+        with self.settings(STARDATE_POST_MODEL='core.CustomPost'):
+            self.assertIsInstance(get_post_model()(), CustomPost)
 
     def test_get_serialized_posts(self):
         posts = self.blog.get_serialized_posts()

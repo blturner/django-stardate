@@ -15,7 +15,7 @@ from stardate.utils import get_post_model
 
 
 class Blog(models.Model):
-    authors = models.ManyToManyField(User, blank=True, null=True)
+    authors = models.ManyToManyField(User, blank=True)
     # Dot notation path to backend Class
     backend_class = models.CharField(
         max_length=255,
@@ -89,15 +89,19 @@ class Blog(models.Model):
 
 
 class PostManager(models.Manager):
-
     def published(self):
-        return self.get_query_set().filter(
+        if self.get_queryset:
+            queryset_method = self.get_queryset
+        else:
+            queryset_method = self.qet_query_set
+
+        return queryset_method().filter(
             deleted=False,
             publish__lte=timezone.now()).order_by('-publish')
 
 
 class BasePost(models.Model):
-    authors = models.ManyToManyField(User, blank=True, null=True, related_name="%(app_label)s_%(class)s_related")
+    authors = models.ManyToManyField(User, blank=True, related_name="%(app_label)s_%(class)s_related")
     blog = models.ForeignKey(Blog, related_name="%(app_label)s_%(class)s_related")
     body = MarkupField(default_markup_type='markdown')
     created = models.DateTimeField(auto_now=True)
@@ -179,3 +183,10 @@ class BasePost(models.Model):
         if prev:
             return prev[0]
         return False
+
+
+class Post(BasePost):
+    """
+    A default ``Post`` Class implementation.
+    """
+    pass

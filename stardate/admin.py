@@ -9,7 +9,6 @@ Post = get_post_model()
 
 class BlogAdmin(admin.ModelAdmin):
     exclude = ['user', ]
-    fields = ('social_auth', 'backend_file', 'name', 'slug', 'authors')
     form = BlogForm
     prepopulated_fields = {'slug': ('name',)}
 
@@ -24,7 +23,6 @@ class BlogAdmin(admin.ModelAdmin):
 
 class PostAdmin(admin.ModelAdmin):
     date_hierarchy = 'publish'
-    fields = ('blog', 'title', 'slug', 'body', 'publish', 'authors')
     form = PostForm
     list_display = ('title', 'publish', 'blog', 'deleted')
     list_filter = ('blog', 'publish',)
