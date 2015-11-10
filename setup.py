@@ -1,29 +1,15 @@
-from setuptools import setup
+from setuptools import find_packages, setup
 
 setup(
     name='django-stardate',
     version='0.1.0.a3',
     author=u'Benjamin Turner',
     author_email='benturn@gmail.com',
-    packages=[
-        'stardate',
-        'stardate.backends',
-        'stardate.management',
-        'stardate.management.commands',
-        'stardate.tests',
-        'stardate.urls',
-    ],
-    package_data={
-        'stardate': [
-            'templates/stardate/includes/*.html',
-            'templates/stardate/*.html',
-        ],
-    },
+    packages=find_packages(),
     url='https://github.com/blturner/django-stardate',
     download_url='https://github.com/blturner/django-stardate/archive/v0.1.0.a3.tar.gz',
     license='BSD',
     description='Another django blog app.',
-    # long_description=open('README').read(),
     zip_safe=False,
     install_requires=[
         'Django>=1.4,<1.9',
@@ -35,5 +21,4 @@ setup(
         'python-social-auth>=0.1,<0.3',
         'pytz<2014.4',
     ],
-    test_suite='stardate.tests'
 )

@@ -1,0 +1,5 @@
+include LICENSE
+include MANIFEST.in
+
+recursive-exclude stardate/tests *
+recursive-exclude example *
