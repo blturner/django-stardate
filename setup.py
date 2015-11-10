@@ -2,12 +2,12 @@ from setuptools import find_packages, setup
 
 setup(
     name='django-stardate',
-    version='0.1.0.a3',
+    version='0.1.0.a4',
     author=u'Benjamin Turner',
     author_email='benturn@gmail.com',
     packages=find_packages(),
     url='https://github.com/blturner/django-stardate',
-    download_url='https://github.com/blturner/django-stardate/archive/v0.1.0.a3.tar.gz',
+    download_url='https://github.com/blturner/django-stardate/archive/v0.1.0.a4.tar.gz',
     license='BSD',
     description='Another django blog app.',
     zip_safe=False,
