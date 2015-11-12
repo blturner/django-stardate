@@ -1,8 +1,13 @@
-from django.conf import settings
-from django.utils.importlib import import_module
-from django.core.serializers import serialize
 import os
 import logging
+
+from django.conf import settings
+from django.core.serializers import serialize
+
+try:
+    from importlib import import_module
+except ImportError:
+    from django.utils.importlib import import_module
 
 from stardate.utils import get_post_model
 

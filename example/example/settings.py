@@ -103,6 +103,8 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
 )
 
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+
 if django.VERSION[:2] < (1, 6):
     TEST_RUNNER = 'django.test.simple.DjangoTestSuiteRunner'
 
