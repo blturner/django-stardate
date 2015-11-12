@@ -104,8 +104,7 @@ class BasePost(models.Model):
     authors = models.ManyToManyField(User, blank=True, related_name="%(app_label)s_%(class)s_related")
     blog = models.ForeignKey(Blog, related_name="%(app_label)s_%(class)s_related")
     body = MarkupField(default_markup_type='markdown')
-    created = models.DateTimeField(default=timezone.now,
-        help_text=u'The created timestamp given by the backend.')
+    created = models.DateTimeField(default=timezone.now)
     deleted = models.BooleanField(default=False)
     objects = PostManager()
     publish = models.DateTimeField(blank=True, null=True)
