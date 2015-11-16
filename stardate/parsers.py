@@ -3,13 +3,15 @@ import uuid
 import yaml
 
 from dateutil.parser import parse
-from django.utils.timezone import get_current_timezone, is_aware, make_aware, utc
+from django.utils.timezone import is_aware, make_aware, utc
 
 from stardate.backends import BaseStardateParser
 
 DELIMITER = "\n---\n"
-TIMEFORMAT = '%Y-%m-%d %I:%M %p'  # 2012-01-01 09:00 AM
-current_timezone = get_current_timezone()
+TIMEFORMAT = '%Y-%m-%d %I:%M %p %Z'  # 2012-01-01 09:00 AM UTC
+# TZOFFSETS = {
+#     'EST': -5*3600,
+# }
 
 
 class FileParser(BaseStardateParser):
@@ -30,7 +32,7 @@ class FileParser(BaseStardateParser):
             pass
 
         try:
-            post['publish'] = post['publish'].astimezone(current_timezone)
+            post['publish'] = post['publish'].astimezone(utc)
             post['publish'] = datetime.datetime.strftime(post['publish'], self.timeformat)
         except:
             pass
@@ -88,11 +90,24 @@ class FileParser(BaseStardateParser):
         # FIXME: this belongs in deserialization, perhaps
         # on model?
         if 'publish' in post_data:
-            if not isinstance(post_data['publish'], datetime.datetime):
-                post_data['publish'] = parse(post_data['publish'])
-                if not is_aware(post_data['publish']):
-                    post_data['publish'] = make_aware(post_data['publish'], current_timezone).astimezone(utc)
+            post_data['publish'] = self.parse_publish(post_data['publish'])
+            # if not isinstance(post_data['publish'], datetime.datetime):
+            #     post_data['publish'] = parse(post_data['publish'], tzinfos=TZOFFSETS)
+            #     if not is_aware(post_data['publish']):
+            #         post_data['publish'] = make_aware(post_data['publish'], utc)
         return post_data
+
+    def parse_publish(self, date):
+        # from dateutil.tz import tzoffset
+        if not isinstance(date, datetime.datetime):
+            # return parse(date).replace(tzinfo=tzoffset(None, -8*3600))
+            # date = parse(date, tzinfos={'PST': -8*3600, 'EST': -5*3600})
+            date = parse(date)
+
+        if not is_aware(date):
+            date = make_aware(date, utc)
+
+        return date
 
     def unpack(self, string):
         """

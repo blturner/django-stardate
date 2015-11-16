@@ -1,10 +1,13 @@
 import datetime
+import pytz
 import uuid
 
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.utils import timezone
 
+from dateutil.parser import parse
+from dateutil.tz import tzutc
 from social.apps.django_app.default.models import UserSocialAuth
 
 from stardate.models import Blog
@@ -13,10 +16,14 @@ from stardate.tests.factories import create_blog
 from stardate.tests.mock_backends import MockDropboxClient
 
 
+TIMESTAMP = '2012-01-02 12:00 AM EST'
+PARSED_TIMESTAMP = parse(TIMESTAMP).replace(tzinfo=timezone.utc)
+
+
 class FileParserTestCase(TestCase):
     def setUp(self):
         self.parser = FileParser()
-        self.test_string = "publish: 2012-01-02 12:00 AM\ntitle: Tingling of the spine\n\n\nExtraordinary claims require extraordinary evidence!"
+        self.test_string = "publish: {0}\ntitle: Tingling of the spine\n\n\nExtraordinary claims require extraordinary evidence!".format(TIMESTAMP)
 
     def tearDown(self):
         Blog.objects.all().delete()
@@ -51,11 +58,31 @@ class FileParserTestCase(TestCase):
         self.assertTrue(u'\n\n\n{0}'.format(post_list[0]['body']) in packed)
         self.assertTrue(u'\n\n\n{0}'.format(post_list[1]['body']) in packed)
 
+    def test_parse_publish(self):
+        timestamp = '01-01-2015 06:00AM PST'
+        utc_expected = datetime.datetime(2015, 1, 1, 14, 0, tzinfo=tzutc())
+
+        dt = self.parser.parse_publish(timestamp)
+
+        self.assertEqual(dt, utc_expected)
+
+        self.assertEqual(
+            dt.astimezone(pytz.timezone('America/New_York')),
+            utc_expected
+        )
+
+    # def test_parse_publish_without_tz(self):
+    #     timestamp = '01-01-2015 06:00AM'
+    #     utc_expected = datetime.datetime(2015, 1, 1, 6, 0, tzinfo=tzutc())
+    #     dt = self.parser.parse_publish(timestamp)
+
+    #     self.assertEqual(dt, utc_expected)
+
     def test_parse(self):
         parsed = self.parser.parse(self.test_string)
 
         self.assertEqual(parsed['title'], 'Tingling of the spine')
-        self.assertEqual(parsed['publish'], datetime.datetime(2012, 1, 2, 8, 0, tzinfo=timezone.utc))
+        self.assertEqual(parsed['publish'], PARSED_TIMESTAMP)
         self.assertEqual(parsed['body'], 'Extraordinary claims require extraordinary evidence!')
 
         # Check that extra_field is parsed
@@ -96,5 +123,5 @@ class FileParserTestCase(TestCase):
         #The file has one post to unpack
         self.assertEqual(len(post_list), 1)
         self.assertEqual(post_list[0].get('title'), 'Tingling of the spine')
-        self.assertEqual(post_list[0].get('publish'), datetime.datetime(2012, 1, 2, 8, 0, tzinfo=timezone.utc))
+        self.assertEqual(post_list[0].get('publish'), PARSED_TIMESTAMP)
         self.assertEqual(post_list[0].get('body'), 'Extraordinary claims require extraordinary evidence!')
