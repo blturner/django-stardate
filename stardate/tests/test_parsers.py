@@ -71,12 +71,12 @@ class FileParserTestCase(TestCase):
             utc_expected
         )
 
-    # def test_parse_publish_without_tz(self):
-    #     timestamp = '01-01-2015 06:00AM'
-    #     utc_expected = datetime.datetime(2015, 1, 1, 6, 0, tzinfo=tzutc())
-    #     dt = self.parser.parse_publish(timestamp)
+    def test_parse_publish_without_tz(self):
+        timestamp = '01-01-2015 06:00AM'
+        utc_expected = datetime.datetime(2015, 1, 1, 6, 0, tzinfo=tzutc())
+        dt = self.parser.parse_publish(timestamp)
 
-    #     self.assertEqual(dt, utc_expected)
+        self.assertEqual(dt, utc_expected)
 
     def test_parse(self):
         parsed = self.parser.parse(self.test_string)
