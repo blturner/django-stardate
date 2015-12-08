@@ -5,8 +5,6 @@ import yaml
 from dateutil.parser import parse
 from django.utils.timezone import is_aware, make_aware, utc
 
-from pytz import timezone
-
 from stardate.backends import BaseStardateParser
 
 DELIMITER = "\n---\n"
