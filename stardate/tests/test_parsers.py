@@ -1,6 +1,5 @@
 import datetime
 import pytz
-import time
 import uuid
 
 from django.contrib.auth.models import User
@@ -23,7 +22,6 @@ TIMESTAMP_UTC = datetime.datetime(2012, 1, 2, 5, 0, tzinfo=tzutc())
 
 class FileParserTestCase(TestCase):
     def setUp(self):
-        self.startTime = time.time()
         self.parser = FileParser()
         self.test_string = "publish: {0}\ntitle: Tingling of the spine\n\n\nExtraordinary claims require extraordinary evidence!".format(TIMESTAMP)
 
@@ -31,9 +29,6 @@ class FileParserTestCase(TestCase):
         Blog.objects.all().delete()
         User.objects.all().delete()
         UserSocialAuth.objects.all().delete()
-
-        t = time.time() - self.startTime
-        # print 'test {0} executed in {1}'.format(self._testMethodName, t)
 
     def test_pack(self):
         blog = create_blog()
