@@ -1,7 +1,6 @@
 import datetime
 import os
 import tempfile
-import time
 
 from django.contrib.auth.models import User
 from django.test import TestCase
@@ -23,8 +22,6 @@ Post = get_post_model()
 
 class DropboxBackendTestCase(TestCase):
     def setUp(self):
-        self.startTime = time.time()
-
         backend_file, backend_file_path = tempfile.mkstemp(suffix='.txt')
         self.file_path = backend_file_path
         self.backend = MockDropboxBackend()
@@ -41,9 +38,6 @@ class DropboxBackendTestCase(TestCase):
         Blog.objects.all().delete()
         UserSocialAuth.objects.all().delete()
         User.objects.all().delete()
-
-        t = time.time() - self.startTime
-        print 'test executed in {0}'.format(t)
 
     def test_get_access_token(self):
         access_token = self.backend.get_access_token()
@@ -255,7 +249,7 @@ class LocalFileBackendTestCase(TestCase):
 
     def test_pull(self):
         timestamp = '2013-01-01 6:00 AM EST'
-        parsed_timestamp = parse(timestamp)
+        parsed_timestamp = datetime.datetime(2013, 1, 1, 11, 0, tzinfo=timezone.utc)
         temp_dir = tempfile.mkdtemp()
         fd, file_path = tempfile.mkstemp(dir=temp_dir, suffix='.md')
         blog = create_blog(name='Pull',
@@ -272,7 +266,8 @@ class LocalFileBackendTestCase(TestCase):
         self.assertIsNotNone(pulled_posts[0].stardate)
         self.assertEqual(pulled_posts[0].title, 'Post title')
         self.assertEqual(pulled_posts[0].body.raw, 'A post for pulling in.\n')
-        self.assertEqual(pulled_posts[0].publish, parsed_timestamp.replace(tzinfo=timezone.utc))
+        self.assertEqual(pulled_posts[0].publish.astimezone(timezone.utc),
+                         parsed_timestamp.replace(tzinfo=timezone.utc))
 
     def test_push(self):
         fd, file_path = tempfile.mkstemp(suffix='.md')

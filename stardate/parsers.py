@@ -5,6 +5,8 @@ import yaml
 from dateutil.parser import parse
 from django.utils.timezone import is_aware, make_aware, utc
 
+from pytz import timezone
+
 from stardate.backends import BaseStardateParser
 
 DELIMITER = "\n---\n"
@@ -91,18 +93,28 @@ class FileParser(BaseStardateParser):
         # on model?
         if 'publish' in post_data:
             post_data['publish'] = self.parse_publish(post_data['publish'])
-            # if not isinstance(post_data['publish'], datetime.datetime):
-            #     post_data['publish'] = parse(post_data['publish'], tzinfos=TZOFFSETS)
-            #     if not is_aware(post_data['publish']):
-            #         post_data['publish'] = make_aware(post_data['publish'], utc)
         return post_data
 
     def parse_publish(self, date):
-        # from dateutil.tz import tzoffset
+        tz_str = None
+        tz = None
+
+        try:
+            tz_str = date.split(' ')[3]
+        except IndexError:
+            pass
+
+        if tz_str:
+            try:
+                tz = timezone(tz_str)
+            except:
+                pass
+
         if not isinstance(date, datetime.datetime):
-            # return parse(date).replace(tzinfo=tzoffset(None, -8*3600))
-            # date = parse(date, tzinfos={'PST': -8*3600, 'EST': -5*3600})
             date = parse(date)
+
+            if tz:
+                date = make_aware(date, tz)
 
         if not is_aware(date):
             date = make_aware(date, utc)

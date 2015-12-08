@@ -1,5 +1,6 @@
 import datetime
 import pytz
+import time
 import uuid
 
 from django.contrib.auth.models import User
@@ -17,11 +18,12 @@ from stardate.tests.mock_backends import MockDropboxClient
 
 
 TIMESTAMP = '2012-01-02 12:00 AM EST'
-PARSED_TIMESTAMP = parse(TIMESTAMP).replace(tzinfo=timezone.utc)
+TIMESTAMP_UTC = datetime.datetime(2012, 1, 2, 5, 0, tzinfo=tzutc())
 
 
 class FileParserTestCase(TestCase):
     def setUp(self):
+        self.startTime = time.time()
         self.parser = FileParser()
         self.test_string = "publish: {0}\ntitle: Tingling of the spine\n\n\nExtraordinary claims require extraordinary evidence!".format(TIMESTAMP)
 
@@ -29,6 +31,9 @@ class FileParserTestCase(TestCase):
         Blog.objects.all().delete()
         User.objects.all().delete()
         UserSocialAuth.objects.all().delete()
+
+        t = time.time() - self.startTime
+        # print 'test {0} executed in {1}'.format(self._testMethodName, t)
 
     def test_pack(self):
         blog = create_blog()
@@ -82,7 +87,8 @@ class FileParserTestCase(TestCase):
         parsed = self.parser.parse(self.test_string)
 
         self.assertEqual(parsed['title'], 'Tingling of the spine')
-        self.assertEqual(parsed['publish'], PARSED_TIMESTAMP)
+        expected = datetime.datetime(2012, 1, 2, 5, 0, tzinfo=tzutc())
+        self.assertEqual(parsed['publish'].astimezone(tzutc()), expected)
         self.assertEqual(parsed['body'], 'Extraordinary claims require extraordinary evidence!')
 
         # Check that extra_field is parsed
@@ -123,5 +129,5 @@ class FileParserTestCase(TestCase):
         #The file has one post to unpack
         self.assertEqual(len(post_list), 1)
         self.assertEqual(post_list[0].get('title'), 'Tingling of the spine')
-        self.assertEqual(post_list[0].get('publish'), PARSED_TIMESTAMP)
+        self.assertEqual(post_list[0].get('publish').astimezone(tzutc()), TIMESTAMP_UTC)
         self.assertEqual(post_list[0].get('body'), 'Extraordinary claims require extraordinary evidence!')
