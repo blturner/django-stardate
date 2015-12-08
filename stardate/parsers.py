@@ -35,11 +35,6 @@ class FileParser(BaseStardateParser):
 
         # FIXME?: this belongs in serialization process
         try:
-            del post['created']
-        except KeyError:
-            pass
-
-        try:
             post['publish'] = post['publish'].astimezone(utc)
             post['publish'] = datetime.datetime.strftime(post['publish'], self.timeformat)
         except:

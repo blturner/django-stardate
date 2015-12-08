@@ -290,7 +290,6 @@ class LocalFileBackendTestCase(TestCase):
     def test_serialize_posts(self):
         serialized_posts = self.blog.backend.serialize_posts(self.post_list)
         self.assertIn('title', serialized_posts[0])
-        self.assertIn('created', serialized_posts[0])
         self.assertIn('stardate', serialized_posts[0])
         self.assertIn('publish', serialized_posts[0])
         self.assertIn('body', serialized_posts[0])

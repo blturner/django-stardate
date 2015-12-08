@@ -53,7 +53,7 @@ class StardateBackend(object):
         serialized = serialize(
             'python',
             posts,
-            fields=('title', 'created', 'slug', 'publish', 'stardate', 'body')
+            fields=('title', 'slug', 'publish', 'stardate', 'body')
         )
         for post in serialized:
             posts_as_dicts.append(post['fields'])
