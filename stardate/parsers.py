@@ -33,13 +33,6 @@ class FileParser(BaseStardateParser):
         """
         post = post.copy()
 
-        # FIXME?: this belongs in serialization process
-        try:
-            post['publish'] = post['publish'].astimezone(utc)
-            post['publish'] = datetime.datetime.strftime(post['publish'], self.timeformat)
-        except:
-            pass
-
         # Body gets processed separately
         body = post.pop('body')
 
@@ -49,7 +42,11 @@ class FileParser(BaseStardateParser):
         for key in sorted(post.keys()):
             try:
                 value = post[key]
+
                 if value:
+                    if key == 'published':
+                        value = datetime.datetime.strftime(value, '%Y-%m-%d %I:%M %p %Z')
+
                     field_string = '{0}: {1}'.format(key, value)
                     meta.append(field_string)
             except KeyError:

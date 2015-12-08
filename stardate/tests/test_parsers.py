@@ -37,11 +37,13 @@ class FileParserTestCase(TestCase):
             {
                 'title': 'My first post',
                 'stardate': uuid.uuid1(),
+                'published': datetime.datetime(2015, 1, 1, 6, 0, tzinfo=tzutc()),
                 'body': 'This is the first post.'
             },
             {
                 'title': 'My second post',
                 'stardate': uuid.uuid1(),
+                'published': datetime.datetime(2015, 1, 2, 6, 0, tzinfo=tzutc()),
                 'body': 'This is the second post.'
             },
         ]
@@ -57,6 +59,12 @@ class FileParserTestCase(TestCase):
         self.assertTrue(u'stardate: {0}'.format(post_list[1]['stardate']) in packed)
         self.assertTrue(u'\n\n\n{0}'.format(post_list[0]['body']) in packed)
         self.assertTrue(u'\n\n\n{0}'.format(post_list[1]['body']) in packed)
+
+        pub_0 = datetime.datetime.strftime(post_list[0]['published'], '%Y-%m-%d %I:%M %p %Z')
+        pub_1 = datetime.datetime.strftime(post_list[1]['published'], '%Y-%m-%d %I:%M %p %Z')
+
+        self.assertTrue(u'published: {0}'.format(pub_0) in packed)
+        self.assertTrue(u'published: {0}'.format(pub_1) in packed)
 
     def test_parse_publish(self):
         timestamp = '01-01-2015 06:00AM PST'
@@ -91,7 +99,7 @@ class FileParserTestCase(TestCase):
         test_stardate = uuid.uuid1()
         dict_to_render = {
             'body': 'The body.',
-            'publish': datetime.datetime(2013, 6, 1, 0, 0),
+            'publish': datetime.datetime(2013, 6, 1, 0, 0, tzinfo=timezone.utc),
             'stardate': test_stardate,
             'title': 'Test title',
         }
