@@ -10,10 +10,18 @@ from pytz import timezone
 from stardate.backends import BaseStardateParser
 
 DELIMITER = "\n---\n"
-TIMEFORMAT = '%Y-%m-%d %I:%M %p %Z'  # 2012-01-01 09:00 AM UTC
-# TZOFFSETS = {
-#     'EST': -5*3600,
-# }
+TIMEFORMAT = '%Y-%m-%d %I:%M %p'  # 2012-01-01 09:00 AM
+
+TZ_OFFSETS = {
+    "EDT": -4*3600,
+    "EST": -5*3600,
+    "CDT": -5*3600,
+    "CST": -6*3600,
+    "MDT": -6*3600,
+    "MST": -7*3600,
+    "PDT": -7*3600,
+    "PST": -8*3600,
+}
 
 
 class FileParser(BaseStardateParser):
@@ -96,25 +104,8 @@ class FileParser(BaseStardateParser):
         return post_data
 
     def parse_publish(self, date):
-        tz_str = None
-        tz = None
-
-        try:
-            tz_str = date.split(' ')[3]
-        except IndexError:
-            pass
-
-        if tz_str:
-            try:
-                tz = timezone(tz_str)
-            except:
-                pass
-
         if not isinstance(date, datetime.datetime):
-            date = parse(date)
-
-            if tz:
-                date = make_aware(date, tz)
+            date = parse(date, tzinfos=TZ_OFFSETS)
 
         if not is_aware(date):
             date = make_aware(date, utc)
