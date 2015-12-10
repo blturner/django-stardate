@@ -125,9 +125,6 @@ class DropboxBackendTestCase(TestCase):
         self.backend.pull(self.blog)
         self.backend.pull(self.blog)
 
-    def test_push_then_pull(self):
-        pass
-
     def test_push_blog_file(self):
         posts = self.blog.get_posts().all()
         self.backend.push_blog_file(self.blog.backend_file, posts)
@@ -135,10 +132,6 @@ class DropboxBackendTestCase(TestCase):
         packed_string = self.backend.parser.pack(
             self.backend.serialize_posts(self.blog.get_posts().all()))
         self.assertEqual(f.read(), packed_string)
-
-    # def test_push_blog_files(self):
-    #     self.assertEqual(1, 2)
-
 
     def test_save_cursor(self):
         self.backend.save_cursor('test_cursor')
@@ -170,17 +163,6 @@ class DropboxBackendTestCase(TestCase):
         self.assertIn('stardate', serialized_posts[0])
         self.assertIn('publish', serialized_posts[0])
         self.assertIn('body', serialized_posts[0])
-
-    # def test_sync(self):
-    #     user = User.objects.get(username='bturner')
-    #     blog = create_blog(owner=user)
-    #     blog.backend.client_class = MockDropboxClient
-    #     create_post(blog=blog)
-    #     post_list = blog.post_set.all()
-
-    #     sync = self.backend.sync(post_list)
-
-    #     self.assertEqual(sync.read(), 'stardate: 352b967d-87bf-11e2-81f3-b88d120c8298\npublish: 2013-01-04 12:00 AM\ntitle: Fourth post\n\n\nDo it.\n')
 
 
 class LocalFileBackendTestCase(TestCase):
