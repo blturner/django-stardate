@@ -98,7 +98,8 @@ class FileParser(BaseStardateParser):
         Parses a datetime string into a datetime instance. If no timezone is
         provided, returns an aware datetime in UTC.
         """
-        date = parse(date, tzinfos=TZ_OFFSETS)
+        if not isinstance(date, datetime.datetime):
+            date = parse(date, tzinfos=TZ_OFFSETS)
 
         if not is_aware(date):
             date = make_aware(date, utc)

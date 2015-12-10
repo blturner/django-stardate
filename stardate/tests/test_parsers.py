@@ -81,6 +81,12 @@ class FileParserTestCase(TestCase):
 
         self.assertEqual(dt, utc_expected)
 
+    def test_parse_publish_with_datetime(self):
+        date = datetime.datetime(2015, 1, 1, 6, 0)
+        expected = datetime.datetime(2015, 1, 1, 6, 0, tzinfo=tzutc())
+
+        self.assertEqual( self.parser.parse_publish(date), expected)
+
     def test_parse(self):
         parsed = self.parser.parse(self.test_string)
 
