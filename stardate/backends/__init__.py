@@ -64,7 +64,7 @@ class StardateBackend(object):
         Create or update a Post from a dictionary
         """
         created = False
-        # If a post is not provided, try an fetch it
+        # If a post is not provided, try and fetch it
         if not post:
             if 'stardate' in post_dict:
                 post = Post.objects.filter(
