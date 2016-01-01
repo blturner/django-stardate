@@ -154,6 +154,7 @@ class BasePost(models.Model):
             # Initialize our backend with user's social auth
             self.backend.set_social_auth(self.blog.social_auth)
             # Sync this post with our backend
+            # need a serialized post here to pass in
             self.backend.push([self])
         super(BasePost, self).save(*args, **kwargs)
 
