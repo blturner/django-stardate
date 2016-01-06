@@ -103,7 +103,7 @@ class PostManager(models.Manager):
 class BasePost(models.Model):
     authors = models.ManyToManyField(User, blank=True, related_name="%(app_label)s_%(class)s_related")
     blog = models.ForeignKey(Blog, related_name="%(app_label)s_%(class)s_related")
-    body = MarkupField(default_markup_type='markdown')
+    body = MarkupField(blank=True, default_markup_type='markdown')
     created = models.DateTimeField(default=timezone.now)
     deleted = models.BooleanField(default=False)
     objects = PostManager()
