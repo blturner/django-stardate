@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.db.models.loading import get_model
 from django.shortcuts import get_object_or_404
 from django.views import generic
 
