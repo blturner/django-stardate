@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.utils import timezone
 
+from dateutil.parser import parse
 from social.apps.django_app.default.models import UserSocialAuth
 
 from stardate.models import Blog
@@ -98,7 +99,7 @@ class DropboxBackendTestCase(TestCase):
         self.assertEqual(backend_file, packed_string)
 
     def test_pull_then_push(self):
-        test_string = 'title: My test post\npublish: June 1, 2013\n\n\nPost body.\n'
+        test_string = 'title: My test post\npublish: June 1, 2013 6AM PST\n\n\nPost body.\n'
         self.backend.client.put_file(self.blog.backend_file, test_string)
         self.assertEqual(
             self.backend.client.get_file(self.blog.backend_file).read(),
@@ -124,9 +125,6 @@ class DropboxBackendTestCase(TestCase):
         self.backend.pull(self.blog)
         self.backend.pull(self.blog)
 
-    def test_push_then_pull(self):
-        pass
-
     def test_push_blog_file(self):
         posts = self.blog.get_posts().all()
         self.backend.push_blog_file(self.blog.backend_file, posts)
@@ -134,10 +132,6 @@ class DropboxBackendTestCase(TestCase):
         packed_string = self.backend.parser.pack(
             self.backend.serialize_posts(self.blog.get_posts().all()))
         self.assertEqual(f.read(), packed_string)
-
-    # def test_push_blog_files(self):
-    #     self.assertEqual(1, 2)
-
 
     def test_save_cursor(self):
         self.backend.save_cursor('test_cursor')
@@ -169,17 +163,6 @@ class DropboxBackendTestCase(TestCase):
         self.assertIn('stardate', serialized_posts[0])
         self.assertIn('publish', serialized_posts[0])
         self.assertIn('body', serialized_posts[0])
-
-    # def test_sync(self):
-    #     user = User.objects.get(username='bturner')
-    #     blog = create_blog(owner=user)
-    #     blog.backend.client_class = MockDropboxClient
-    #     create_post(blog=blog)
-    #     post_list = blog.post_set.all()
-
-    #     sync = self.backend.sync(post_list)
-
-    #     self.assertEqual(sync.read(), 'stardate: 352b967d-87bf-11e2-81f3-b88d120c8298\npublish: 2013-01-04 12:00 AM\ntitle: Fourth post\n\n\nDo it.\n')
 
 
 class LocalFileBackendTestCase(TestCase):
@@ -247,6 +230,8 @@ class LocalFileBackendTestCase(TestCase):
         os.removedirs(temp_dir)
 
     def test_pull(self):
+        timestamp = '2013-01-01 6:00 AM EST'
+        parsed_timestamp = datetime.datetime(2013, 1, 1, 11, 0, tzinfo=timezone.utc)
         temp_dir = tempfile.mkdtemp()
         fd, file_path = tempfile.mkstemp(dir=temp_dir, suffix='.md')
         blog = create_blog(name='Pull',
@@ -255,7 +240,7 @@ class LocalFileBackendTestCase(TestCase):
                            slug='pull')
 
         f = open(file_path, 'w')
-        f.write('title: Post title\npublish: 2013-01-01 6:00 AM\n\n\nA post for pulling in.')
+        f.write('title: Post title\npublish: {0}\n\n\nA post for pulling in.'.format(timestamp))
         f.close()
 
         pulled_posts = blog.backend.pull(blog)
@@ -263,7 +248,8 @@ class LocalFileBackendTestCase(TestCase):
         self.assertIsNotNone(pulled_posts[0].stardate)
         self.assertEqual(pulled_posts[0].title, 'Post title')
         self.assertEqual(pulled_posts[0].body.raw, 'A post for pulling in.\n')
-        self.assertEqual(pulled_posts[0].publish, datetime.datetime(2013, 1, 1, 14, 0, tzinfo=timezone.utc))
+        self.assertEqual(pulled_posts[0].publish.astimezone(timezone.utc),
+                         parsed_timestamp.replace(tzinfo=timezone.utc))
 
     def test_push(self):
         fd, file_path = tempfile.mkstemp(suffix='.md')
@@ -286,7 +272,6 @@ class LocalFileBackendTestCase(TestCase):
     def test_serialize_posts(self):
         serialized_posts = self.blog.backend.serialize_posts(self.post_list)
         self.assertIn('title', serialized_posts[0])
-        self.assertIn('created', serialized_posts[0])
         self.assertIn('stardate', serialized_posts[0])
         self.assertIn('publish', serialized_posts[0])
         self.assertIn('body', serialized_posts[0])

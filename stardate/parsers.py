@@ -3,13 +3,23 @@ import uuid
 import yaml
 
 from dateutil.parser import parse
-from django.utils.timezone import get_current_timezone, make_aware, utc
+from django.utils.timezone import is_aware, make_aware, utc
 
 from stardate.backends import BaseStardateParser
 
 DELIMITER = "\n---\n"
 TIMEFORMAT = '%Y-%m-%d %I:%M %p'  # 2012-01-01 09:00 AM
-current_timezone = get_current_timezone()
+
+TZ_OFFSETS = {
+    "EDT": -4*3600,
+    "EST": -5*3600,
+    "CDT": -5*3600,
+    "CST": -6*3600,
+    "MDT": -6*3600,
+    "MST": -7*3600,
+    "PDT": -7*3600,
+    "PST": -8*3600,
+}
 
 
 class FileParser(BaseStardateParser):
@@ -23,13 +33,6 @@ class FileParser(BaseStardateParser):
         """
         post = post.copy()
 
-        # FIXME?: this belongs in serialization process
-        try:
-            post['publish'] = post['publish'].astimezone(current_timezone)
-            post['publish'] = datetime.datetime.strftime(post['publish'], self.timeformat)
-        except:
-            pass
-
         # Body gets processed separately
         body = post.pop('body')
 
@@ -39,7 +42,11 @@ class FileParser(BaseStardateParser):
         for key in sorted(post.keys()):
             try:
                 value = post[key]
+
                 if value:
+                    if key == 'published':
+                        value = datetime.datetime.strftime(value, '%Y-%m-%d %I:%M %p %Z')
+
                     field_string = '{0}: {1}'.format(key, value)
                     meta.append(field_string)
             except KeyError:
@@ -83,10 +90,21 @@ class FileParser(BaseStardateParser):
         # FIXME: this belongs in deserialization, perhaps
         # on model?
         if 'publish' in post_data:
-            if not isinstance(post_data['publish'], datetime.datetime):
-                post_data['publish'] = parse(post_data['publish'])
-                post_data['publish'] = make_aware(post_data['publish'], current_timezone).astimezone(utc)
+            post_data['publish'] = self.parse_publish(post_data['publish'])
         return post_data
+
+    def parse_publish(self, date):
+        """
+        Parses a datetime string into a datetime instance. If no timezone is
+        provided, returns an aware datetime in UTC.
+        """
+        if not isinstance(date, datetime.datetime):
+            date = parse(date, tzinfos=TZ_OFFSETS)
+
+        if not is_aware(date):
+            date = make_aware(date, utc)
+
+        return date
 
     def unpack(self, string):
         """

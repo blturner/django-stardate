@@ -1,8 +1,11 @@
 import os
 import logging
 
+from datetime import datetime
+
 from django.conf import settings
 from django.core.serializers import serialize
+from django.utils.timezone import utc
 
 try:
     from importlib import import_module
@@ -53,9 +56,15 @@ class StardateBackend(object):
         serialized = serialize(
             'python',
             posts,
-            fields=('title', 'created', 'slug', 'publish', 'stardate', 'body')
+            fields=('title', 'slug', 'publish', 'stardate', 'body')
         )
         for post in serialized:
+            if post['fields']['publish']:
+                post['fields']['publish'] = datetime.strftime(
+                    post['fields']['publish'].astimezone(utc),
+                    '%Y-%m-%d %I:%M %p %Z'
+                )
+
             posts_as_dicts.append(post['fields'])
         return posts_as_dicts
 
@@ -64,7 +73,7 @@ class StardateBackend(object):
         Create or update a Post from a dictionary
         """
         created = False
-        # If a post is not provided, try an fetch it
+        # If a post is not provided, try and fetch it
         if not post:
             if 'stardate' in post_dict:
                 post = Post.objects.filter(
