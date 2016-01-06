@@ -1,8 +1,11 @@
 import os
 import logging
 
+from datetime import datetime
+
 from django.conf import settings
 from django.core.serializers import serialize
+from django.utils.timezone import utc
 
 try:
     from importlib import import_module
@@ -56,6 +59,12 @@ class StardateBackend(object):
             fields=('title', 'slug', 'publish', 'stardate', 'body')
         )
         for post in serialized:
+            if post['fields']['publish']:
+                post['fields']['publish'] = datetime.strftime(
+                    post['fields']['publish'].astimezone(utc),
+                    '%Y-%m-%d %I:%M %p %Z'
+                )
+
             posts_as_dicts.append(post['fields'])
         return posts_as_dicts
 
