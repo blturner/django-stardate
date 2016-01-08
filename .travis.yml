@@ -1,13 +1,11 @@
 language: python
 env:
-  - TOXENV=py26-django14
   - TOXENV=py27-django14
-  - TOXENV=py26-django15
   - TOXENV=py27-django15
-  - TOXENV=py26-django16
   - TOXENV=py27-django16
   - TOXENV=py27-django17
   - TOXENV=py27-django18
+  - TOXENV=py27-django19
 install:
   - pip install tox
 script:
