@@ -14,11 +14,11 @@ setup(
     install_requires=[
         'Django>=1.4,<1.10',
         'django-markupfield==1.4.0',
-        'dropbox>=1.4,<2.0',
-        'Markdown==2.0.3',
+        'dropbox>=1.4,<4.0',
+        'Markdown==2.6.5',
         'PyYAML==3.11',
-        'python-dateutil==2.1',
+        'python-dateutil==2.4.2',
         'python-social-auth>=0.1,<0.3',
-        'pytz<2014.4',
+        'pytz<2015.7',
     ],
 )
