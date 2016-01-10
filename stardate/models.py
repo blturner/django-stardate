@@ -1,9 +1,11 @@
 import datetime
+import uuid
 
 from django.contrib.auth.models import User
 from django.core import serializers
 from django.db import models
 from django.db.models.query import QuerySet
+from django.template.defaultfilters import slugify
 from django.utils import timezone
 
 from social.apps.django_app.default.models import UserSocialAuth
@@ -129,9 +131,6 @@ class BasePost(models.Model):
         return self.title
 
     def clean(self, *args, **kwargs):
-        import uuid
-        from django.template.defaultfilters import slugify
-
         if not self.stardate:
             self.stardate = str(uuid.uuid1())
         if not self.slug:
