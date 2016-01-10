@@ -108,7 +108,7 @@ class BasePost(models.Model):
     deleted = models.BooleanField(default=False)
     objects = PostManager()
     publish = models.DateTimeField(blank=True, null=True)
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField()
     stardate = models.CharField(max_length=255)
     title = models.CharField(max_length=255)
     timezone = models.CharField(blank=True, max_length=255)
@@ -117,6 +117,7 @@ class BasePost(models.Model):
         abstract = True
         app_label = 'stardate'
         ordering = ['-publish']
+        unique_together = ('blog', 'slug')
 
     def __init__(self, *args, **kwargs):
         super(BasePost, self).__init__(*args, **kwargs)
