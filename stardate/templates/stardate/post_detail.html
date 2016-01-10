@@ -9,6 +9,8 @@
 
 
     {% block content_title %}
+        {% load tz %}
+
         <h1>{{ post.title }}</h1>
         <ul>
         {% if post.authors.all %}
@@ -20,7 +22,14 @@
                 {% include 'stardate/includes/author_list.html' %}
             {% endwith %}
         {% endif %}
-        <li>Posted {{ post.publish|date:"l, F jS, Y P T" }}</li>
+
+        {% if post.timezone %}
+            {% timezone post.timezone %}
+            <li>Posted {{ post.publish|date:"l, F jS, Y P T" }}</li>
+            {% endtimezone %}
+        {% else %}
+            <li>Posted {{ post.publish|date:"l, F jS, Y P T" }}</li>
+        {% endif %}
         </ul>
     {% endblock content_title %}
 

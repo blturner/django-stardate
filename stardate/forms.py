@@ -49,5 +49,6 @@ class PostForm(forms.ModelForm):
             'slug',
             'body',
             'publish',
-            'authors'
+            'timezone',
+            'authors',
         ]

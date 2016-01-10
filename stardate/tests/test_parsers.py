@@ -101,6 +101,15 @@ class FileParserTestCase(TestCase):
         self.assertTrue(parsed.has_key('title'))
         self.assertTrue(parsed.has_key('extra_field'))
 
+    def test_parse_with_timezone(self):
+        string = u'title: An EST post\npublish: 2016-01-01 6AM\ntimezone: US/Eastern\n\n\nBody copy.\n'
+        parsed = self.parser.parse(string)
+
+        local = pytz.timezone('US/Eastern')
+        dt = local.localize(parse('2016-01-01 6AM'))
+
+        self.assertEqual(parsed['publish'], dt.astimezone(pytz.utc))
+
     def test_render(self):
         test_stardate = uuid.uuid1()
         dict_to_render = {
@@ -108,6 +117,7 @@ class FileParserTestCase(TestCase):
             'publish': datetime.datetime(2013, 6, 1, 0, 0, tzinfo=timezone.utc),
             'stardate': test_stardate,
             'title': 'Test title',
+            'timezone': 'US/Eastern',
         }
         dict_without_publish = dict_to_render.copy()
         dict_without_publish.pop('publish', None)

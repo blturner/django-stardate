@@ -1,4 +1,5 @@
 import datetime
+import pytz
 import uuid
 import yaml
 
@@ -44,7 +45,7 @@ class FileParser(BaseStardateParser):
                 value = post[key]
 
                 if value:
-                    if key == 'published':
+                    if key == 'publish' and isinstance(value, datetime.datetime):
                         value = datetime.datetime.strftime(value, '%Y-%m-%d %I:%M %p %Z')
 
                     field_string = '{0}: {1}'.format(key, value)
@@ -89,11 +90,16 @@ class FileParser(BaseStardateParser):
 
         # FIXME: this belongs in deserialization, perhaps
         # on model?
+        timezone = None
+
+        if 'timezone' in post_data:
+            timezone = post_data['timezone']
+
         if 'publish' in post_data:
-            post_data['publish'] = self.parse_publish(post_data['publish'])
+            post_data['publish'] = self.parse_publish(post_data['publish'], timezone)
         return post_data
 
-    def parse_publish(self, date):
+    def parse_publish(self, date, timezone=None):
         """
         Parses a datetime string into a datetime instance. If no timezone is
         provided, returns an aware datetime in UTC.
@@ -101,7 +107,15 @@ class FileParser(BaseStardateParser):
         if not isinstance(date, datetime.datetime):
             date = parse(date, tzinfos=TZ_OFFSETS)
 
-        if not is_aware(date):
+        date_is_aware = is_aware(date)
+
+        if timezone and not date_is_aware:
+            local = pytz.timezone(timezone)
+            date = local.localize(date, is_dst=None)
+
+            return date.astimezone(utc)
+
+        if not date_is_aware:
             date = make_aware(date, utc)
 
         return date
