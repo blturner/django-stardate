@@ -37,13 +37,13 @@ class FileParserTestCase(TestCase):
             {
                 'title': 'My first post',
                 'stardate': uuid.uuid1(),
-                'published': datetime.datetime(2015, 1, 1, 6, 0, tzinfo=tzutc()),
+                'publish': datetime.datetime(2015, 1, 1, 6, 0, tzinfo=tzutc()),
                 'body': 'This is the first post.'
             },
             {
                 'title': 'My second post',
                 'stardate': uuid.uuid1(),
-                'published': datetime.datetime(2015, 1, 2, 6, 0, tzinfo=tzutc()),
+                'publish': datetime.datetime(2015, 1, 2, 6, 0, tzinfo=tzutc()),
                 'body': 'This is the second post.'
             },
         ]
@@ -60,11 +60,11 @@ class FileParserTestCase(TestCase):
         self.assertTrue(u'\n\n\n{0}'.format(post_list[0]['body']) in packed)
         self.assertTrue(u'\n\n\n{0}'.format(post_list[1]['body']) in packed)
 
-        pub_0 = datetime.datetime.strftime(post_list[0]['published'], '%Y-%m-%d %I:%M %p %Z')
-        pub_1 = datetime.datetime.strftime(post_list[1]['published'], '%Y-%m-%d %I:%M %p %Z')
+        pub_0 = datetime.datetime.strftime(post_list[0]['publish'], '%Y-%m-%d %I:%M %p %Z')
+        pub_1 = datetime.datetime.strftime(post_list[1]['publish'], '%Y-%m-%d %I:%M %p %Z')
 
-        self.assertTrue(u'published: {0}'.format(pub_0) in packed)
-        self.assertTrue(u'published: {0}'.format(pub_1) in packed)
+        self.assertTrue(u'publish: {0}'.format(pub_0) in packed)
+        self.assertTrue(u'publish: {0}'.format(pub_1) in packed)
 
     def test_parse_publish(self):
         timestamp = '01-01-2015 06:00AM PST'
