@@ -47,4 +47,9 @@ class Command(BaseCommand):
     @atomic
     def batch_save(self, queryset):
         for obj in queryset:
-            obj.save()
+            push = False
+
+            if obj.stardate:
+                push = True
+
+            obj.save(push=push)
