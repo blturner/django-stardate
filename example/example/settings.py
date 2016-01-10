@@ -36,7 +36,7 @@ DATABASES = {
     }
 }
 
-TIME_ZONE = 'America/Los_Angeles'
+TIME_ZONE = 'UTC'
 
 LANGUAGE_CODE = 'en-us'
 
