@@ -8,7 +8,7 @@ from django.utils.timezone import is_aware, make_aware, utc
 
 from stardate.backends import BaseStardateParser
 
-DELIMITER = "\n---\n"
+DELIMITER = "\n---\n\n"
 TIMEFORMAT = '%Y-%m-%d %I:%M %p'  # 2012-01-01 09:00 AM
 
 TZ_OFFSETS = {
