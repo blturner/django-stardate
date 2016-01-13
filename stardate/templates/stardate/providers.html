@@ -1,0 +1,15 @@
+{% extends "stardate/base_stardate.html" %}
+
+
+{% block content_title %}
+    <h1>Choose a provider</h1>
+{% endblock content_title %}
+
+
+{% block content %}
+    <ul>
+    {% for backend in backends.backends %}
+        <li><a href="{% url 'social:begin' backend=backend %}">{{ backend|capfirst }}</a></li>
+    {% endfor %}
+    </ul>
+{% endblock content %}

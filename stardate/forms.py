@@ -1,4 +1,5 @@
 from django import forms
+from django.utils.text import slugify
 
 from markupfield.widgets import AdminMarkupTextareaWidget
 
@@ -19,13 +20,13 @@ class BlogForm(forms.ModelForm):
         model = Blog
         fields = [
             'name',
-            'slug',
             'social_auth',
             'backend_file',
-            'authors',
+            'user',
         ]
-
-    # backend_file = forms.ChoiceField(required=False)
+        widgets = {
+            'user': forms.HiddenInput(),
+        }
 
     def __init__(self, *args, **kwargs):
         super(BlogForm, self).__init__(*args, **kwargs)
@@ -35,7 +36,14 @@ class BlogForm(forms.ModelForm):
         except:
             pass
 
-        # self.fields['backend_file'].choices = backend.get_source_list()
+    def save(self):
+        instance = super(BlogForm, self).save(commit=False)
+
+        if not instance.slug:
+            instance.slug = slugify(instance.name)
+        instance.save()
+
+        return instance
 
 
 class PostForm(forms.ModelForm):

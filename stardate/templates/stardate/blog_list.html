@@ -10,6 +10,10 @@
 
 
 {% block content %}
+    <p>
+    <a href="{% url 'blog-create' %}">Create blog</a>
+    </p>
+
     {% if blog_list %}
         <ul>
         {% for blog in blog_list %}
