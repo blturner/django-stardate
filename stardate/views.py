@@ -7,7 +7,7 @@ from django.views import generic
 
 from social.apps.django_app.default.models import UserSocialAuth
 
-from stardate.forms import BlogForm
+from stardate.forms import BlogForm, PostForm
 from stardate.models import Blog
 from stardate.utils import get_post_model
 
@@ -38,11 +38,12 @@ class BlogCreate(generic.edit.CreateView):
 
 
 class PostViewMixin(object):
+    allow_empty = True
     model = Post
     date_field = 'publish'
 
     def get_queryset(self):
-        blog = get_object_or_404(Blog, slug__iexact=self.kwargs['blog_slug'])
+        blog = Blog.objects.get(slug__iexact=self.kwargs['blog_slug'])
         return Post.objects.published().filter(blog=blog)
 
 
@@ -70,6 +71,10 @@ class PostDayArchive(PostViewMixin, generic.DayArchiveView):
 class PostDetail(PostViewMixin, generic.DateDetailView):
     context_object_name = 'post'
     slug_url_kwarg = 'post_slug'
+
+
+class PostCreate(PostViewMixin, generic.edit.CreateView):
+    form_class = PostForm
 
 
 class PostEdit(PostViewMixin, generic.UpdateView):

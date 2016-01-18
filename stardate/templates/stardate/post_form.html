@@ -3,12 +3,22 @@
 
 {% block title %}{{ post.title }}{% endblock %}
 
-{% block extra_head %}
-    <link rel="stylesheet" href="{{ STATIC_URL }}stardate/js/CodeMirror-3.12/lib/codemirror.css">
-    <link rel="stylesheet" href="{{ STATIC_URL }}stardate/js/CodeMirror-3.12/theme/monokai.css">
-    <link rel="stylesheet" href="{{ STATIC_URL }}stardate/js/highlight.js/styles/monokai.css">
+
+{% block content_title %}
+    <h1>Create a new post</h1>
+{% endblock content_title %}
+
+
+{% block content %}
+    {{ form.as_p }}
+
+    <p>
+        <button type="submit">Create post</button>
+    </p>
 {% endblock %}
 
+
+{% comment %}
 {% block page %}
     {% include 'stardate/includes/breadcrumbs.html' %}
 
@@ -41,3 +51,4 @@
     </script>
     {% endblock content %}
 {% endblock page %}
+{% endcomment %}
