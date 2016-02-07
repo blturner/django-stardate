@@ -7,6 +7,7 @@ from django.views import generic
 
 from social.apps.django_app.default.models import UserSocialAuth
 
+from stardate import backends
 from stardate.forms import BlogForm, PostForm
 from stardate.models import Blog
 from stardate.utils import get_post_model
@@ -18,17 +19,18 @@ class BlogCreate(generic.edit.CreateView):
     form_class = BlogForm
     model = Blog
 
-    def get(self, request, *args, **kwargs):
-        try:
-            social_auth = UserSocialAuth.objects.get(user=request.user)
-        except UserSocialAuth.DoesNotExist:
-            return HttpResponseRedirect(reverse('provider-select'))
-
-        return super(BlogCreate, self).get(request, *args, **kwargs)
-
     def get_initial(self):
+        provider = self.kwargs['provider']
+        user = self.request.user
+
+        try:
+            social_auth = UserSocialAuth.objects.get(user=user, provider=provider)
+        except:
+            social_auth = None
+
         self.initial.update({
-            'user': self.request.user
+            'social_auth': social_auth,
+            'user': user,
         })
 
         return self.initial
@@ -92,7 +94,13 @@ class DraftPostDetail(PostViewMixin, generic.DetailView):
 
 
 class PostCreate(PostViewMixin, generic.edit.CreateView):
+    model = Post
     form_class = PostForm
+
+    def form_valid(self, form):
+        blog = Blog.objects.get(slug=self.kwargs['blog_slug'])
+        form.instance.blog = blog
+        return super(PostCreate, self).form_valid(form)
 
 
 class PostEdit(PostViewMixin, generic.UpdateView):
@@ -100,7 +108,30 @@ class PostEdit(PostViewMixin, generic.UpdateView):
     slug_url_kwarg = 'post_slug'
 
 
-def select_backend(request):
-    return render_to_response('stardate/providers.html',
-                              {},
-                              context_instance=RequestContext(request))
+def select_backend(request, **kwargs):
+    if request.POST:
+        backend = request.POST.get('backend')
+
+        if backend == 'local':
+            return HttpResponseRedirect(reverse('blog-create', kwargs={
+                'provider': backend}))
+
+        try:
+            UserSocialAuth.objects.get(user=request.user, provider=backend)
+
+            return HttpResponseRedirect(reverse('blog-create', kwargs={
+                'provider': backend}))
+        except UserSocialAuth.DoesNotExist:
+            return HttpResponseRedirect(
+                reverse('social:begin', kwargs={'backend': backend})
+            )
+
+    context = {
+        'stardate_backends': backends.STARDATE_BACKENDS
+    }
+
+    return render_to_response(
+        'stardate/providers.html',
+        context,
+        context_instance=RequestContext(request)
+    )

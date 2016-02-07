@@ -5,19 +5,21 @@
 {% block body_class %}{{ block.super }} blog_list{% endblock %}
 
 {% block content_title %}
-    <h1>Weblog list</h1>
+    <h1>Blog list</h1>
 {% endblock %}
 
 
 {% block content %}
+    {% if request.user.is_authenticated %}
     <p>
-    <a href="{% url 'blog-create' %}">Create blog</a>
+        <a href="{% url 'blog-new' %}">Create blog</a>
     </p>
+    {% endif %}
 
     {% if blog_list %}
         <ul>
         {% for blog in blog_list %}
-            <li><a href="{{ blog.get_absolute_url }}">{{ blog.name }}</a></li>
+            <li><a href="{{ blog.get_absolute_url }}">{{ blog.name }}</a> {{ blog.user }}</li>
         {% endfor %}
         </ul>
     {% else %}

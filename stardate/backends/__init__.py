@@ -19,10 +19,21 @@ Post = get_post_model()
 
 logger = logging.getLogger('stardate')
 
-STARDATE_BACKEND = getattr(settings, 'STARDATE_BACKEND', 'stardate.backends.dropbox.DropboxBackend')
+DEFAULT_BACKENDS = {
+    'local': {
+        'name': 'Local',
+        'module': 'stardate.backends.local_file.LocalFileBackend',
+    },
+    'dropbox': {
+        'name': 'Dropbox',
+        'module': 'stardate.backends.dropbox.DropboxBackend',
+    }
+}
+
+STARDATE_BACKENDS = getattr(settings, 'STARDATE_BACKENDS', DEFAULT_BACKENDS)
 
 
-def get_backend(backend=STARDATE_BACKEND):
+def get_backend(backend=None):
     i = backend.rfind('.')
     module, attr = backend[:i], backend[i + 1:]
     try:

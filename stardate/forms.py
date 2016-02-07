@@ -3,12 +3,11 @@ from django.utils.text import slugify
 
 from markupfield.widgets import AdminMarkupTextareaWidget
 
-from stardate.backends import get_backend
+from stardate import backends
 from stardate.models import Blog
 from stardate.utils import get_post_model
 
 
-backend = get_backend()
 Post = get_post_model()
 
 
@@ -25,19 +24,19 @@ class BlogForm(forms.ModelForm):
             'user',
         ]
         widgets = {
+            'social_auth': forms.HiddenInput(),
             'user': forms.HiddenInput(),
         }
 
-    def __init__(self, *args, **kwargs):
-        super(BlogForm, self).__init__(*args, **kwargs)
-        try:
-            qs = Blog.objects.get(pk=self.instance.pk)
-            backend.set_social_auth(qs.social_auth)
-        except:
-            pass
-
     def save(self):
         instance = super(BlogForm, self).save(commit=False)
+
+        try:
+            provider = instance.social_auth.provider
+        except AttributeError:
+            provider = 'local'
+
+        instance.backend_class = backends.STARDATE_BACKENDS[provider]['module']
 
         if not instance.slug:
             instance.slug = slugify(instance.name)
