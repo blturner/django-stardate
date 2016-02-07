@@ -30,6 +30,15 @@
         {% else %}
             <li>Posted {{ post.publish|date:"l, F jS, Y P T" }}</li>
         {% endif %}
+
+
+        {% if request.user == post.blog.user %}
+            <li>
+                <a href="{% url 'post-edit' blog_slug=post.blog.slug year=post.publish.year month=post.publish|date:"b" day=post.publish.day post_slug=post.slug %}">
+                    Edit post
+                </a>
+            </li>
+        {% endif %}
         </ul>
     {% endblock content_title %}
 

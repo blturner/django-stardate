@@ -93,6 +93,17 @@ class DraftPostDetail(PostViewMixin, generic.DetailView):
         )
 
 
+class DraftEdit(PostViewMixin, generic.UpdateView):
+    context_object_name = 'post'
+    form_class = PostForm
+
+    def get_object(self):
+        return Post.objects.get(
+            blog__slug=self.kwargs['blog_slug'],
+            stardate=self.kwargs['stardate']
+        )
+
+
 class PostCreate(PostViewMixin, generic.edit.CreateView):
     model = Post
     form_class = PostForm
@@ -106,6 +117,7 @@ class PostCreate(PostViewMixin, generic.edit.CreateView):
 class PostEdit(PostViewMixin, generic.UpdateView):
     context_object_name = 'post'
     slug_url_kwarg = 'post_slug'
+    form_class = PostForm
 
 
 def select_backend(request, **kwargs):
