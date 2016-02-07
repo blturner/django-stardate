@@ -91,6 +91,18 @@ class Blog(models.Model):
 
 
 class PostManager(models.Manager):
+    def drafts(self):
+        """
+        Returns all draft Post instances. A draft is considered to be a Post
+        without a publish property.
+        """
+        if self.get_queryset:
+            queryset_method = self.get_queryset
+        else:
+            queryset_method = self.qet_query_set
+
+        return queryset_method().filter(publish=None)
+
     def published(self):
         if self.get_queryset:
             queryset_method = self.get_queryset
@@ -161,7 +173,12 @@ class BasePost(models.Model):
 
     @models.permalink
     def get_absolute_url(self):
-        self.publish = self.publish.astimezone(timezone.get_current_timezone())
+        if not self.publish:
+            return ('draft-post-detail', (), {
+                'blog_slug': self.blog.slug,
+                'stardate': self.stardate
+            })
+
         return ('post-detail', (), {
             'blog_slug': self.blog.slug,
             'year': self.publish.year,

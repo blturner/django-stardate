@@ -1,0 +1,18 @@
+{% extends "stardate/base_stardate.html" %}
+
+
+{% block page %}
+    <ul class="breadcrumbs">
+        <li><a href="{% url 'post-archive-index' blog_slug=post.blog.slug %}">Drafts</a></li>
+    </ul>
+
+    {% block content_title %}
+        <h1>{{ post.title }}</h1>
+        <p><strong>This post is currently in draft</strong></p>
+    {% endblock content_title %}
+
+
+    {% block content %}
+        {{ post.body }}
+    {% endblock content %}
+{% endblock page %}

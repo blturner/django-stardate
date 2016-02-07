@@ -73,6 +73,24 @@ class PostDetail(PostViewMixin, generic.DateDetailView):
     slug_url_kwarg = 'post_slug'
 
 
+class DraftArchiveIndex(PostViewMixin, generic.ListView):
+    template_name = 'stardate/draft_list.html'
+
+    def get_queryset(self):
+        blog = Blog.objects.get(slug__iexact=self.kwargs['blog_slug'])
+        return Post.objects.drafts().filter(blog=blog)
+
+
+class DraftPostDetail(PostViewMixin, generic.DetailView):
+    template_name = 'stardate/draft_detail.html'
+
+    def get_object(self):
+        return Post.objects.get(
+            blog__slug=self.kwargs['blog_slug'],
+            stardate=self.kwargs['stardate']
+        )
+
+
 class PostCreate(PostViewMixin, generic.edit.CreateView):
     form_class = PostForm
 
