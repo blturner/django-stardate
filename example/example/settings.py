@@ -112,7 +112,6 @@ INSTALLED_APPS = (
     'core',
     'social.apps.django_app.default',
     'stardate',
-    'debug_toolbar',
 )
 
 AUTHENTICATION_BACKENDS = (
