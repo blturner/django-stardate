@@ -19,11 +19,7 @@ from stardate.utils import get_post_model
 class Blog(models.Model):
     authors = models.ManyToManyField(User, blank=True)
     # Dot notation path to backend Class
-    backend_class = models.CharField(
-        max_length=255,
-        blank=True,
-        default=settings.STARDATE_BACKEND
-    )
+    backend_class = models.CharField(max_length=255, blank=True)
     # Path to file or directory used by backend to determine
     # how and where to store / retrieve posts
     backend_file = models.CharField(blank=True, max_length=255)
