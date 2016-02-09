@@ -1,8 +1,10 @@
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
+from django.utils.decorators import method_decorator
 from django.views import generic
 
 from social.apps.django_app.default.models import UserSocialAuth
@@ -15,7 +17,13 @@ from stardate.utils import get_post_model
 Post = get_post_model()
 
 
-class BlogCreate(generic.edit.CreateView):
+class LoginRequiredMixin(object):
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(ProtectedView, self).dispatch(*args, **kwargs)
+
+
+class BlogCreate(LoginRequiredMixin, generic.edit.CreateView):
     form_class = BlogForm
     model = Blog
 
@@ -93,7 +101,7 @@ class DraftPostDetail(PostViewMixin, generic.DetailView):
         )
 
 
-class DraftEdit(PostViewMixin, generic.UpdateView):
+class DraftEdit(LoginRequiredMixin, PostViewMixin, generic.UpdateView):
     context_object_name = 'post'
     form_class = PostForm
 
@@ -104,7 +112,7 @@ class DraftEdit(PostViewMixin, generic.UpdateView):
         )
 
 
-class PostCreate(PostViewMixin, generic.edit.CreateView):
+class PostCreate(LoginRequiredMixin, PostViewMixin, generic.edit.CreateView):
     model = Post
     form_class = PostForm
 
@@ -114,12 +122,13 @@ class PostCreate(PostViewMixin, generic.edit.CreateView):
         return super(PostCreate, self).form_valid(form)
 
 
-class PostEdit(PostViewMixin, generic.UpdateView):
+class PostEdit(LoginRequiredMixin, PostViewMixin, generic.UpdateView):
     context_object_name = 'post'
     slug_url_kwarg = 'post_slug'
     form_class = PostForm
 
 
+@login_required
 def select_backend(request, **kwargs):
     if request.POST:
         backend = request.POST.get('backend')
