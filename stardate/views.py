@@ -17,13 +17,8 @@ from stardate.utils import get_post_model
 Post = get_post_model()
 
 
-class LoginRequiredMixin(object):
-    @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
-        return super(ProtectedView, self).dispatch(*args, **kwargs)
-
-
-class BlogCreate(LoginRequiredMixin, generic.edit.CreateView):
+@method_decorator(login_required, name='dispatch')
+class BlogCreate(generic.edit.CreateView):
     form_class = BlogForm
     model = Blog
 
@@ -101,7 +96,8 @@ class DraftPostDetail(PostViewMixin, generic.DetailView):
         )
 
 
-class DraftEdit(LoginRequiredMixin, PostViewMixin, generic.UpdateView):
+@method_decorator(login_required, name='dispatch')
+class DraftEdit(PostViewMixin, generic.UpdateView):
     context_object_name = 'post'
     form_class = PostForm
 
@@ -112,7 +108,8 @@ class DraftEdit(LoginRequiredMixin, PostViewMixin, generic.UpdateView):
         )
 
 
-class PostCreate(LoginRequiredMixin, PostViewMixin, generic.edit.CreateView):
+@method_decorator(login_required, name='dispatch')
+class PostCreate(PostViewMixin, generic.edit.CreateView):
     model = Post
     form_class = PostForm
 
@@ -122,7 +119,8 @@ class PostCreate(LoginRequiredMixin, PostViewMixin, generic.edit.CreateView):
         return super(PostCreate, self).form_valid(form)
 
 
-class PostEdit(LoginRequiredMixin, PostViewMixin, generic.UpdateView):
+@method_decorator(login_required, name='dispatch')
+class PostEdit(PostViewMixin, generic.UpdateView):
     context_object_name = 'post'
     slug_url_kwarg = 'post_slug'
     form_class = PostForm
