@@ -31,7 +31,6 @@ class PostAdmin(admin.ModelAdmin):
         'body',
         'publish',
         'timezone',
-        'authors',
     ]
 
 
