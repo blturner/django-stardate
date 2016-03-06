@@ -67,7 +67,7 @@ class StardateBackend(object):
         serialized = serialize(
             'python',
             posts,
-            fields=('title', 'slug', 'publish', 'stardate', 'body')
+            fields=('title', 'slug', 'publish', 'stardate', 'body', 'timezone')
         )
         for post in serialized:
             if post['fields']['publish']:
