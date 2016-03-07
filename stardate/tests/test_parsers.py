@@ -8,12 +8,12 @@ from django.utils import timezone
 
 from dateutil.parser import parse
 from dateutil.tz import tzutc
+from mock import patch
 from social.apps.django_app.default.models import UserSocialAuth
 
 from stardate.models import Blog
 from stardate.parsers import FileParser
 from stardate.tests.factories import create_blog
-from stardate.tests.mock_backends import MockDropboxClient
 
 
 TIMESTAMP = '2012-01-02 12:00 AM EST'
@@ -31,8 +31,6 @@ class FileParserTestCase(TestCase):
         UserSocialAuth.objects.all().delete()
 
     def test_pack(self):
-        blog = create_blog()
-        blog.backend.client_class = MockDropboxClient
         post_list = [
             {
                 'title': 'My first post',
@@ -145,3 +143,10 @@ class FileParserTestCase(TestCase):
         self.assertEqual(post_list[0].get('title'), 'Tingling of the spine')
         self.assertEqual(post_list[0].get('publish').astimezone(tzutc()), TIMESTAMP_UTC)
         self.assertEqual(post_list[0].get('body'), 'Extraordinary claims require extraordinary evidence!')
+
+    @patch('stardate.parsers.logger')
+    def test_logs_error(self, mock_logging):
+        content = 'bad string\n\r'
+        post_list = self.parser.unpack(content)
+
+        self.assertTrue(mock_logging.error.called)
