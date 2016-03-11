@@ -7,7 +7,6 @@ from django.test import TestCase
 from django.utils import timezone
 
 from dateutil.parser import parse
-from dateutil.tz import tzutc
 from mock import patch
 from social.apps.django_app.default.models import UserSocialAuth
 
@@ -17,7 +16,7 @@ from stardate.tests.factories import create_blog
 
 
 TIMESTAMP = '2012-01-02 12:00 AM EST'
-TIMESTAMP_UTC = datetime.datetime(2012, 1, 2, 5, 0, tzinfo=tzutc())
+TIMESTAMP_UTC = datetime.datetime(2012, 1, 2, 5, 0, tzinfo=timezone.utc)
 
 
 class FileParserTestCase(TestCase):
@@ -35,13 +34,13 @@ class FileParserTestCase(TestCase):
             {
                 'title': 'My first post',
                 'stardate': uuid.uuid1(),
-                'publish': datetime.datetime(2015, 1, 1, 6, 0, tzinfo=tzutc()),
+                'publish': datetime.datetime(2015, 1, 1, 6, 0, tzinfo=timezone.utc),
                 'body': 'This is the first post.'
             },
             {
                 'title': 'My second post',
                 'stardate': uuid.uuid1(),
-                'publish': datetime.datetime(2015, 1, 2, 6, 0, tzinfo=tzutc()),
+                'publish': datetime.datetime(2015, 1, 2, 6, 0, tzinfo=timezone.utc),
                 'body': 'This is the second post.'
             },
         ]
@@ -66,7 +65,7 @@ class FileParserTestCase(TestCase):
 
     def test_parse_publish(self):
         timestamp = '01-01-2015 06:00AM PST'
-        utc_expected = datetime.datetime(2015, 1, 1, 14, 0, tzinfo=tzutc())
+        utc_expected = datetime.datetime(2015, 1, 1, 14, 0, tzinfo=timezone.utc)
 
         dt = self.parser.parse_publish(timestamp)
 
@@ -74,14 +73,14 @@ class FileParserTestCase(TestCase):
 
     def test_parse_publish_without_tz(self):
         timestamp = '01-01-2015 06:00AM'
-        utc_expected = datetime.datetime(2015, 1, 1, 6, 0, tzinfo=tzutc())
+        utc_expected = datetime.datetime(2015, 1, 1, 6, 0, tzinfo=timezone.utc)
         dt = self.parser.parse_publish(timestamp)
 
         self.assertEqual(dt, utc_expected)
 
     def test_parse_publish_with_datetime(self):
         date = datetime.datetime(2015, 1, 1, 6, 0)
-        expected = datetime.datetime(2015, 1, 1, 6, 0, tzinfo=tzutc())
+        expected = datetime.datetime(2015, 1, 1, 6, 0, tzinfo=timezone.utc)
 
         self.assertEqual( self.parser.parse_publish(date), expected)
 
@@ -89,8 +88,8 @@ class FileParserTestCase(TestCase):
         parsed = self.parser.parse(self.test_string)
 
         self.assertEqual(parsed['title'], 'Tingling of the spine')
-        expected = datetime.datetime(2012, 1, 2, 5, 0, tzinfo=tzutc())
-        self.assertEqual(parsed['publish'].astimezone(tzutc()), expected)
+        expected = datetime.datetime(2012, 1, 2, 5, 0, tzinfo=timezone.utc)
+        self.assertEqual(parsed['publish'].astimezone(timezone.utc), expected)
         self.assertEqual(parsed['body'], 'Extraordinary claims require extraordinary evidence!')
 
         # Check that extra_field is parsed
@@ -141,7 +140,7 @@ class FileParserTestCase(TestCase):
         #The file has one post to unpack
         self.assertEqual(len(post_list), 1)
         self.assertEqual(post_list[0].get('title'), 'Tingling of the spine')
-        self.assertEqual(post_list[0].get('publish').astimezone(tzutc()), TIMESTAMP_UTC)
+        self.assertEqual(post_list[0].get('publish').astimezone(timezone.utc), TIMESTAMP_UTC)
         self.assertEqual(post_list[0].get('body'), 'Extraordinary claims require extraordinary evidence!')
 
     @patch('stardate.parsers.logger')
