@@ -118,7 +118,7 @@ class BasePost(models.Model):
     slug = models.SlugField()
     stardate = models.CharField(max_length=255)
     title = models.CharField(max_length=255)
-    timezone = models.CharField(blank=True, max_length=255)
+    timezone = models.CharField(blank=True, max_length=255, default=settings.TIME_ZONE)
 
     class Meta:
         abstract = True
