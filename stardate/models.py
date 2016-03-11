@@ -204,6 +204,10 @@ class BasePost(models.Model):
             return prev[0]
         return False
 
+    @property
+    def is_draft(self):
+        return False if self.publish else True
+
 
 class Post(BasePost):
     """
