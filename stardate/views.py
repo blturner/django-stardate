@@ -1,3 +1,5 @@
+import datetime
+
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
@@ -46,10 +48,16 @@ class PostViewMixin(object):
     allow_empty = True
     model = Post
     date_field = 'publish'
+    slug_url_kwarg = 'post_slug'
 
     def get_queryset(self):
         blog = Blog.objects.get(slug__iexact=self.kwargs['blog_slug'])
         return Post.objects.published().filter(blog=blog)
+
+
+class DraftViewMixin(object):
+    def get_queryset(self):
+        return Post.objects.drafts().filter(blog__user=self.request.user)
 
 
 class PostArchiveIndex(PostViewMixin, generic.ArchiveIndexView):
@@ -72,40 +80,30 @@ class PostMonthArchive(PostViewMixin, generic.MonthArchiveView):
 class PostDayArchive(PostViewMixin, generic.DayArchiveView):
     pass
 
-
 class PostDetail(PostViewMixin, generic.DateDetailView):
     context_object_name = 'post'
     slug_url_kwarg = 'post_slug'
 
 
+@method_decorator(login_required, name='dispatch')
 class DraftArchiveIndex(PostViewMixin, generic.ListView):
     template_name = 'stardate/draft_list.html'
 
     def get_queryset(self):
-        blog = Blog.objects.get(slug__iexact=self.kwargs['blog_slug'])
+        blog = Blog.objects.get(
+            slug__iexact=self.kwargs['blog_slug'], user=self.request.user)
         return Post.objects.drafts().filter(blog=blog)
 
 
-class DraftPostDetail(PostViewMixin, generic.DetailView):
-    template_name = 'stardate/draft_detail.html'
-
-    def get_object(self):
-        return Post.objects.get(
-            blog__slug=self.kwargs['blog_slug'],
-            stardate=self.kwargs['stardate']
-        )
+@method_decorator(login_required, name='dispatch')
+class DraftPostDetail(DraftViewMixin, PostViewMixin, generic.DetailView):
+    pass
 
 
 @method_decorator(login_required, name='dispatch')
-class DraftEdit(PostViewMixin, generic.UpdateView):
+class DraftEdit(DraftViewMixin, PostViewMixin, generic.UpdateView):
     context_object_name = 'post'
     form_class = PostForm
-
-    def get_object(self):
-        return Post.objects.get(
-            blog__slug=self.kwargs['blog_slug'],
-            stardate=self.kwargs['stardate']
-        )
 
 
 @method_decorator(login_required, name='dispatch')
@@ -124,6 +122,22 @@ class PostEdit(PostViewMixin, generic.UpdateView):
     context_object_name = 'post'
     slug_url_kwarg = 'post_slug'
     form_class = PostForm
+
+
+def post_detail(request, **kwargs):
+    blog_slug = kwargs.get('blog_slug')
+    post_slug = kwargs.get('post_slug')
+
+    post = Post.objects.get(
+        blog=Blog.objects.get(slug=blog_slug),
+        slug=post_slug
+    )
+
+    return render_to_response(
+        'stardate/post_detail.html',
+        {'post': post},
+        context_instance=RequestContext(request)
+    )
 
 
 @login_required

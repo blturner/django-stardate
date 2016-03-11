@@ -9,7 +9,7 @@
 {% block content %}
     <ul>
     {% for draft in object_list %}
-        <li><a href="{{ draft.get_absolute_url }}">{{draft.title}}</a></li>
+        <li><a href="{{ draft.get_draft_url }}">{{draft.title}}</a></li>
     {% endfor %}
     </ul>
 {% endblock content %}

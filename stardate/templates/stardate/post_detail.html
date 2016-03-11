@@ -5,32 +5,31 @@
 
 
 {% block page %}
+    {% block breadcrumbs %}
     {% include 'stardate/includes/breadcrumbs.html' %}
+    {% endblock breadcrumbs %}
 
 
     {% block content_title %}
         {% load tz %}
 
         <h1>{{ post.title }}</h1>
+
+        {% if post.publish %}
+        {% timezone post.get_timezone %}
         <ul>
-        {% if post.authors.all %}
-            {% with post.authors.all as author_list %}
-                {% include 'stardate/includes/author_list.html' %}
-            {% endwith %}
-        {% elif post.blog.authors.all %}
-            {% with post.blog.authors.all as author_list %}
-                {% include 'stardate/includes/author_list.html' %}
-            {% endwith %}
-        {% endif %}
+            <li class="pubdate">
+                {% with post.publish as publish %}
+                <time datetime="{{ publish|date:"c" }}" pubdate>{{ publish|date:"l, F jS, Y P e" }}</time>
 
-        {% if post.timezone %}
-            {% timezone post.timezone %}
-            <li>Posted {{ post.publish|date:"l, F jS, Y P T" }}</li>
-            {% endtimezone %}
-        {% else %}
-            <li>Posted {{ post.publish|date:"l, F jS, Y P T" }}</li>
-        {% endif %}
+                <br />
+                {% endwith %}
+            </li>
+        </ul>
+        {% endtimezone %}
 
+        <time>{{ post.publish|date:'c' }}</time>
+        {% endif %}
 
         {% if request.user == post.blog.user %}
             <li>
@@ -45,7 +44,9 @@
 
     {% block content %}
         {{ post.body }}
+    {% endblock content %}
 
+    {% block pagination %}
         {% if post.get_prev_post %}
             <p><a href="{{ post.get_prev_post.get_absolute_url }}">Previous: {{ post.get_prev_post.title }}</a></p>
         {% endif %}
@@ -53,5 +54,5 @@
         {% if post.get_next_post %}
             <p><a href="{{ post.get_next_post.get_absolute_url }}">Next: {{ post.get_next_post.title }}</a></p>
         {% endif %}
-    {% endblock content %}
+    {% endblock pagination %}
 {% endblock page %}

@@ -166,18 +166,29 @@ class BasePost(models.Model):
 
     @models.permalink
     def get_absolute_url(self):
-        if not self.publish:
-            return ('draft-post-detail', (), {
-                'blog_slug': self.blog.slug,
-                'stardate': self.stardate
-            })
-
         return ('post-detail', (), {
-            'blog_slug': self.blog.slug,
-            'year': self.publish.year,
-            'day': self.publish.day,
-            'month': self.publish.strftime('%b').lower(),
-            'post_slug': self.slug})
+            'blog_slug': self.blog.slug, 'post_slug': self.slug})
+
+    @models.permalink
+    def get_draft_url(self):
+        return ('draft-post-detail', (), {
+            'blog_slug': self.blog.slug, 'post_slug': self.slug})
+
+    @models.permalink
+    def get_dated_absolute_url(self):
+        publish = self.publish
+
+        return (
+            'post-detail',
+            (),
+            {
+                'blog_slug': self.blog.slug,
+                'year': publish.year,
+                'day': publish.day,
+                'month': publish.strftime('%b').lower(),
+                'post_slug': self.slug
+            }
+        )
 
     def get_next_post(self):
         next = self.blog.get_posts().filter(publish__gt=self.publish).exclude(
