@@ -80,9 +80,13 @@ class PostMonthArchive(PostViewMixin, generic.MonthArchiveView):
 class PostDayArchive(PostViewMixin, generic.DayArchiveView):
     pass
 
-class PostDetail(PostViewMixin, generic.DateDetailView):
+
+class PostDateDetail(PostViewMixin, generic.DateDetailView):
     context_object_name = 'post'
-    slug_url_kwarg = 'post_slug'
+
+
+class PostDetail(PostViewMixin, generic.DetailView):
+    context_object_name = 'post'
 
 
 @method_decorator(login_required, name='dispatch')
@@ -122,22 +126,6 @@ class PostEdit(PostViewMixin, generic.UpdateView):
     context_object_name = 'post'
     slug_url_kwarg = 'post_slug'
     form_class = PostForm
-
-
-def post_detail(request, **kwargs):
-    blog_slug = kwargs.get('blog_slug')
-    post_slug = kwargs.get('post_slug')
-
-    post = Post.objects.get(
-        blog=Blog.objects.get(slug=blog_slug),
-        slug=post_slug
-    )
-
-    return render_to_response(
-        'stardate/post_detail.html',
-        {'post': post},
-        context_instance=RequestContext(request)
-    )
 
 
 @login_required
