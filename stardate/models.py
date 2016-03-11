@@ -28,20 +28,17 @@ class Blog(models.Model):
     slug = models.SlugField(unique=True)
     social_auth = models.ForeignKey(UserSocialAuth, blank=True, null=True)
 
-    def __init__(self, *args, **kwargs):
-        super(Blog, self).__init__(*args, **kwargs)
-        # Instantiate the backend
-        from stardate.backends import get_backend
-        self.backend = get_backend(self.backend_class)
-        # If backend uses a social auth to connect,
-        # initialize it here
-        try:
-            self.backend.set_social_auth(self.social_auth)
-        except AttributeError:
-            pass
 
     def __unicode__(self):
         return self.name
+
+    @property
+    def backend(self):
+        from stardate.backends import get_backend
+
+        backend = get_backend(self.backend_class)
+        backend.set_social_auth(self.social_auth)
+        return backend
 
     @models.permalink
     def get_absolute_url(self):
