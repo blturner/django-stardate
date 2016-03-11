@@ -13,7 +13,7 @@ setup(
     zip_safe=False,
     install_requires=[
         'Django>=1.4,<1.10',
-        'django-markupfield==1.3.5',
+        'django-markupfield==1.4.0',
         'dropbox>=1.4,<4.0',
         'Markdown==2.6.5',
         'PyYAML==3.11',
