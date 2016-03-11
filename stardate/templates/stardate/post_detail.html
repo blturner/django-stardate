@@ -16,7 +16,7 @@
         <h1>{{ post.title }}</h1>
 
         {% if post.publish %}
-        {% timezone post.get_timezone %}
+        {% timezone post.timezone %}
         <ul>
             <li class="pubdate">
                 {% with post.publish as publish %}
