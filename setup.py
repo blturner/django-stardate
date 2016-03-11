@@ -21,4 +21,5 @@ setup(
         'python-social-auth>=0.1,<0.3',
         'pytz<2015.7',
     ],
+    test_requires=['mock==1.3.0',]
 )
