@@ -19,10 +19,13 @@ from stardate.utils import get_post_model
 Post = get_post_model()
 
 
-@method_decorator(login_required, name='dispatch')
 class BlogCreate(generic.edit.CreateView):
     form_class = BlogForm
     model = Blog
+
+    @method_decorator(login_required)
+    def dispatch(self, request, *args, **kwargs):
+        return super(self.__class__, self).dispatch(request, *args, **kwargs)
 
     def get_initial(self):
         provider = self.kwargs['provider']
@@ -89,9 +92,12 @@ class PostDetail(PostViewMixin, generic.DetailView):
     context_object_name = 'post'
 
 
-@method_decorator(login_required, name='dispatch')
 class DraftArchiveIndex(PostViewMixin, generic.ListView):
     template_name = 'stardate/draft_list.html'
+
+    @method_decorator(login_required)
+    def dispatch(self, request, *args, **kwargs):
+       return super(self.__class__, self).dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         blog = Blog.objects.get(
@@ -99,21 +105,28 @@ class DraftArchiveIndex(PostViewMixin, generic.ListView):
         return Post.objects.drafts().filter(blog=blog)
 
 
-@method_decorator(login_required, name='dispatch')
 class DraftPostDetail(DraftViewMixin, PostViewMixin, generic.DetailView):
-    pass
+    @method_decorator(login_required)
+    def dispatch(self, request, *args, **kwargs):
+       return super(self.__class__, self).dispatch(request, *args, **kwargs)
 
 
-@method_decorator(login_required, name='dispatch')
 class DraftEdit(DraftViewMixin, PostViewMixin, generic.UpdateView):
     context_object_name = 'post'
     form_class = PostForm
 
+    @method_decorator(login_required)
+    def dispatch(self, request, *args, **kwargs):
+       return super(self.__class__, self).dispatch(request, *args, **kwargs)
 
-@method_decorator(login_required, name='dispatch')
+
 class PostCreate(PostViewMixin, generic.edit.CreateView):
     model = Post
     form_class = PostForm
+
+    @method_decorator(login_required)
+    def dispatch(self, request, *args, **kwargs):
+       return super(self.__class__, self).dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         blog = Blog.objects.get(slug=self.kwargs['blog_slug'])
@@ -121,11 +134,14 @@ class PostCreate(PostViewMixin, generic.edit.CreateView):
         return super(PostCreate, self).form_valid(form)
 
 
-@method_decorator(login_required, name='dispatch')
 class PostEdit(PostViewMixin, generic.UpdateView):
     context_object_name = 'post'
     slug_url_kwarg = 'post_slug'
     form_class = PostForm
+
+    @method_decorator(login_required)
+    def dispatch(self, request, *args, **kwargs):
+       return super(self.__class__, self).dispatch(request, *args, **kwargs)
 
 
 @login_required
