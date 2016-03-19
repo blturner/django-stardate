@@ -1,13 +1,13 @@
 from django import forms
+from django.utils.text import slugify
 
 from markupfield.widgets import AdminMarkupTextareaWidget
 
-from stardate.backends import get_backend
+from stardate import backends
 from stardate.models import Blog
 from stardate.utils import get_post_model
 
 
-backend = get_backend()
 Post = get_post_model()
 
 
@@ -19,23 +19,30 @@ class BlogForm(forms.ModelForm):
         model = Blog
         fields = [
             'name',
-            'slug',
             'social_auth',
             'backend_file',
-            'authors',
+            'user',
         ]
+        widgets = {
+            'social_auth': forms.HiddenInput(),
+            'user': forms.HiddenInput(),
+        }
 
-    # backend_file = forms.ChoiceField(required=False)
+    def save(self):
+        instance = super(BlogForm, self).save(commit=False)
 
-    def __init__(self, *args, **kwargs):
-        super(BlogForm, self).__init__(*args, **kwargs)
         try:
-            qs = Blog.objects.get(pk=self.instance.pk)
-            backend.set_social_auth(qs.social_auth)
-        except:
-            pass
+            provider = instance.social_auth.provider
+        except AttributeError:
+            provider = 'local'
 
-        # self.fields['backend_file'].choices = backend.get_source_list()
+        instance.backend_class = backends.STARDATE_BACKENDS[provider]['module']
+
+        if not instance.slug:
+            instance.slug = slugify(instance.name)
+        instance.save()
+
+        return instance
 
 
 class PostForm(forms.ModelForm):
@@ -44,11 +51,8 @@ class PostForm(forms.ModelForm):
     class Meta:
         model = Post
         fields = [
-            'blog',
             'title',
-            'slug',
             'body',
             'publish',
             'timezone',
-            'authors',
         ]

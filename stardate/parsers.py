@@ -1,4 +1,5 @@
 import datetime
+import logging
 import pytz
 import uuid
 import yaml
@@ -7,6 +8,8 @@ from dateutil.parser import parse
 from django.utils.timezone import is_aware, make_aware, utc
 
 from stardate.backends import BaseStardateParser
+
+logger = logging.getLogger(__name__)
 
 DELIMITER = "\n---\n\n"
 TIMEFORMAT = '%Y-%m-%d %I:%M %p'  # 2012-01-01 09:00 AM
@@ -85,7 +88,8 @@ class FileParser(BaseStardateParser):
             # Join incase other parts of post are separated
             # by three return characters \n\n\n
             post_data['body'] = ''.join(bits[1:])
-        except:
+        except Exception as e:
+            logger.error(e)
             post_data = {}
 
         # FIXME: this belongs in deserialization, perhaps

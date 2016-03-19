@@ -19,11 +19,7 @@ from stardate.utils import get_post_model
 class Blog(models.Model):
     authors = models.ManyToManyField(User, blank=True)
     # Dot notation path to backend Class
-    backend_class = models.CharField(
-        max_length=255,
-        blank=True,
-        default=settings.STARDATE_BACKEND
-    )
+    backend_class = models.CharField(max_length=255, blank=True)
     # Path to file or directory used by backend to determine
     # how and where to store / retrieve posts
     backend_file = models.CharField(blank=True, max_length=255)
@@ -32,20 +28,17 @@ class Blog(models.Model):
     slug = models.SlugField(unique=True)
     social_auth = models.ForeignKey(UserSocialAuth, blank=True, null=True)
 
-    def __init__(self, *args, **kwargs):
-        super(Blog, self).__init__(*args, **kwargs)
-        # Instantiate the backend
-        from stardate.backends import get_backend
-        self.backend = get_backend(self.backend_class)
-        # If backend uses a social auth to connect,
-        # initialize it here
-        try:
-            self.backend.set_social_auth(self.social_auth)
-        except AttributeError:
-            pass
 
     def __unicode__(self):
         return self.name
+
+    @property
+    def backend(self):
+        from stardate.backends import get_backend
+
+        backend = get_backend(self.backend_class)
+        backend.set_social_auth(self.social_auth)
+        return backend
 
     @models.permalink
     def get_absolute_url(self):
@@ -91,6 +84,18 @@ class Blog(models.Model):
 
 
 class PostManager(models.Manager):
+    def drafts(self):
+        """
+        Returns all draft Post instances. A draft is considered to be a Post
+        without a publish property.
+        """
+        if self.get_queryset:
+            queryset_method = self.get_queryset
+        else:
+            queryset_method = self.qet_query_set
+
+        return queryset_method().filter(publish=None)
+
     def published(self):
         if self.get_queryset:
             queryset_method = self.get_queryset
@@ -113,7 +118,7 @@ class BasePost(models.Model):
     slug = models.SlugField()
     stardate = models.CharField(max_length=255)
     title = models.CharField(max_length=255)
-    timezone = models.CharField(blank=True, max_length=255)
+    timezone = models.CharField(blank=True, max_length=255, default=settings.TIME_ZONE)
 
     class Meta:
         abstract = True
@@ -161,13 +166,29 @@ class BasePost(models.Model):
 
     @models.permalink
     def get_absolute_url(self):
-        self.publish = self.publish.astimezone(timezone.get_current_timezone())
         return ('post-detail', (), {
-            'blog_slug': self.blog.slug,
-            'year': self.publish.year,
-            'day': self.publish.day,
-            'month': self.publish.strftime('%b').lower(),
-            'post_slug': self.slug})
+            'blog_slug': self.blog.slug, 'post_slug': self.slug})
+
+    @models.permalink
+    def get_draft_url(self):
+        return ('draft-post-detail', (), {
+            'blog_slug': self.blog.slug, 'post_slug': self.slug})
+
+    @models.permalink
+    def get_dated_absolute_url(self):
+        publish = self.publish
+
+        return (
+            'post-detail',
+            (),
+            {
+                'blog_slug': self.blog.slug,
+                'year': publish.year,
+                'day': publish.day,
+                'month': publish.strftime('%b').lower(),
+                'post_slug': self.slug
+            }
+        )
 
     def get_next_post(self):
         next = self.blog.get_posts().filter(publish__gt=self.publish).exclude(
@@ -182,6 +203,10 @@ class BasePost(models.Model):
         if prev:
             return prev[0]
         return False
+
+    @property
+    def is_draft(self):
+        return False if self.publish else True
 
 
 class Post(BasePost):

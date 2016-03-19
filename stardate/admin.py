@@ -8,25 +8,30 @@ Post = get_post_model()
 
 
 class BlogAdmin(admin.ModelAdmin):
-    exclude = ['user', ]
-    form = BlogForm
+    fields = [
+        'name',
+        'slug',
+        'backend_file',
+        'user',
+        'social_auth',
+    ]
     prepopulated_fields = {'slug': ('name',)}
-
-    def save_model(self, request, obj, form, change):
-        """
-        When creating a new object, set the user field.
-        """
-        if not change:
-            obj.user = request.user
-        obj.save()
 
 
 class PostAdmin(admin.ModelAdmin):
     date_hierarchy = 'publish'
     form = PostForm
-    list_display = ('title', 'publish', 'blog', 'deleted')
+    list_display = ('title', 'publish', 'blog')
     list_filter = ('blog', 'publish',)
     prepopulated_fields = {'slug': ('title',)}
+    fields = [
+        'blog',
+        'title',
+        'slug',
+        'body',
+        'publish',
+        'timezone',
+    ]
 
 
 admin.site.register(Blog, BlogAdmin)

@@ -81,6 +81,8 @@ TEMPLATES = [
             'context_processors': [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'social.apps.django_app.context_processors.backends',
+                'social.apps.django_app.context_processors.login_redirect',
             ]
         },
     },
@@ -135,5 +137,6 @@ except:
 DROPBOX_ACCESS_TYPE = 'app_folder'
 
 # DJANGO-SOCIAL-AUTH
+SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/create/'
 SOCIAL_AUTH_DROPBOX_KEY = DROPBOX_APP_KEY
 SOCIAL_AUTH_DROPBOX_SECRET = DROPBOX_APP_SECRET
