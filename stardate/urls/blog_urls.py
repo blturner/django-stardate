@@ -22,5 +22,5 @@ urlpatterns = [
     url(r'^(?P<year>\d{4})/(?P<month>\w{3})/(?P<day>\d{1,2})/(?P<post_slug>[-\w]+)/edit/$',
         views.PostEdit.as_view(), name='post-edit'),
     url(r'^(?P<post_slug>[-\w]+)/$', views.PostDetail.as_view(), name='post-detail'),
-    url(r'^(?P<post_slug>[-\w]+)/edit/$', views.PostDetail.as_view(), name='post-edit'),
+    url(r'^(?P<post_slug>[-\w]+)/edit/$', views.PostEdit.as_view(), name='post-edit'),
 ]
