@@ -204,29 +204,6 @@ class DropboxBackend(StardateBackend):
             responses.append(response)
         return responses
 
-    def push(self, posts):
-        """
-        Sync one or more posts with remote Dropbox
-
-        posts: List of Post object instances
-        """
-        # Grab the file or folder path associated
-        # with a blog
-        blog_path = posts[0].blog.backend_file
-
-        # Separate blog path into directory and filename
-        blog_dir, blog_file = os.path.split(blog_path)
-
-        # Syncing works differently depending on whether
-        # We are using a single file or a directory of files
-        if blog_file:
-            responses = [self.push_blog_file(blog_path, posts)]
-
-        else:
-            responses = self.push_post_files(blog_dir, posts)
-
-        return responses
-
     def get_posts(self, path):
         """
         Fetch posts from single file or directory
@@ -244,18 +221,3 @@ class DropboxBackend(StardateBackend):
                 post = self.parser.parse(content)
                 posts.append(post)
         return posts
-
-    def pull(self, blog):
-        """
-        Update local posts from remote source
-
-        blog: Blog instance
-        """
-        remote_posts = self.get_posts(blog.backend_file)
-
-        updated_list = []
-        for remote_post in remote_posts:
-            updated = self._update_from_dict(blog, remote_post)
-            updated_list.append(updated)
-
-        return updated_list
