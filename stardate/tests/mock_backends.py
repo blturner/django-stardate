@@ -121,8 +121,9 @@ class MockDropboxClient(object):
 
 
 class MockDropboxBackend(DropboxBackend):
-    def __init__(self, client_class=MockDropboxClient):
-        return super(MockDropboxBackend, self).__init__(client_class=client_class)
+    def __init__(self, *args, **kwargs):
+        client_class = MockDropboxClient
+        return super(MockDropboxBackend, self).__init__(client_class=client_class, *args, **kwargs)
 
 
 class MockLocalFileBackend(LocalFileBackend):

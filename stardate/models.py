@@ -36,7 +36,7 @@ class Blog(models.Model):
     def backend(self):
         from stardate.backends import get_backend
 
-        backend = get_backend(self.backend_class)
+        backend = get_backend(self.backend_class, blog=self)
         backend.set_social_auth(self.social_auth)
         return backend
 

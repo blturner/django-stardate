@@ -6,6 +6,8 @@ from django.conf import settings
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 
+from dateutil.parser import parse
+
 from dropbox import client, rest, session
 
 from stardate.backends import StardateBackend
@@ -32,7 +34,8 @@ logger = logging.getLogger('stardate')
 
 
 class DropboxBackend(StardateBackend):
-    def __init__(self, client_class=client.DropboxClient):
+    def __init__(self, client_class=client.DropboxClient, *args, **kwargs):
+        super(DropboxBackend, self).__init__(*args, **kwargs)
         self.client = None
         self.client_class = client_class
         self.cursor = self.get_cursor()
@@ -129,10 +132,11 @@ class DropboxBackend(StardateBackend):
         path = os.path.join(folder, filename)
         return path
 
-    def push_blog_file(self, blog_path, posts):
+    def push_blog_file(self, posts):
         """
         Update posts in a single blog file
         """
+        blog_path = self.blog.backend_file
         try:
             content = self.client.get_file(blog_path).read()
             remote_posts = self.parser.unpack(content)
@@ -204,10 +208,11 @@ class DropboxBackend(StardateBackend):
             responses.append(response)
         return responses
 
-    def get_posts(self, path):
+    def get_posts(self):
         """
         Fetch posts from single file or directory
         """
+        path = self.blog.backend_file
         folder, filename = os.path.split(path)
 
         if filename:
@@ -221,3 +226,7 @@ class DropboxBackend(StardateBackend):
                 post = self.parser.parse(content)
                 posts.append(post)
         return posts
+
+    @property
+    def last_sync(self):
+        return parse(self.client.metadata(self.blog.backend_file)['modified'])

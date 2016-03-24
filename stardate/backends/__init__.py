@@ -33,7 +33,7 @@ DEFAULT_BACKENDS = {
 STARDATE_BACKENDS = getattr(settings, 'STARDATE_BACKENDS', DEFAULT_BACKENDS)
 
 
-def get_backend(backend=None):
+def get_backend(backend=None, blog=None):
     i = backend.rfind('.')
     module, attr = backend[:i], backend[i + 1:]
     try:
@@ -44,14 +44,15 @@ def get_backend(backend=None):
         backend_class = getattr(mod, attr)
     except AttributeError:
         print module
-    return backend_class()
+    return backend_class(blog=blog)
 
 
 class StardateBackend(object):
-    def __init__(self, name=None, parser=None, social_auth=None):
-        self.name = name
-        self.parser = parser
-        self.social_auth = social_auth
+    def __init__(self, *args, **kwargs):
+        self.blog = kwargs.get('blog', None)
+        self.name = kwargs.get('name', None)
+        self.parser = kwargs.get('parser', None)
+        self.social_auth = kwargs.get('social_auth', None)
 
     def set_social_auth(self, *args, **kwargs):
         raise NotImplementedError
@@ -105,11 +106,11 @@ class StardateBackend(object):
         logger.info('Blog: %s, Post: %s, created=%s', post.blog, post, created)
         return post
 
-    def push_blog_file(self, file_path, posts):
+    def push_blog_file(self, posts):
         """
         Update posts in a single blog file
         """
-        remote_posts = self.get_posts(file_path)
+        remote_posts = self.get_posts()
 
         # Use serialized version of posts to find
         # and update
@@ -145,7 +146,7 @@ class StardateBackend(object):
 
         # Turn post list back into string
         content = self.parser.pack(remote_posts)
-        self.write_file(file_path, content)
+        self.write_file(self.blog.backend_file, content)
         return
 
 
@@ -177,7 +178,7 @@ class StardateBackend(object):
         """
         # Grab the file or folder path associated
         # with a blog
-        blog_path = posts[0].blog.backend_file
+        blog_path = self.blog.backend_file
 
         # Separate blog path into directory and filename
         blog_dir, blog_file = os.path.split(blog_path)
@@ -185,24 +186,24 @@ class StardateBackend(object):
         # pushing works differently depending on whether
         # We are using a single file or a directory of files
         if blog_file:
-            responses = [self.push_blog_file(blog_path, posts)]
+            responses = [self.push_blog_file(posts)]
 
         else:
             responses = self.push_post_files(blog_dir, posts)
 
         return responses
 
-    def pull(self, blog):
+    def pull(self):
         """
         Update local posts from remote source
 
         blog: Blog instance
         """
-        remote_posts = self.get_posts(blog.backend_file)
+        remote_posts = self.get_posts()
 
         updated_list = []
         for remote_post in remote_posts:
-            updated = self._update_from_dict(blog, remote_post)
+            updated = self._update_from_dict(self.blog, remote_post)
             updated_list.append(updated)
 
         return updated_list

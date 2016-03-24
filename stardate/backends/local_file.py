@@ -8,7 +8,8 @@ from stardate.parsers import FileParser
 
 
 class LocalFileBackend(StardateBackend):
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super(LocalFileBackend, self).__init__(*args, **kwargs)
         self.name = u'localfile'
         self.parser = FileParser()
         self.social_auth = None
@@ -33,10 +34,11 @@ class LocalFileBackend(StardateBackend):
             post = {}
         return post
 
-    def get_posts(self, path):
+    def get_posts(self):
         """
         Fetch post dictionaries from single file or directory
         """
+        path = self.blog.backend_file
         # First try to parse it as a directory
         # If we fail, parse it as a file
         if os.path.isfile(path):

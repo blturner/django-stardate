@@ -13,11 +13,22 @@ from stardate.models import Blog
 from stardate.parsers import FileParser
 from stardate.tests.factories import create_blog, create_post, create_user, \
     create_user_social_auth
+from stardate.backends.local_file import LocalFileBackend
 from stardate.tests.mock_backends import MockDropboxClient, \
     MockDropboxBackend, MockLocalFileBackend
 from stardate.utils import get_post_model
 
 Post = get_post_model()
+
+
+class StardateBackendTestCase(TestCase):
+    def test_get_backend(self):
+        from stardate.backends import get_backend
+
+        backend_class = 'stardate.backends.local_file.LocalFileBackend'
+        backend = get_backend(backend_class)
+
+        self.assertIsInstance(backend, LocalFileBackend)
 
 
 class DropboxBackendTestCase(TestCase):
@@ -65,7 +76,7 @@ class DropboxBackendTestCase(TestCase):
 
     def test_get_file(self):
         backend_file = self.backend.get_file(self.blog.backend_file)
-        packed = self.backend.parser.pack(self.backend.get_posts(self.file_path))
+        packed = self.backend.parser.pack(self.blog.backend.get_posts())
         self.assertEqual(backend_file, packed)
 
     def test_get_file_changed(self):
@@ -74,7 +85,7 @@ class DropboxBackendTestCase(TestCase):
         self.assertEqual(self.backend.get_file(backend_file_path), 'new string')
 
     def test_get_posts(self):
-        post_list = self.backend.get_posts(self.blog.backend_file)
+        post_list = self.blog.backend.get_posts()
         self.assertEqual(len(post_list), 1)
         self.assertEqual(post_list[0]['title'], 'Test post title')
 
@@ -84,7 +95,7 @@ class DropboxBackendTestCase(TestCase):
 
     def test_pull(self):
         blog = self.blog
-        pulled_posts = blog.backend.pull(blog)
+        pulled_posts = blog.backend.pull()
         self.assertEqual(len(pulled_posts), 1)
         self.assertEqual(pulled_posts[0].title, 'Test post title')
 
@@ -107,9 +118,10 @@ class DropboxBackendTestCase(TestCase):
         for post in self.blog.get_posts().all():
             post.delete()
         self.assertFalse(self.blog.get_posts().all())
-        self.backend.pull(self.blog)
+        
+        self.blog.backend.pull()
         self.assertEqual(len(self.blog.get_posts().all()), 1)
-        self.backend.push(self.blog.get_posts().all())
+        self.blog.backend.push(self.blog.get_posts().all())
         # After push, file should have stardate metadata
         packed_string = self.backend.parser.pack(
             self.backend.serialize_posts(self.blog.get_posts().all()))
@@ -122,12 +134,12 @@ class DropboxBackendTestCase(TestCase):
         self.backend.client.put_file(self.blog.backend_file, test_string)
         for post in self.blog.get_posts().all():
             post.delete()
-        self.backend.pull(self.blog)
-        self.backend.pull(self.blog)
+        self.blog.backend.pull()
+        self.blog.backend.pull()
 
     def test_push_blog_file(self):
         posts = self.blog.get_posts().all()
-        self.backend.push_blog_file(self.blog.backend_file, posts)
+        self.blog.backend.push_blog_file(posts)
         f = open(self.blog.backend_file, 'r')
         packed_string = self.backend.parser.pack(
             self.backend.serialize_posts(self.blog.get_posts().all()))
@@ -201,7 +213,9 @@ class LocalFileBackendTestCase(TestCase):
         f.write('title: Test post\n\n\nThe body content.')
         f.close()
 
-        posts = self.blog.backend.get_posts(temp_file)
+        self.blog.backend_file = temp_file
+
+        posts = self.blog.backend.get_posts()
         self.assertEqual(posts, [{'title': 'Test post', 'body': 'The body content.'}])
 
     def test_posts_from_dir(self):
@@ -216,7 +230,9 @@ class LocalFileBackendTestCase(TestCase):
         f.write('title: Another test post\n\n\nA different body.')
         f.close()
 
-        posts = self.blog.backend.get_posts(temp_dir)
+        self.blog.backend_file = temp_dir
+
+        posts = self.blog.backend.get_posts()
         self.assertEqual(len(posts), 2)
         self.assertTrue('title' in posts[0])
         self.assertTrue('title' in posts[1])
@@ -243,7 +259,7 @@ class LocalFileBackendTestCase(TestCase):
         f.write('title: Post title\npublish: {0}\n\n\nA post for pulling in.'.format(timestamp))
         f.close()
 
-        pulled_posts = blog.backend.pull(blog)
+        pulled_posts = blog.backend.pull()
 
         self.assertIsNotNone(pulled_posts[0].stardate)
         self.assertEqual(pulled_posts[0].title, 'Post title')
