@@ -2,7 +2,6 @@ import logging
 
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
-from django.db.transaction import atomic
 
 from optparse import make_option
 
@@ -41,15 +40,4 @@ class Command(BaseCommand):
             for blog in Blog.objects.filter(user=user):
                 logger.info(u'Updating posts for {0}'.format(blog))
 
-                posts = blog.backend.pull(blog)
-                self.batch_save(posts)
-
-    @atomic
-    def batch_save(self, queryset):
-        for obj in queryset:
-            push = False
-
-            if obj.stardate:
-                push = True
-
-            obj.save(push=push)
+                blog.backend.pull()

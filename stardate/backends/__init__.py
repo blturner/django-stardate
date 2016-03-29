@@ -5,6 +5,7 @@ from datetime import datetime
 
 from django.conf import settings
 from django.core.serializers import serialize
+from django.db.transaction import atomic
 from django.utils.timezone import utc
 
 try:
@@ -199,14 +200,40 @@ class StardateBackend(object):
 
         blog: Blog instance
         """
+        blog = self.blog
+        last_sync = blog.backend.last_sync
+        updated_list = []
+
+        if blog.last_sync and not blog.last_sync < last_sync:
+            logger.info(u'Nothing to update. Last sync was {}'.format(datetime.strftime(last_sync, '%c')))
+            return updated_list
+
         remote_posts = self.get_posts()
 
-        updated_list = []
         for remote_post in remote_posts:
-            updated = self._update_from_dict(self.blog, remote_post)
+            updated = self._update_from_dict(blog, remote_post)
             updated_list.append(updated)
 
+        batch_save(updated_list)
+        logger.info(u'Updated {} posts for {}'.format(len(updated_list), blog))
+
+        blog.last_sync = last_sync
+        blog.save()
+        logger.info('last_sync updated: {}'.format(last_sync))
+
         return updated_list
+
+
+@atomic
+def batch_save(queryset):
+    for obj in queryset:
+        logger.info(obj.title)
+        push = False
+
+        if obj.stardate:
+            push = True
+
+        obj.save(push=push)
 
 
 class BaseStardateParser(object):
