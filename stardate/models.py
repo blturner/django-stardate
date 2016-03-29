@@ -23,6 +23,7 @@ class Blog(models.Model):
     # Path to file or directory used by backend to determine
     # how and where to store / retrieve posts
     backend_file = models.CharField(blank=True, max_length=255)
+    last_sync = models.DateTimeField(blank=True, null=True)
     name = models.CharField(max_length=255)
     user = models.ForeignKey(User, related_name="+")
     slug = models.SlugField(unique=True)
