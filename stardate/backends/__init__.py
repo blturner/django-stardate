@@ -217,7 +217,7 @@ class StardateBackend(object):
         batch_save(updated_list)
         logger.info(u'Updated {} posts for {}'.format(len(updated_list), blog))
 
-        blog.last_sync = last_sync
+        blog.last_sync = blog.backend.last_sync
         blog.save()
         logger.info('last_sync updated: {}'.format(last_sync))
 

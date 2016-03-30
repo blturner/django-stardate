@@ -1,7 +1,11 @@
 from __future__ import absolute_import
+
 import os
+import time
 
+from django.utils.timezone import make_aware
 
+from dateutil.parser import parse
 
 from stardate.backends import StardateBackend
 from stardate.parsers import FileParser
@@ -70,3 +74,8 @@ class LocalFileBackend(StardateBackend):
         filename = '{0}.md'.format(filename)
         path = os.path.join(folder, filename)
         return path
+
+    @property
+    def last_sync(self):
+        return make_aware(parse(time.ctime(
+                    os.path.getmtime(self.blog.backend_file))))
