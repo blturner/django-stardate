@@ -132,10 +132,12 @@ class DropboxBackendTestCase(TestCase):
     def test_pull_then_pull(self):
         test_string = 'title: Title\n\n\nBody.\n'
         self.backend.client.put_file(self.blog.backend_file, test_string)
+
         for post in self.blog.get_posts().all():
             post.delete()
-        self.blog.backend.pull()
-        self.blog.backend.pull()
+
+        self.assertEqual(len(self.blog.backend.pull()), 1)
+        self.assertEqual(len(self.blog.backend.pull()), 0)
 
     def test_push_blog_file(self):
         posts = self.blog.get_posts().all()
