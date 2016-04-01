@@ -7,6 +7,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from dateutil.parser import parse
+from mock import patch
 from social.apps.django_app.default.models import UserSocialAuth
 
 from stardate.models import Blog
@@ -33,6 +34,22 @@ class StardateBackendTestCase(TestCase):
 
 class DropboxBackendTestCase(TestCase):
     def setUp(self):
+        self.patcher = patch('stardate.tests.mock_backends.MockDropboxClient.metadata')
+        self.mock_metadata = self.patcher.start()
+
+        self.mock_metadata.return_value = {
+            'modified': 'Wed, 20 Jul 2011 22:04:50 +0000',
+            'hash': 'efdac89c4da886a9cece1927e6c22977',
+            'contents': [
+                {
+                    'path': '/foo'
+                },
+                {
+                    'path': '/bar'
+                }
+            ]
+        }
+
         backend_file, backend_file_path = tempfile.mkstemp(suffix='.txt')
         self.file_path = backend_file_path
         self.backend = MockDropboxBackend()
@@ -46,6 +63,8 @@ class DropboxBackendTestCase(TestCase):
         create_post(blog=self.blog)
 
     def tearDown(self):
+        self.patcher.stop()
+
         Blog.objects.all().delete()
         UserSocialAuth.objects.all().delete()
         User.objects.all().delete()
