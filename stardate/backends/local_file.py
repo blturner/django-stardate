@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import os
 import time
 
-from django.utils.timezone import make_aware
+from django.utils.timezone import make_aware, utc
 
 from dateutil.parser import parse
 
@@ -77,5 +77,5 @@ class LocalFileBackend(StardateBackend):
 
     @property
     def last_sync(self):
-        return make_aware(parse(time.ctime(
-                    os.path.getmtime(self.blog.backend_file))))
+        modified = time.ctime(os.path.getmtime(self.blog.backend_file))
+        return make_aware(parse(modified), utc)
