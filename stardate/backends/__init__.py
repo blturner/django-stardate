@@ -5,8 +5,12 @@ from datetime import datetime
 
 from django.conf import settings
 from django.core.serializers import serialize
-from django.db.transaction import atomic
 from django.utils.timezone import utc
+
+try:
+    from django.db.transaction import atomic
+except ImportError:
+    from django.db.transaction import commit_on_success as atomic
 
 try:
     from importlib import import_module
