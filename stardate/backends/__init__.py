@@ -59,9 +59,6 @@ class StardateBackend(object):
         self.parser = kwargs.get('parser', None)
         self.social_auth = kwargs.get('social_auth', None)
 
-    def set_social_auth(self, *args, **kwargs):
-        raise NotImplementedError
-
     def get_name(self):
         return self.name
 

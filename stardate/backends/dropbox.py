@@ -43,6 +43,8 @@ class DropboxBackend(StardateBackend):
         self.parser = FileParser()
         self.social_auth = None
 
+        self.set_social_auth(self.blog.social_auth)
+
     def get_file(self, path):
         return self.client.get_file(path).read()
 

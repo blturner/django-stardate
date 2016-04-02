@@ -52,15 +52,14 @@ class DropboxBackendTestCase(TestCase):
 
         backend_file, backend_file_path = tempfile.mkstemp(suffix='.txt')
         self.file_path = backend_file_path
-        self.backend = MockDropboxBackend()
-        social_auth = create_user_social_auth(user=create_user())
-        self.backend.set_social_auth(social_auth)
 
         self.blog = create_blog(
             backend_class="stardate.tests.mock_backends.MockDropboxBackend",
             backend_file=backend_file_path
         )
         create_post(blog=self.blog)
+
+        self.backend = self.blog.backend
 
     def tearDown(self):
         self.patcher.stop()
@@ -174,11 +173,7 @@ class DropboxBackendTestCase(TestCase):
         user = User.objects.get(username='bturner')
         social_auth = UserSocialAuth.objects.get(user__exact=user.id)
 
-        self.backend.social_auth = None
-        self.assertEqual(self.backend.social_auth, None)
-
-        self.backend.set_social_auth(social_auth)
-        self.assertIsInstance(self.backend.social_auth, UserSocialAuth)
+        self.assertEqual(self.backend.social_auth, social_auth)
 
     def test_get_post_path(self):
         post_list = self.blog.get_posts().all()

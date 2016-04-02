@@ -37,9 +37,7 @@ class Blog(models.Model):
     def backend(self):
         from stardate.backends import get_backend
 
-        backend = get_backend(self.backend_class, blog=self)
-        backend.set_social_auth(self.social_auth)
-        return backend
+        return get_backend(self.backend_class, blog=self)
 
     @models.permalink
     def get_absolute_url(self):
@@ -158,8 +156,6 @@ class BasePost(models.Model):
         self.validate_unique()
 
         if push:
-            # Initialize our backend with user's social auth
-            self.backend.set_social_auth(self.blog.social_auth)
             # Sync this post with our backend
             # need a serialized post here to pass in
             self.backend.push([self])
