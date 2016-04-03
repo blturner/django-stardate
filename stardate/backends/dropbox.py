@@ -147,7 +147,7 @@ class DropboxBackend(StardateBackend):
 
         # Use serialized version of posts to find
         # and update
-        local_posts = self.serialize_posts(posts)
+        local_posts = [post.serialized() for post in posts]
 
         # Update remote_posts with local versions
         ## FIXME: n^2 crawl, use stardate as keys

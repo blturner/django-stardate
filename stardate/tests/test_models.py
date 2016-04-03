@@ -47,6 +47,9 @@ class BlogTestCase(TestCase):
         posts = self.blog.get_serialized_posts()
         self.assertEqual(len(posts), 2)
 
+        self.assertTrue('stardate' in posts[0]['fields'])
+        self.assertTrue('stardate' in posts[1]['fields'])
+
     def test_get_posts(self):
         post_list = self.blog.get_posts()
         self.assertTrue(len(post_list), 2)

@@ -15,6 +15,15 @@ from django.conf import settings
 
 from stardate.utils import get_post_model
 
+SERIALIZED_FIELDS = (
+    'title',
+    'slug',
+    'publish',
+    'stardate',
+    'body',
+    'timezone'
+)
+
 
 class Blog(models.Model):
     authors = models.ManyToManyField(User, blank=True)
@@ -52,7 +61,7 @@ class Blog(models.Model):
         Returns a list of dictionaries representing post objects on the blog.
         """
         return serializers.serialize("python", self.get_posts().filter(
-            deleted=False), fields=('title', 'publish', 'stardate', 'body'))
+            deleted=False), fields=SERIALIZED_FIELDS)
 
     def get_posts(self):
         """
@@ -160,6 +169,18 @@ class BasePost(models.Model):
             # need a serialized post here to pass in
             self.backend.push([self])
         super(BasePost, self).save(*args, **kwargs)
+
+    def serialized(self):
+        serialized = serializers.serialize('python', [self], fields=SERIALIZED_FIELDS)
+
+        for s in serialized:
+            if s['fields']['publish']:
+                s['fields']['publish'] = datetime.datetime.strftime(
+                    s['fields']['publish'].astimezone(timezone.utc),
+                    '%Y-%m-%d %I:%M %p %Z'
+                )
+
+        return serialized[0]['fields']
 
     @models.permalink
     def get_absolute_url(self):

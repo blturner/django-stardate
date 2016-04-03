@@ -4,7 +4,6 @@ import logging
 from datetime import datetime
 
 from django.conf import settings
-from django.core.serializers import serialize
 from django.utils.timezone import utc
 
 try:
@@ -62,26 +61,6 @@ class StardateBackend(object):
     def get_name(self):
         return self.name
 
-    def serialize_posts(self, posts):
-        """
-        Returns dictionary version of Post objects
-        """
-        posts_as_dicts = []
-        serialized = serialize(
-            'python',
-            posts,
-            fields=('title', 'slug', 'publish', 'stardate', 'body', 'timezone')
-        )
-        for post in serialized:
-            if post['fields']['publish']:
-                post['fields']['publish'] = datetime.strftime(
-                    post['fields']['publish'].astimezone(utc),
-                    '%Y-%m-%d %I:%M %p %Z'
-                )
-
-            posts_as_dicts.append(post['fields'])
-        return posts_as_dicts
-
     def _update_from_dict(self, blog, post_dict, post=None):
         """
         Create or update a Post from a dictionary
@@ -116,7 +95,7 @@ class StardateBackend(object):
 
         # Use serialized version of posts to find
         # and update
-        local_posts = self.serialize_posts(posts)
+        local_posts = [post.serialized() for post in posts]
 
         # Update remote_posts with local versions
         ## FIXME: n^2 crawl, use stardate as keys

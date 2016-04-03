@@ -124,7 +124,8 @@ class DropboxBackendTestCase(TestCase):
 
         backend_file = self.backend.get_file(self.blog.backend_file)
         packed_string = self.backend.parser.pack(
-            self.backend.serialize_posts(self.blog.get_posts().all()))
+            [post.serialized() for post in self.blog.get_posts().all()]
+        )
         self.assertEqual(backend_file, packed_string)
 
     def test_pull_then_push(self):
@@ -142,7 +143,8 @@ class DropboxBackendTestCase(TestCase):
         self.blog.backend.push(self.blog.get_posts().all())
         # After push, file should have stardate metadata
         packed_string = self.backend.parser.pack(
-            self.backend.serialize_posts(self.blog.get_posts().all()))
+            [post.serialized() for post in self.blog.get_posts().all()]
+        )
         self.assertEqual(
             self.backend.client.get_file(self.blog.backend_file).read(),
             packed_string)
@@ -161,8 +163,11 @@ class DropboxBackendTestCase(TestCase):
         posts = self.blog.get_posts().all()
         self.blog.backend.push_blog_file(posts)
         f = open(self.blog.backend_file, 'r')
+
         packed_string = self.backend.parser.pack(
-            self.backend.serialize_posts(self.blog.get_posts().all()))
+            [post.serialized() for post in self.blog.get_posts().all()]
+        )
+
         self.assertEqual(f.read(), packed_string)
 
     def test_save_cursor(self):
@@ -184,13 +189,6 @@ class DropboxBackendTestCase(TestCase):
         # Try with no folder
         post_path = self.backend.get_post_path('', post_list[0])
         self.assertEqual(post_path, u'test-post-title.md')
-
-    def test_serialize_posts(self):
-        serialized_posts = self.backend.serialize_posts(self.blog.get_posts().all())
-        self.assertIn('title', serialized_posts[0])
-        self.assertIn('stardate', serialized_posts[0])
-        self.assertIn('publish', serialized_posts[0])
-        self.assertIn('body', serialized_posts[0])
 
 
 class LocalFileBackendTestCase(TestCase):
@@ -216,8 +214,7 @@ class LocalFileBackendTestCase(TestCase):
         self.assertEqual(self.blog.backend.get_name(), 'localfile')
 
     def test_get_post_path(self):
-        serialized_posts = self.blog.backend.serialize_posts(
-            self.post_list)
+        serialized_posts = [post.serialized() for post in self.post_list]
         path = self.blog.backend._get_post_path('', serialized_posts[0])
         self.assertEqual(path, 'hello-world.md')
         path = self.blog.backend._get_post_path('posts', serialized_posts[0])
@@ -300,10 +297,3 @@ class LocalFileBackendTestCase(TestCase):
         self.assertEqual(parsed[0]['title'], u'A test push post')
         self.assertEqual(parsed[0]['body'], u'Testing a push post.\n')
         self.assertTrue('stardate' in parsed[0])
-
-    def test_serialize_posts(self):
-        serialized_posts = self.blog.backend.serialize_posts(self.post_list)
-        self.assertIn('title', serialized_posts[0])
-        self.assertIn('stardate', serialized_posts[0])
-        self.assertIn('publish', serialized_posts[0])
-        self.assertIn('body', serialized_posts[0])
