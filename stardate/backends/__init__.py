@@ -127,9 +127,11 @@ class StardateBackend(object):
 
         # Turn post list back into string
         content = self.parser.pack(remote_posts)
-        self.write_file(self.blog.backend_file, content)
-        return
 
+        return self.write_file(self.blog.backend_file, content)
+
+    def write_file(self, path, content):
+        raise NotImplementedError
 
     def push_post_files(self, folder, posts):
         """

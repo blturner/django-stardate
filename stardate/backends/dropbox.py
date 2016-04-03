@@ -134,53 +134,6 @@ class DropboxBackend(StardateBackend):
         path = os.path.join(folder, filename)
         return path
 
-    def push_blog_file(self, posts):
-        """
-        Update posts in a single blog file
-        """
-        blog_path = self.blog.backend_file
-        try:
-            content = self.client.get_file(blog_path).read()
-            remote_posts = self.parser.unpack(content)
-        except Exception:
-            remote_posts = []
-
-        # Use serialized version of posts to find
-        # and update
-        local_posts = [post.serialized() for post in posts]
-
-        # Update remote_posts with local versions
-        ## FIXME: n^2 crawl, use stardate as keys
-        ## in dicts instead of lists?
-        for local_post in local_posts:
-            exists = False
-            # First we try to see if match by stardate exists
-            for remote_post in remote_posts:
-                if 'stardate' in remote_post:
-                    if local_post['stardate'] == remote_post['stardate']:
-                        exists = True
-                        remote_post.update(local_post)
-                        break
-
-            # If post was created remotely and was pulled in
-            # then it has a stardate, but remote post does not.
-            # Try to match up using title
-            if not exists:
-                for remote_post in remote_posts:
-                    if 'title' in remote_post:
-                        if local_post['title'] == remote_post['title']:
-                            exists = True
-                            remote_post.update(local_post)
-                            break
-
-            # Add new remote post if it does not exist yet
-            if not exists:
-                remote_posts.append(local_post)
-
-        # Turn post list back into string
-        content = self.parser.pack(remote_posts)
-        return self.client.put_file(blog_path, content, overwrite=True)
-
     def push_post_files(self, blog_dir, posts):
         """
         Update posts in multiple files
