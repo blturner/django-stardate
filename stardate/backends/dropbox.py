@@ -54,7 +54,7 @@ class DropboxBackend(StardateBackend):
     def get_post(self, path):
         try:
             content = self.get_file(path)
-            post = self.parser.parser(post)
+            post = self.parser.parser(content)
         except Exception:
             post = {}
         return post
