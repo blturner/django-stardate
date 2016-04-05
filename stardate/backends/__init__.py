@@ -61,6 +61,15 @@ class StardateBackend(object):
     def get_name(self):
         return self.name
 
+    def _get_post_path(self, folder, post):
+        """
+        Dynamically guess post file path from slug / blog folder
+        """
+        filename = post['slug']
+        filename = '{0}.md'.format(filename)
+        path = os.path.join(folder, filename)
+        return path
+
     def _update_from_dict(self, blog, post_dict, post=None):
         """
         Create or update a Post from a dictionary
@@ -137,7 +146,7 @@ class StardateBackend(object):
         """
         Update posts in multiple files
         """
-        local_posts = self.serialized_posts(posts)
+        local_posts = [post.serialized() for post in posts]
 
         for local_post in local_posts:
             # Generate the post file path dynamically
@@ -149,7 +158,7 @@ class StardateBackend(object):
             # Update the contents of the remote post
             remote_post.update(local_post)
             content = self.parser.render(remote_post)
-            self.write_file(content)
+            self.write_file(post_path, content)
         return
 
 

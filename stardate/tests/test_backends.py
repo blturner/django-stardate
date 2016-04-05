@@ -183,11 +183,11 @@ class DropboxBackendTestCase(TestCase):
     def test_get_post_path(self):
         post_list = self.blog.get_posts().all()
 
-        post_path = self.backend.get_post_path('posts', post_list[0])
+        post_path = self.backend._get_post_path('posts', post_list[0])
         self.assertEqual(post_path, u'posts/test-post-title.md')
 
         # Try with no folder
-        post_path = self.backend.get_post_path('', post_list[0])
+        post_path = self.backend._get_post_path('', post_list[0])
         self.assertEqual(post_path, u'test-post-title.md')
 
 

@@ -62,14 +62,14 @@ class LocalFileBackend(StardateBackend):
     def _list_path(self, path):
         return os.listdir(path)
 
-    def _get_post_path(self, folder, post):
-        """
-        Dynamically guess post file path from slug / blog folder
-        """
-        filename = post['slug']
-        filename = '{0}.md'.format(filename)
-        path = os.path.join(folder, filename)
-        return path
+    # def _get_post_path(self, folder, post):
+    #     """
+    #     Dynamically guess post file path from slug / blog folder
+    #     """
+    #     filename = post['slug']
+    #     filename = '{0}.md'.format(filename)
+    #     path = os.path.join(folder, filename)
+    #     return path
 
     @property
     def last_sync(self):
