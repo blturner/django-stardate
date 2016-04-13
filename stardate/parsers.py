@@ -1,7 +1,7 @@
 import datetime
 import logging
 import pytz
-import uuid
+import types
 import yaml
 
 from dateutil.parser import parse
@@ -80,17 +80,22 @@ class FileParser(BaseStardateParser):
         try:
             # split each string from it's meta data
             bits = string.split('\n\n\n')
+        except:
+            raise
 
-            # load meta data into post dictionary
-            post_data = yaml.load(bits[0])
+        # load meta data into post dictionary
+        post_data = yaml.load(bits[0]) or {}
 
-            # post body is everything else
-            # Join incase other parts of post are separated
-            # by three return characters \n\n\n
-            post_data['body'] = ''.join(bits[1:])
-        except Exception as e:
-            logger.error(e)
-            post_data = {}
+        # post body is everything else
+        # Join incase other parts of post are separated
+        # by three return characters \n\n\n
+
+        if isinstance(post_data, types.DictType):
+            try:
+                post_data['body'] = ''.join(bits[1:])
+            except Exception as e:
+                logger.error(e)
+                raise
 
         # FIXME: this belongs in deserialization, perhaps
         # on model?
@@ -128,9 +133,10 @@ class FileParser(BaseStardateParser):
         """
         Returns a list of parsed post dictionaries.
         """
-        self.parsed_list = []
+        parsed_list = []
 
         for post in string.split(self.delimiter):
-            if self.parse(post):
-                self.parsed_list.append(self.parse(post))
-        return self.parsed_list
+            parsed = self.parse(post)
+            if parsed:
+                parsed_list.append(parsed)
+        return parsed_list

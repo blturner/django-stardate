@@ -146,6 +146,7 @@ class FileParserTestCase(TestCase):
     @patch('stardate.parsers.logger')
     def test_logs_error(self, mock_logging):
         content = 'bad string\n\r'
-        post_list = self.parser.unpack(content)
 
-        self.assertTrue(mock_logging.error.called)
+        self.assertRaises(TypeError, self.parser.unpack(content))
+
+        # self.assertTrue(mock_logging.error.called)
