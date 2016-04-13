@@ -192,7 +192,7 @@ class StardateBackend(object):
         """
         # Grab the file or folder path associated
         # with a blog
-        blog_path = self.blog.backend_file
+        blog_path = append_slash(self.blog.backend_file)
 
         # Separate blog path into directory and filename
         blog_dir, blog_file = os.path.split(blog_path)
@@ -235,6 +235,17 @@ class StardateBackend(object):
         logger.info('last_sync updated: {}'.format(last_sync))
 
         return updated_list
+
+
+def append_slash(path):
+    ext = get_extension(path)
+    if not ext and path[-1] != '/':
+        path = path + '/'
+    return path
+
+
+def get_extension(path):
+    return os.path.splitext(path)[-1].lower()
 
 
 @atomic
