@@ -125,65 +125,6 @@ class DropboxBackend(StardateBackend):
         self.social_auth = social_auth
         self.client = self.get_dropbox_client()
 
-    # def get_post_path(self, folder, post):
-    #     """
-    #     Dynamically guess post file path from slug / blog folder
-    #     """
-    #     filename = post.slug
-    #     filename = '{0}.md'.format(filename)
-    #     path = os.path.join(folder, filename)
-    #     return path
-
-    # def push_post_files(self, blog_dir, posts):
-    #     """
-    #     Update posts in multiple files
-    #     """
-    #     responses = []
-    #     for post in posts:
-    #         # Generate the post file path dynamically
-    #         post_path = self._get_post_path(blog_dir, post)
-
-    #         # Get the existing remote post as a post dict
-    #         try:
-    #             remote_post = self.client.get_file(post_path).read()
-    #         except Exception:
-    #             remote_post = {}
-    #         remote_post = self.parser.parse(remote_post)
-
-    #         # Turn local post into post dict
-    #         local_post = self.serialize_posts([post])[0]
-
-
-    #         # Update the contents of the remote post
-    #         remote_post.update(local_post)
-    #         content = self.parser.render(remote_post)
-    #         response = self.client.put_file(post_path, content, overwrite=True)
-
-    #         # Log the result
-    #         responses.append(response)
-    #     return responses
-
-    def get_posts(self):
-        """
-        Fetch posts from single file or directory
-        """
-        path = self.blog.backend_file
-        folder, filename = os.path.split(path)
-
-        ext = os.path.splitext(filename)[-1].lower()
-
-        if ext:
-            content = self.get_file(path)
-            posts = self.parser.unpack(content)
-        else:
-            posts = []
-            file_list = self._list_path(path)
-            for filename in file_list:
-                content = self.get_file(filename)
-                post = self.parser.parse(content)
-                posts.append(post)
-        return posts
-
     @property
     def last_sync(self):
         return parse(self.client.metadata(self.blog.backend_file)['modified'])

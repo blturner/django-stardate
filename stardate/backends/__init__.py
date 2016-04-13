@@ -96,6 +96,28 @@ class StardateBackend(object):
         logger.info('Blog: %s, Post: %s, created=%s', post.blog, post, created)
         return post
 
+    def get_posts(self):
+        """
+        Fetch post dictionaries from single file or directory
+        """
+        path = self.blog.backend_file
+        ext = get_extension(path)
+        posts = []
+
+        if ext:
+            content = self.get_file(path)
+            posts = self.parser.unpack(content)
+        else:
+            for file_name in self._list_path(path):
+                content = self.get_file(file_name)
+
+                try:
+                    post = self.parser.parse(content)
+                    posts.append(post)
+                except:
+                    continue
+        return posts
+
     def push_blog_file(self, posts):
         """
         Update posts in a single blog file

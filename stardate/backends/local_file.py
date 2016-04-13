@@ -37,28 +37,6 @@ class LocalFileBackend(StardateBackend):
             post = {}
         return post
 
-    def get_posts(self):
-        """
-        Fetch post dictionaries from single file or directory
-        """
-        path = self.blog.backend_file
-        # First try to parse it as a directory
-        # If we fail, parse it as a file
-        if os.path.isfile(path):
-            content = self.get_file(path)
-            posts = self.parser.unpack(content)
-        elif os.path.isdir(path):
-            posts = []
-            file_list = self._list_path(path)
-            for filename in file_list:
-                file_path = os.path.join(path, filename)
-                content = self.get_file(file_path)
-                post = self.parser.parse(content)
-                posts.append(post)
-        else:
-            raise Exception('File does not exist')
-        return posts
-
     def _list_path(self, path):
         return os.listdir(path)
 
