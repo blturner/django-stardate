@@ -38,7 +38,10 @@ class LocalFileBackend(StardateBackend):
         return post
 
     def _list_path(self, path):
-        return os.listdir(path)
+        paths = []
+        for file in os.listdir(path):
+            paths.append(os.path.join(path, file))
+        return paths
 
     @property
     def last_sync(self):
