@@ -22,6 +22,11 @@ class Command(BaseCommand):
     """
     option_list = BaseCommand.option_list + (
         make_option(
+            '--force',
+            action='store_true',
+            dest='force',
+        ),
+        make_option(
             '--user',
             action='append',
             dest='user',
@@ -31,6 +36,8 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
+        force = options['force'] or False
+
         if options['user']:
             users = User.objects.filter(username__in=options['user'])
         else:
@@ -40,4 +47,4 @@ class Command(BaseCommand):
             for blog in Blog.objects.filter(user=user):
                 logger.info(u'Updating posts for {0}'.format(blog))
 
-                blog.backend.pull()
+                blog.backend.pull(force=force)

@@ -207,7 +207,7 @@ class StardateBackend(object):
 
         return responses
 
-    def pull(self):
+    def pull(self, force=False):
         """
         Update local posts from remote source
 
@@ -217,9 +217,12 @@ class StardateBackend(object):
         last_sync = blog.backend.last_sync
         updated_list = []
 
-        if blog.last_sync and not blog.last_sync < last_sync:
-            logger.info(u'Nothing to update. Last sync was {}'.format(datetime.strftime(last_sync, '%c')))
-            return updated_list
+        if not force:
+            if blog.last_sync and not blog.last_sync < last_sync:
+                logger.info(u'Nothing to update. Last sync was {}'.format(datetime.strftime(last_sync, '%c')))
+                return updated_list
+        else:
+            logger.info(u'INFO: using --force, forcing sync')
 
         remote_posts = self.get_posts()
 
