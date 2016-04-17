@@ -144,9 +144,10 @@ class FileParserTestCase(TestCase):
         self.assertEqual(post_list[0].get('body'), 'Extraordinary claims require extraordinary evidence!')
 
     @patch('stardate.parsers.logger')
-    def test_logs_error(self, mock_logging):
+    def test_bad_string(self, mock_logging):
         content = 'bad string\n\r'
+        posts = self.parser.unpack(content)
 
-        self.assertRaises(TypeError, self.parser.unpack(content))
-
-        # self.assertTrue(mock_logging.error.called)
+        self.assertEqual(posts, [])
+        mock_logging.warn.assert_called_once_with(
+            'Not enough information found to parse string.')

@@ -81,11 +81,12 @@ class FileParser(BaseStardateParser):
             logger.warn('parser received an empty string')
             return None
 
-        try:
-            # split each string from it's meta data
-            bits = string.split('\n\n\n')
-        except:
-            raise
+        # split each string from it's meta data
+        bits = string.split('\n\n\n')
+
+        if not len(bits) > 1:
+            logger.warn('Not enough information found to parse string.')
+            return None
 
         # load meta data into post dictionary
         post_data = yaml.load(bits[0]) or {}
@@ -95,11 +96,7 @@ class FileParser(BaseStardateParser):
         # by three return characters \n\n\n
 
         if isinstance(post_data, types.DictType):
-            try:
-                post_data['body'] = ''.join(bits[1:])
-            except Exception as e:
-                logger.error(e)
-                raise
+            post_data['body'] = ''.join(bits[1:])
 
         # FIXME: this belongs in deserialization, perhaps
         # on model?
