@@ -106,7 +106,8 @@ class StardateBackend(object):
 
         if ext:
             content = self.get_file(path)
-            posts = self.parser.unpack(content)
+            if content:
+                posts = self.parser.unpack(content)
         else:
             for file_name in self._list_path(path):
                 content = self.get_file(file_name)

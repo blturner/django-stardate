@@ -77,6 +77,10 @@ class FileParser(BaseStardateParser):
         """
         Parse a single string into a dictionary representing a post object.
         """
+        if not len(string) > 0:
+            logger.warn('parser received an empty string')
+            return None
+
         try:
             # split each string from it's meta data
             bits = string.split('\n\n\n')
