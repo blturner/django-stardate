@@ -32,7 +32,7 @@ class LocalFileBackend(StardateBackend):
     def get_post(self, path):
         if os.path.exists(path):
             content = self.get_file(path)
-            post = self.parser.parser(content)
+            post = self.parser.parse(content)
         else:
             post = {}
         return post
