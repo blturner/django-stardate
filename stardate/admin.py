@@ -15,6 +15,7 @@ class BlogAdmin(admin.ModelAdmin):
         'user',
         'social_auth',
         'last_sync',
+        'sync',
     ]
     prepopulated_fields = {'slug': ('name',)}
 

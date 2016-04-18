@@ -37,6 +37,8 @@ class Blog(models.Model):
     user = models.ForeignKey(User, related_name="+")
     slug = models.SlugField(unique=True)
     social_auth = models.ForeignKey(UserSocialAuth, blank=True, null=True)
+    sync = models.BooleanField(default=True,
+        help_text='This blog should sync using it\'s selected backend')
 
 
     def __unicode__(self):
@@ -164,7 +166,7 @@ class BasePost(models.Model):
         self.clean_fields()
         self.validate_unique()
 
-        if push:
+        if push and self.blog.sync:
             # Sync this post with our backend
             # need a serialized post here to pass in
             self.backend.push([self])

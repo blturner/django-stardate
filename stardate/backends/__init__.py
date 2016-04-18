@@ -191,6 +191,9 @@ class StardateBackend(object):
 
         posts: List of Post object instances
         """
+        if not self.blog.sync:
+            return []
+
         # Grab the file or folder path associated
         # with a blog
         blog_path = append_slash(self.blog.backend_file)
@@ -217,6 +220,9 @@ class StardateBackend(object):
         blog = self.blog
         last_sync = blog.backend.last_sync
         updated_list = []
+
+        if not blog.sync:
+            return updated_list
 
         if not force:
             if blog.last_sync and not blog.last_sync < last_sync:

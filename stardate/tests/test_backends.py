@@ -287,3 +287,10 @@ class LocalFileBackendTestCase(TestCase):
         self.assertEqual(parsed[0]['title'], u'A test push post')
         self.assertEqual(parsed[0]['body'], u'Testing a push post.\n')
         self.assertTrue('stardate' in parsed[0])
+
+    def test_disabled_blog(self):
+        self.blog.sync = False
+        self.blog.save()
+
+        self.assertEqual(self.blog.backend.pull(), [])
+        self.assertEqual(self.blog.backend.push({'title': 'Arbitrary title'}), [])
