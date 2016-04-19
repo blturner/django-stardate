@@ -51,7 +51,7 @@ class BlogTestCase(TestCase):
         self.assertTrue('stardate' in posts[1]['fields'])
 
     def test_get_posts(self):
-        post_list = self.blog.get_posts()
+        post_list = self.blog.posts.all()
         self.assertTrue(len(post_list), 2)
 
     def test_get_next_post(self):
@@ -80,11 +80,11 @@ class BlogTestCase(TestCase):
         self.assertRaises(ValidationError, p.save)
 
     def test_post_marked_deleted_is_removed(self):
-        p = self.blog.get_posts().get(title="Test post title")
+        p = self.blog.posts.get(title="Test post title")
         p.mark_deleted()
         p.save()  # Probably bad
         self.assertTrue(p.deleted)
-        self.assertTrue(self.blog.get_posts().get(title="Test post title").deleted)
+        self.assertTrue(self.blog.posts.get(title="Test post title").deleted)
         self.assertTrue(len(self.blog.get_serialized_posts()), 1)
 
     def test_removed_post_is_deleted(self):

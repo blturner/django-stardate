@@ -62,17 +62,20 @@ class Blog(models.Model):
         """
         Returns a list of dictionaries representing post objects on the blog.
         """
-        return serializers.serialize("python", self.get_posts().filter(
+        return serializers.serialize("python", self.posts.filter(
             deleted=False), fields=SERIALIZED_FIELDS)
 
-    def get_posts(self):
+    @property
+    def posts(self):
         """
-        returns a queryset of related posts based on the installed
-        ``Post`` model
+        Dynamically looks up the related post model based on the model specified
+        in the settings file and returns the related object queryset for that
+        model.
         """
-        Post = get_post_model()
-        qs = QuerySet(model=Post).filter(blog=self)
-        return qs
+        POST_MODEL = getattr(settings, 'STARDATE_POST_MODEL')
+        app_label, model_name = POST_MODEL.split('.')
+
+        return getattr(self, '{}_{}_related'.format(app_label, model_name.lower()))
 
     def save_post_objects(self, post_list):
         Post = get_post_model()
@@ -211,14 +214,14 @@ class BasePost(models.Model):
         )
 
     def get_next_post(self):
-        next = self.blog.get_posts().filter(publish__gt=self.publish).exclude(
+        next = self.blog.posts.filter(publish__gt=self.publish).exclude(
             id__exact=self.id).order_by('publish')
         if next:
             return next[0]
         return False
 
     def get_prev_post(self):
-        prev = self.blog.get_posts().filter(publish__lt=self.publish).exclude(
+        prev = self.blog.posts.filter(publish__lt=self.publish).exclude(
                 id__exact=self.id).order_by('-publish')
         if prev:
             return prev[0]

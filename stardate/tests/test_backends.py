@@ -120,11 +120,11 @@ class DropboxBackendTestCase(TestCase):
     def test_push(self):
         create_post(blog=self.blog, title="Test one")
         create_post(blog=self.blog, title="Test two")
-        self.blog.backend.push(self.blog.get_posts().all())
+        self.blog.backend.push(self.blog.posts.all())
 
         backend_file = self.backend.get_file(self.blog.backend_file)
         packed_string = self.backend.parser.pack(
-            [post.serialized() for post in self.blog.get_posts().all()]
+            [post.serialized() for post in self.blog.posts.all()]
         )
         self.assertEqual(backend_file, packed_string)
 
@@ -134,16 +134,16 @@ class DropboxBackendTestCase(TestCase):
         self.assertEqual(
             self.backend.client.get_file(self.blog.backend_file).read(),
             test_string)
-        for post in self.blog.get_posts().all():
+        for post in self.blog.posts.all():
             post.delete()
-        self.assertFalse(self.blog.get_posts().all())
+        self.assertFalse(self.blog.posts.all())
         
         self.blog.backend.pull()
-        self.assertEqual(len(self.blog.get_posts().all()), 1)
-        self.blog.backend.push(self.blog.get_posts().all())
+        self.assertEqual(len(self.blog.posts.all()), 1)
+        self.blog.backend.push(self.blog.posts.all())
         # After push, file should have stardate metadata
         packed_string = self.backend.parser.pack(
-            [post.serialized() for post in self.blog.get_posts().all()]
+            [post.serialized() for post in self.blog.posts.all()]
         )
         self.assertEqual(
             self.backend.client.get_file(self.blog.backend_file).read(),
@@ -153,19 +153,19 @@ class DropboxBackendTestCase(TestCase):
         test_string = 'title: Title\n\n\nBody.\n'
         self.backend.client.put_file(self.blog.backend_file, test_string)
 
-        for post in self.blog.get_posts().all():
+        for post in self.blog.posts.all():
             post.delete()
 
         self.assertEqual(len(self.blog.backend.pull()), 1)
         self.assertEqual(len(self.blog.backend.pull()), 0)
 
     def test_push_blog_file(self):
-        posts = self.blog.get_posts().all()
+        posts = self.blog.posts.all()
         self.blog.backend.push_blog_file(posts)
         f = open(self.blog.backend_file, 'r')
 
         packed_string = self.backend.parser.pack(
-            [post.serialized() for post in self.blog.get_posts().all()]
+            [post.serialized() for post in self.blog.posts.all()]
         )
 
         self.assertEqual(f.read(), packed_string)
@@ -189,7 +189,7 @@ class LocalFileBackendTestCase(TestCase):
             backend_file=file_path)
         create_post(title="Hello world", blog=self.blog)
 
-        self.post_list = self.blog.get_posts().all()
+        self.post_list = self.blog.posts.all()
 
     def tearDown(self):
         Blog.objects.all().delete()
