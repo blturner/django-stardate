@@ -2,7 +2,6 @@ import json
 import mimetypes
 
 from stardate.backends.dropbox import DropboxBackend
-from stardate.backends.local_file import LocalFileBackend
 
 
 class MockDropboxClient(object):
@@ -124,7 +123,3 @@ class MockDropboxBackend(DropboxBackend):
     def __init__(self, *args, **kwargs):
         client_class = MockDropboxClient
         return super(MockDropboxBackend, self).__init__(client_class=client_class, *args, **kwargs)
-
-
-class MockLocalFileBackend(LocalFileBackend):
-    pass

@@ -16,7 +16,7 @@ from stardate.tests.factories import create_blog, create_post, create_user, \
     create_user_social_auth
 from stardate.backends.local_file import LocalFileBackend
 from stardate.tests.mock_backends import MockDropboxClient, \
-    MockDropboxBackend, MockLocalFileBackend
+    MockDropboxBackend
 from stardate.utils import get_post_model
 
 Post = get_post_model()
@@ -184,21 +184,29 @@ class DropboxBackendTestCase(TestCase):
 class LocalFileBackendTestCase(TestCase):
     def setUp(self):
         fd, file_path = tempfile.mkstemp(suffix='.md')
-        self.blog = create_blog(
-            backend_class="stardate.tests.mock_backends.MockLocalFileBackend",
-            backend_file=file_path)
-        create_post(title="Hello world", blog=self.blog)
+        user = User.objects.create(username='bturner')
+        blog = Blog.objects.create(
+            backend_class='stardate.backends.local_file.LocalFileBackend',
+            backend_file=file_path,
+            name='arbitrary name',
+            user=user,
+        )
+        Post.objects.create(
+            blog=blog,
+            title='Hello world',
+            body='A very fine world it is.',
+        )
 
-        self.post_list = self.blog.posts.all()
+        self.blog = blog
+        self.post_list = blog.posts.all()
 
     def tearDown(self):
         Blog.objects.all().delete()
         Post.objects.all().delete()
         User.objects.all().delete()
-        UserSocialAuth.objects.all().delete()
 
     def test_is_mock_local_file_backend(self):
-        self.assertIsInstance(self.blog.backend, MockLocalFileBackend)
+        self.assertIsInstance(self.blog.backend, LocalFileBackend)
 
     def test_get_name(self):
         self.assertEqual(self.blog.backend.get_name(), 'localfile')
@@ -251,18 +259,12 @@ class LocalFileBackendTestCase(TestCase):
     def test_pull(self):
         timestamp = '2013-01-01 6:00 AM EST'
         parsed_timestamp = datetime.datetime(2013, 1, 1, 11, 0, tzinfo=timezone.utc)
-        temp_dir = tempfile.mkdtemp()
-        fd, file_path = tempfile.mkstemp(dir=temp_dir, suffix='.md')
-        blog = create_blog(name='Pull',
-                           backend_class='stardate.tests.mock_backends.MockLocalFileBackend',
-                           backend_file=file_path,
-                           slug='pull')
 
-        f = open(file_path, 'w')
+        f = open(self.blog.backend_file, 'w')
         f.write('title: Post title\npublish: {0}\n\n\nA post for pulling in.'.format(timestamp))
         f.close()
 
-        pulled_posts = blog.backend.pull()
+        pulled_posts = self.blog.backend.pull()
 
         self.assertIsNotNone(pulled_posts[0].stardate)
         self.assertEqual(pulled_posts[0].title, 'Post title')
@@ -271,22 +273,22 @@ class LocalFileBackendTestCase(TestCase):
                          parsed_timestamp.replace(tzinfo=timezone.utc))
 
     def test_push(self):
-        fd, file_path = tempfile.mkstemp(suffix='.md')
-        blog = create_blog(name='Push',
-                           backend_class='stardate.tests.mock_backends.MockLocalFileBackend',
-                           backend_file=file_path,
-                           slug='push')
+        Post.objects.create(
+            title='A test push post',
+            blog=self.blog,
+            body='Testing a push post.'
+        )
 
-        # creating a post calls `push`
-        create_post(title='A test push post', blog=blog, body='Testing a push post.')
-
-        f = open(file_path, 'r')
+        f = open(self.blog.backend_file, 'r')
         content = f.read()
-        parser = FileParser()
-        parsed = parser.unpack(content)
-        self.assertEqual(parsed[0]['title'], u'A test push post')
-        self.assertEqual(parsed[0]['body'], u'Testing a push post.\n')
-        self.assertTrue('stardate' in parsed[0])
+        f.close()
+
+        parsed = self.blog.backend.parser.unpack(content)
+
+        self.assertEqual(len(parsed), 2)
+        self.assertEqual(parsed[1]['title'], u'A test push post')
+        self.assertEqual(parsed[1]['body'], u'Testing a push post.\n')
+        self.assertTrue('stardate' in parsed[1])
 
     def test_disabled_blog(self):
         self.blog.sync = False
