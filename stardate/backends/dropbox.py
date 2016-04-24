@@ -34,22 +34,24 @@ logger = logging.getLogger('stardate')
 
 
 class DropboxBackend(StardateBackend):
-    def __init__(self, client_class=client.DropboxClient, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(DropboxBackend, self).__init__(*args, **kwargs)
         self.client = None
-        self.client_class = client_class
-        self.cursor = self.get_cursor()
+        # self.cursor = self.get_cursor()
         self.name = u'dropbox'
         self.parser = FileParser()
         self.social_auth = None
 
-        self.set_social_auth(self.blog.social_auth)
+        self.set_social_auth(self.get_social_auth())
 
     def get_file(self, path):
         return self.client.get_file(path).read()
 
     def write_file(self, file_path, content):
         return self.client.put_file(file_path, content, overwrite=True)
+
+    def get_social_auth(self):
+        return self.blog.user.social_auth.get(provider='dropbox')
 
     def get_post(self, path):
         try:
@@ -60,11 +62,12 @@ class DropboxBackend(StardateBackend):
         return post
 
     def get_access_token(self):
-        return self.social_auth.extra_data['access_token']
+        social_auth = self.get_social_auth()
+        return social_auth.extra_data['access_token']
 
     def get_cursor(self):
         try:
-            cursor = self.social_auth.extra_data['cursor']
+            cursor = self.get_social_auth().extra_data['cursor']
         except (AttributeError, KeyError):
             cursor = None
         return cursor
@@ -73,10 +76,10 @@ class DropboxBackend(StardateBackend):
         sess = session.DropboxSession(APP_KEY, APP_SECRET, ACCESS_TYPE)
         token = self.get_access_token()
         sess.set_token(token['oauth_token'], token['oauth_token_secret'])
-        return self.client_class(sess)
+        return client.DropboxClient(sess)
 
     def delta(self):
-        delta = self.client.delta(cursor=self.cursor)
+        delta = self.client.delta(cursor=self.get_cursor())
         self.save_cursor(delta.get('cursor'))
         return delta
 
@@ -117,8 +120,12 @@ class DropboxBackend(StardateBackend):
         return source_list
 
     def save_cursor(self, cursor):
-        self.social_auth.extra_data['cursor'] = cursor
-        self.social_auth.save()
+        social_auth = self.get_social_auth()
+
+        social_auth.extra_data['cursor'] = cursor
+        social_auth.save()
+
+        # FIXME: remove
         self.cursor = self.get_cursor()
 
     def set_social_auth(self, social_auth):

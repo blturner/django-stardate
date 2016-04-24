@@ -98,7 +98,10 @@ class StardateBackend(object):
 
     def get_posts(self):
         """
-        Fetch post dictionaries from single file or directory
+        Fetch post dictionaries from single file or directory by reading and
+        parsing file content into post dictionaries.
+
+        Returns an array of Post dictionairies.
         """
         path = self.blog.backend_file
         ext = get_extension(path)

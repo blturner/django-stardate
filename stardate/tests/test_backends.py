@@ -7,19 +7,28 @@ from django.test import TestCase
 from django.utils import timezone
 
 from dateutil.parser import parse
-from mock import patch
+from dropbox import client
+from mock import Mock, patch
 from social.apps.django_app.default.models import UserSocialAuth
 
 from stardate.models import Blog
 from stardate.parsers import FileParser
-from stardate.tests.factories import create_blog, create_post, create_user, \
-    create_user_social_auth
 from stardate.backends.local_file import LocalFileBackend
-from stardate.tests.mock_backends import MockDropboxClient, \
-    MockDropboxBackend
 from stardate.utils import get_post_model
 
 Post = get_post_model()
+
+
+def mock_get(path):
+    return open(path)
+
+
+def mock_put(path, content, overwrite):
+    open(path, 'w').write(content)
+
+    return {
+        'path': path
+    }
 
 
 class StardateBackendTestCase(TestCase):
@@ -34,10 +43,101 @@ class StardateBackendTestCase(TestCase):
 
 class DropboxBackendTestCase(TestCase):
     def setUp(self):
-        self.patcher = patch('stardate.tests.mock_backends.MockDropboxClient.metadata')
-        self.mock_metadata = self.patcher.start()
+        file_path = tempfile.mkstemp(suffix='.txt', text=True)[1]
 
-        self.mock_metadata.return_value = {
+        user = User.objects.create(username='bturner')
+
+        defaults = {
+            "provider": "dropbox",
+            "uid": "1234",
+            "user": user,
+            "extra_data": {
+                "access_token": {
+                    u'oauth_token_secret': u'oauth_token_secret_string',
+                    u'oauth_token': u'oauth_token_string',
+                    u'uid': u'123'
+                }
+            }
+        }
+        UserSocialAuth.objects.create(**defaults)
+
+        blog = Blog.objects.create(
+            name='Arbitrary',
+            backend_class='stardate.backends.dropbox.DropboxBackend',
+            backend_file=file_path,
+            user=user,
+        )
+
+        self.blog = blog
+
+    def tearDown(self):
+        Blog.objects.all().delete()
+        UserSocialAuth.objects.all().delete()
+        User.objects.all().delete()
+
+    def test_get_access_token(self):
+        access_token = self.blog.backend.get_access_token()
+
+        self.assertEqual(access_token['oauth_token_secret'], 'oauth_token_secret_string')
+        self.assertEqual(access_token['oauth_token'], 'oauth_token_string')
+
+    def test_cursor(self):
+        self.assertEqual(self.blog.backend.get_cursor(), None)
+        self.blog.backend.save_cursor('testing_cursor')
+        self.assertEqual(self.blog.backend.get_cursor(), 'testing_cursor')
+
+    def test_get_name(self):
+        self.assertEqual(self.blog.backend.get_name(), 'dropbox')
+
+    @patch.object(client.DropboxClient, 'delta', autospec=True)
+    def test_delta(self, mock_delta):
+        mock_delta.return_value = {
+            'entries': [['/test_file.md']],
+            'cursor': 'fake_cursor',
+        }
+
+        delta = self.blog.backend.delta()
+        self.assertEqual(self.blog.backend.get_cursor(), 'fake_cursor')
+        self.assertEqual(delta.get('entries')[0][0], '/test_file.md')
+
+    @patch.object(client.DropboxClient, 'get_file')
+    def test_get_file(self, mock_get_file):
+        expected = 'title: Hello world\n\n\nHello world'
+
+        mock_file = Mock()
+        mock_file.read.return_value = expected
+        mock_get_file.return_value = mock_file
+
+        backend_file = self.blog.backend.get_file(self.blog.backend_file)
+
+        self.assertEqual(backend_file, expected)
+
+    @patch.object(client.DropboxClient, 'get_file')
+    @patch.object(client.DropboxClient, 'put_file')
+    def test_get_posts(self, mock_put_file, mock_get_file):
+        mock_get_file.side_effect = mock_get
+        mock_put_file.side_effect = mock_put
+
+        Post.objects.create(
+            title='Hello world',
+            publish='2016-04-01 12:00:00+0000',
+            body='Hello world.',
+            blog=self.blog,
+        )
+
+        post_list = self.blog.backend.get_posts()
+
+        self.assertEqual(len(post_list), 1)
+        self.assertEqual(post_list[0]['title'], 'Hello world')
+        self.assertEqual(post_list[0]['body'], 'Hello world.\n')
+        self.assertEqual(
+            post_list[0]['publish'],
+            datetime.datetime(2016, 4, 1, 12, 0, tzinfo=timezone.utc)
+        )
+
+    @patch.object(client.DropboxClient, 'metadata')
+    def test_get_source_list(self, mock_metadata):
+        mock_metadata.return_value = {
             'modified': 'Wed, 20 Jul 2011 22:04:50 +0000',
             'hash': 'efdac89c4da886a9cece1927e6c22977',
             'contents': [
@@ -50,135 +150,99 @@ class DropboxBackendTestCase(TestCase):
             ]
         }
 
-        backend_file, backend_file_path = tempfile.mkstemp(suffix='.txt')
-        self.file_path = backend_file_path
-
-        self.blog = create_blog(
-            backend_class="stardate.tests.mock_backends.MockDropboxBackend",
-            backend_file=backend_file_path
+        expected = (
+            (0, '---'),
+            (1, '/foo'),
+            (2, '/bar'),
         )
-        create_post(blog=self.blog)
 
-        self.backend = self.blog.backend
+        source_list = self.blog.backend.get_source_list()
+        self.assertEqual(expected, source_list)
 
-    def tearDown(self):
-        self.patcher.stop()
+    @patch.object(client.DropboxClient, 'put_file')
+    @patch.object(client.DropboxClient, 'get_file')
+    @patch.object(client.DropboxClient, 'metadata')
+    def test_pull(self, mock_metadata, mock_get_file, mock_put_file):
+        post_string = 'title: Test post title\n\n\nHello world.'
 
-        Blog.objects.all().delete()
-        UserSocialAuth.objects.all().delete()
-        User.objects.all().delete()
+        with open(self.blog.backend_file, 'w') as backend_file:
+            backend_file.write(post_string)
 
-    def test_get_access_token(self):
-        access_token = self.backend.get_access_token()
+        mock_get_file.side_effect = mock_get
+        mock_put_file.side_effect = mock_put
 
-        self.assertEqual(access_token['oauth_token_secret'], 'oauth_token_secret_string')
-        self.assertEqual(access_token['oauth_token'], 'oauth_token_string')
+        mock_metadata.return_value = {
+            'modified': 'Wed, 20 Jul 2011 22:04:50 +0000',
+        }
 
-    def test_cursor(self):
-        self.assertEqual(self.backend.get_cursor(), None)
-        self.backend.save_cursor('testing_cursor')
-        self.assertEqual(self.backend.get_cursor(), 'testing_cursor')
-
-    def test_get_dropbox_client(self):
-        self.assertIsInstance(self.backend.get_dropbox_client(), MockDropboxClient)
-
-    def test_get_name(self):
-        self.assertEqual(self.backend.get_name(), 'dropbox')
-
-    def test_delta(self):
-        self.assertEqual(self.backend.get_cursor(), None)
-        delta = self.backend.delta()
-        self.assertEqual(self.backend.get_cursor(), 'VAU6GZG5NK31AW2YD8H7UDWE0W74VV')
-        self.assertTrue(delta.get('entries'))
-        self.assertEqual(delta.get('entries')[0][0], '/test_file.md')
-
-    def test_get_file(self):
-        backend_file = self.backend.get_file(self.blog.backend_file)
-        packed = self.backend.parser.pack(self.blog.backend.get_posts())
-        self.assertEqual(backend_file, packed)
-
-    def test_get_file_changed(self):
-        backend_file_path = self.blog.backend_file
-        self.backend.client.put_file(backend_file_path, 'new string')
-        self.assertEqual(self.backend.get_file(backend_file_path), 'new string')
-
-    def test_get_posts(self):
-        post_list = self.blog.backend.get_posts()
-        self.assertEqual(len(post_list), 1)
-        self.assertEqual(post_list[0]['title'], 'Test post title')
-
-    def test_get_source_list(self):
-        source_list = self.backend.get_source_list()
-        self.assertEqual(len(source_list), 3)
-
-    def test_pull(self):
-        blog = self.blog
-        pulled_posts = blog.backend.pull()
+        pulled_posts = self.blog.backend.pull()
         self.assertEqual(len(pulled_posts), 1)
         self.assertEqual(pulled_posts[0].title, 'Test post title')
 
-    def test_push(self):
-        create_post(blog=self.blog, title="Test one")
-        create_post(blog=self.blog, title="Test two")
-        self.blog.backend.push(self.blog.posts.all())
+        # There should be no posts returned after the first update
+        self.assertEqual(self.blog.backend.pull(), [])
 
-        backend_file = self.backend.get_file(self.blog.backend_file)
-        packed_string = self.backend.parser.pack(
+    @patch.object(client.DropboxClient, 'put_file')
+    @patch.object(client.DropboxClient, 'get_file')
+    def test_push(self, mock_get_file, mock_put_file):
+        mock_get_file.side_effect = mock_get
+        mock_put_file.side_effect = mock_put
+
+        # Creating a Post will automatically push it to the backend file
+        first_post = Post.objects.create(
+            blog=self.blog,
+            title='Foo',
+            body='Foo body.'
+        )
+
+        second_post = Post.objects.create(
+            blog=self.blog,
+            title='Bar',
+            body='Bar body.'
+        )
+
+        backend_file = open(self.blog.backend_file).read()
+        packed_string = self.blog.backend.parser.pack(
             [post.serialized() for post in self.blog.posts.all()]
         )
         self.assertEqual(backend_file, packed_string)
 
-    def test_pull_then_push(self):
-        test_string = 'title: My test post\npublish: June 1, 2013 6AM PST\n\n\nPost body.\n'
-        self.backend.client.put_file(self.blog.backend_file, test_string)
-        self.assertEqual(
-            self.backend.client.get_file(self.blog.backend_file).read(),
-            test_string)
-        for post in self.blog.posts.all():
-            post.delete()
-        self.assertFalse(self.blog.posts.all())
-        
+    @patch.object(client.DropboxClient, 'metadata')
+    @patch.object(client.DropboxClient, 'get_file')
+    @patch.object(client.DropboxClient, 'put_file')
+    def test_pull_then_push(self, mock_put_file, mock_get_file, mock_metadata):
+        mock_put_file.side_effect = mock_put
+        mock_get_file.side_effect = mock_get
+        mock_metadata.return_value = {
+            'modified': 'Wed, 20 Jul 2011 22:04:50 +0000',
+        }
+
+        new_post = 'title: My test post\npublish: June 1, 2013 6AM PST\n\n\nPost body.\n'
+
+        with open(self.blog.backend_file, 'w') as backend_file:
+            backend_file.write(new_post)
+            backend_file.close()
+
         self.blog.backend.pull()
-        self.assertEqual(len(self.blog.posts.all()), 1)
+        self.assertEqual(self.blog.posts.all().count(), 1)
+
         self.blog.backend.push(self.blog.posts.all())
-        # After push, file should have stardate metadata
-        packed_string = self.backend.parser.pack(
+        # # After push, file should have stardate metadata
+        with open(self.blog.backend_file) as backend_file:
+            self.assertTrue('stardate:' in backend_file.read())
+
+        packed_string = self.blog.backend.parser.pack(
             [post.serialized() for post in self.blog.posts.all()]
         )
         self.assertEqual(
-            self.backend.client.get_file(self.blog.backend_file).read(),
+            self.blog.backend.client.get_file(self.blog.backend_file).read(),
             packed_string)
-
-    def test_pull_then_pull(self):
-        test_string = 'title: Title\n\n\nBody.\n'
-        self.backend.client.put_file(self.blog.backend_file, test_string)
-
-        for post in self.blog.posts.all():
-            post.delete()
-
-        self.assertEqual(len(self.blog.backend.pull()), 1)
-        self.assertEqual(len(self.blog.backend.pull()), 0)
-
-    def test_push_blog_file(self):
-        posts = self.blog.posts.all()
-        self.blog.backend.push_blog_file(posts)
-        f = open(self.blog.backend_file, 'r')
-
-        packed_string = self.backend.parser.pack(
-            [post.serialized() for post in self.blog.posts.all()]
-        )
-
-        self.assertEqual(f.read(), packed_string)
-
-    def test_save_cursor(self):
-        self.backend.save_cursor('test_cursor')
-        self.assertEqual(self.backend.cursor, 'test_cursor')
 
     def test_set_social_auth(self):
         user = User.objects.get(username='bturner')
         social_auth = UserSocialAuth.objects.get(user__exact=user.id)
 
-        self.assertEqual(self.backend.social_auth, social_auth)
+        self.assertEqual(self.blog.backend.social_auth, social_auth)
 
 
 class LocalFileBackendTestCase(TestCase):
