@@ -4,8 +4,10 @@ import pytz
 import types
 import yaml
 
-from dateutil.parser import parse
 from django.utils.timezone import is_aware, make_aware, utc
+
+from dateutil import tz
+from dateutil.parser import parse
 
 from stardate.backends import BaseStardateParser
 
@@ -115,17 +117,13 @@ class FileParser(BaseStardateParser):
         provided, returns an aware datetime in UTC.
         """
         if not isinstance(date, datetime.datetime):
-            date = parse(date, tzinfos=TZ_OFFSETS)
+            date = parse(date)
 
-        date_is_aware = is_aware(date)
+        if timezone:
+            to_zone = tz.gettz(timezone)
+            date = date.replace(tzinfo=to_zone)
 
-        if timezone and not date_is_aware:
-            local = pytz.timezone(timezone)
-            date = local.localize(date, is_dst=None)
-
-            return date.astimezone(utc)
-
-        if not date_is_aware:
+        if not is_aware(date):
             date = make_aware(date, utc)
 
         return date

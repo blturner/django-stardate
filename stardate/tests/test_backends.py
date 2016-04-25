@@ -321,11 +321,11 @@ class LocalFileBackendTestCase(TestCase):
         os.removedirs(temp_dir)
 
     def test_pull(self):
-        timestamp = '2013-01-01 6:00 AM EST'
-        parsed_timestamp = datetime.datetime(2013, 1, 1, 11, 0, tzinfo=timezone.utc)
+        timestamp = '2013-01-01 6:00 AM'
+        expected_timestamp = datetime.datetime(2013, 1, 1, 11, 0, tzinfo=timezone.utc)
 
         f = open(self.blog.backend_file, 'w')
-        f.write('title: Post title\npublish: {0}\n\n\nA post for pulling in.'.format(timestamp))
+        f.write('title: Post title\npublish: {0}\ntimezone: US/Eastern\n\n\nA post for pulling in.'.format(timestamp))
         f.close()
 
         pulled_posts = self.blog.backend.pull()
@@ -333,8 +333,7 @@ class LocalFileBackendTestCase(TestCase):
         self.assertIsNotNone(pulled_posts[0].stardate)
         self.assertEqual(pulled_posts[0].title, 'Post title')
         self.assertEqual(pulled_posts[0].body.raw, 'A post for pulling in.\n')
-        self.assertEqual(pulled_posts[0].publish.astimezone(timezone.utc),
-                         parsed_timestamp.replace(tzinfo=timezone.utc))
+        self.assertEqual(pulled_posts[0].publish, expected_timestamp)
 
     def test_push(self):
         Post.objects.create(
