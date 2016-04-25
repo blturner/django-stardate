@@ -16,17 +16,6 @@ logger = logging.getLogger(__name__)
 DELIMITER = "\n---\n\n"
 TIMEFORMAT = '%Y-%m-%d %I:%M %p'  # 2012-01-01 09:00 AM
 
-TZ_OFFSETS = {
-    "EDT": -4*3600,
-    "EST": -5*3600,
-    "CDT": -5*3600,
-    "CST": -6*3600,
-    "MDT": -6*3600,
-    "MST": -7*3600,
-    "PDT": -7*3600,
-    "PST": -8*3600,
-}
-
 
 class FileParser(BaseStardateParser):
     def __init__(self):
