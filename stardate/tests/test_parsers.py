@@ -13,7 +13,6 @@ from social.apps.django_app.default.models import UserSocialAuth
 
 from stardate.models import Blog
 from stardate.parsers import FileParser
-from stardate.tests.factories import create_blog
 
 
 TIMESTAMP = '2012-01-02 12:00 AM'
