@@ -11,6 +11,8 @@ try:
 except ImportError:
     from django.test import override_settings
 
+from dateutil import tz
+
 from stardate.models import Blog, Post
 from stardate.utils import get_post_model
 
@@ -52,12 +54,26 @@ class BlogTestCase(TestCase):
         self.assertTrue(self.blog.slug)
         self.assertEqual(self.blog.slug, 'test-blog')
 
-    # @override_settings(STARDATE_POST_MODEL='stardate.Post')
     def test_get_post_model(self):
         self.assertIsInstance(get_post_model()(), Post)
 
         with self.settings(STARDATE_POST_MODEL='core.CustomPost'):
             self.assertIsInstance(get_post_model()(), CustomPost)
+
+    def test_publish_field(self):
+        post = Post(
+            blog=self.blog,
+            title='A starry night',
+            publish=datetime.datetime(2016, 1, 1),
+            timezone='US/Eastern',
+            body='foo',
+        )
+
+        post.clean()
+
+        expected = datetime.datetime(2016, 1, 1, tzinfo=tz.gettz('US/Eastern')).astimezone(timezone.utc)
+
+        self.assertEqual(post.publish, expected)
 
     def test_get_serialized_posts(self):
         posts = self.blog.get_serialized_posts()

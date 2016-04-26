@@ -89,31 +89,16 @@ class FileParser(BaseStardateParser):
         if isinstance(post_data, types.DictType):
             post_data['body'] = ''.join(bits[1:])
 
-        # FIXME: this belongs in deserialization, perhaps
-        # on model?
-        timezone = None
-
-        if 'timezone' in post_data:
-            timezone = post_data['timezone']
-
         if 'publish' in post_data:
-            post_data['publish'] = self.parse_publish(post_data['publish'], timezone)
+            post_data['publish'] = self.parse_publish(post_data['publish'])
         return post_data
 
-    def parse_publish(self, date, timezone=None):
+    def parse_publish(self, date):
         """
-        Parses a datetime string into a datetime instance. If no timezone is
-        provided, returns an aware datetime in UTC.
+        Parses a datetime string into a datetime instance.
         """
         if not isinstance(date, datetime.datetime):
             date = parse(date)
-
-        if timezone:
-            to_zone = tz.gettz(timezone)
-            date = date.replace(tzinfo=to_zone)
-
-        if not is_aware(date):
-            date = make_aware(date, utc)
 
         return date
 

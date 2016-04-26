@@ -1,6 +1,7 @@
 import datetime
 import uuid
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core import serializers
 from django.db import models
@@ -8,10 +9,9 @@ from django.db.models.query import QuerySet
 from django.template.defaultfilters import slugify
 from django.utils import timezone
 
-from social.apps.django_app.default.models import UserSocialAuth
+from dateutil import tz
 from markupfield.fields import MarkupField
-
-from django.conf import settings
+from social.apps.django_app.default.models import UserSocialAuth
 
 from stardate.utils import get_post_model
 
@@ -151,8 +151,13 @@ class BasePost(models.Model):
     def clean(self, *args, **kwargs):
         if not self.stardate:
             self.stardate = str(uuid.uuid1())
+
+        if self.timezone and self.timezone != 'UTC':
+            self.publish = self.publish.replace(tzinfo=tz.gettz(self.timezone))
+
         if not self.slug:
             self.slug = slugify(self.title)
+
         if not self.body.raw.endswith('\n'):
             self.body.raw += '\n'
 
@@ -165,6 +170,7 @@ class BasePost(models.Model):
             self.backend = self.blog.backend
 
         # Validate first so things don't break on push
+        # self.full_clean()
         self.clean()
         self.clean_fields()
         self.validate_unique()
@@ -181,7 +187,7 @@ class BasePost(models.Model):
         for s in serialized:
             if s['fields']['publish']:
                 s['fields']['publish'] = datetime.datetime.strftime(
-                    s['fields']['publish'].astimezone(timezone.utc),
+                    s['fields']['publish'].replace(tzinfo=tz.gettz(self.timezone)).astimezone(timezone.utc),
                     '%Y-%m-%d %I:%M %p %Z'
                 )
 

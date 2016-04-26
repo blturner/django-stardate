@@ -16,7 +16,6 @@ from stardate.parsers import FileParser
 
 
 TIMESTAMP = '2012-01-02 12:00 AM'
-TIMESTAMP_UTC = datetime.datetime(2012, 1, 2, 5, 0, tzinfo=timezone.utc)
 
 
 class FileParserTestCase(TestCase):
@@ -65,50 +64,25 @@ class FileParserTestCase(TestCase):
 
     def test_parse_publish(self):
         timestamp = '01-01-2015 06:00AM'
-        utc_expected = datetime.datetime(2015, 1, 1, 14, 0, tzinfo=timezone.utc)
+        expected = datetime.datetime(2015, 1, 1, 6, 0)
 
-        dt = self.parser.parse_publish(timestamp, timezone='US/Pacific')
-
-        self.assertEqual(dt, utc_expected)
-
-    def test_parse_publish_without_tz(self):
-        timestamp = '01-01-2015 06:00AM'
-        utc_expected = datetime.datetime(2015, 1, 1, 6, 0, tzinfo=timezone.utc)
-        dt = self.parser.parse_publish(timestamp)
-
-        self.assertEqual(dt, utc_expected)
-
-    def test_parse_publish_with_datetime(self):
-        date = datetime.datetime(2015, 1, 1, 6, 0)
-        expected = datetime.datetime(2015, 1, 1, 6, 0, tzinfo=timezone.utc)
-        self.assertEqual(self.parser.parse_publish(date), expected)
-
-        # with timezone
-        self.assertEqual(
-            self.parser.parse_publish(date, 'US/Eastern').astimezone(timezone.utc),
-            datetime.datetime(2015, 1, 1, 11, 0, tzinfo=timezone.utc)
-        )
+        self.assertEqual(self.parser.parse_publish(timestamp), expected)
+        self.assertEqual(self.parser.parse_publish(expected), expected)
 
     def test_parse(self):
         parsed = self.parser.parse(self.test_string)
 
         self.assertEqual(parsed['title'], 'Tingling of the spine')
-        expected = datetime.datetime(2012, 1, 2, 5, 0, tzinfo=timezone.utc)
-        self.assertEqual(parsed['publish'].astimezone(timezone.utc), expected)
+        expected = datetime.datetime(2012, 1, 2)
+        self.assertEqual(parsed['publish'], expected)
         self.assertEqual(parsed['body'], 'Extraordinary claims require extraordinary evidence!')
+        self.assertEqual(parsed['timezone'], 'US/Eastern')
 
         # Check that extra_field is parsed
         string = u"title: My title\nextra_field: Something arbitrary\n\n\nThe body.\n"
         parsed = self.parser.parse(string)
         self.assertTrue(parsed.has_key('title'))
         self.assertTrue(parsed.has_key('extra_field'))
-
-    def test_parse_with_timezone(self):
-        string = u'title: An EST post\npublish: 2016-01-01 6AM\ntimezone: US/Eastern\n\n\nBody copy.\n'
-        parsed = self.parser.parse(string)
-        dt = datetime.datetime(2016, 1, 1, 6, tzinfo=tz.gettz('US/Eastern'))
-
-        self.assertEqual(parsed['publish'], dt)
 
     def test_render(self):
         test_stardate = uuid.uuid1()
@@ -143,10 +117,7 @@ class FileParserTestCase(TestCase):
         #The file has one post to unpack
         self.assertEqual(len(post_list), 1)
         self.assertEqual(post_list[0].get('title'), 'Tingling of the spine')
-        self.assertEqual(
-            post_list[0].get('publish').astimezone(timezone.utc),
-            TIMESTAMP_UTC
-        )
+        self.assertEqual(post_list[0].get('publish'), parse(TIMESTAMP))
         self.assertEqual(post_list[0].get('body'), 'Extraordinary claims require extraordinary evidence!')
 
     @patch('stardate.parsers.logger')
