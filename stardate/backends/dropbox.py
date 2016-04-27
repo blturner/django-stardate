@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+import json
 import logging
 import os
 
@@ -62,10 +63,12 @@ class DropboxBackend(StardateBackend):
         return post
 
     def get_access_token(self):
-        return self.get_social_auth().extra_data.get('access_token')
+        extra_data = json.loads(self.get_social_auth().extra_data)
+        return extra_data.get('access_token')
 
     def get_cursor(self):
-        return self.get_social_auth().extra_data.get('cursor')
+        extra_data = json.loads(self.get_social_auth().extra_data)
+        return extra_data.get('cursor')
 
     def get_dropbox_client(self):
         sess = session.DropboxSession(APP_KEY, APP_SECRET, ACCESS_TYPE)
@@ -116,8 +119,10 @@ class DropboxBackend(StardateBackend):
 
     def save_cursor(self, cursor):
         social_auth = self.get_social_auth()
+        extra_data = json.loads(social_auth.extra_data)
 
-        social_auth.extra_data['cursor'] = cursor
+        extra_data['cursor'] = cursor
+        social_auth.extra_data = extra_data
         social_auth.save()
 
         # FIXME: remove
