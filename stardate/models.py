@@ -197,7 +197,7 @@ class BasePost(models.Model):
             if s['fields']['publish']:
                 s['fields']['publish'] = datetime.datetime.strftime(
                     s['fields']['publish'].replace(tzinfo=tz.gettz(self.timezone)).astimezone(timezone.utc),
-                    '%Y-%m-%d %I:%M %p %Z'
+                    '%Y-%m-%d %I:%M %p'
                 )
 
         return serialized[0]['fields']

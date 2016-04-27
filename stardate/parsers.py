@@ -39,9 +39,6 @@ class FileParser(BaseStardateParser):
                 value = post[key]
 
                 if value:
-                    if key == 'publish' and isinstance(value, datetime.datetime):
-                        value = datetime.datetime.strftime(value, '%Y-%m-%d %I:%M %p %Z')
-
                     field_string = '{0}: {1}'.format(key, value)
                     meta.append(field_string)
             except KeyError:
