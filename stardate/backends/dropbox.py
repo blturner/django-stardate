@@ -56,7 +56,7 @@ class DropboxBackend(StardateBackend):
     def get_post(self, path):
         try:
             content = self.get_file(path)
-            post = self.parser.parser(content)
+            post = self.parser.parse(content)
         except Exception:
             post = {}
         return post
@@ -66,11 +66,7 @@ class DropboxBackend(StardateBackend):
         return social_auth.extra_data['access_token']
 
     def get_cursor(self):
-        try:
-            cursor = self.get_social_auth().extra_data['cursor']
-        except (AttributeError, KeyError):
-            cursor = None
-        return cursor
+        return self.get_social_auth().extra_data.get('cursor')
 
     def get_dropbox_client(self):
         sess = session.DropboxSession(APP_KEY, APP_SECRET, ACCESS_TYPE)
