@@ -29,7 +29,6 @@ class BlogTestCase(TestCase):
             name='My test blog',
             backend_class='stardate.backends.local_file.LocalFileBackend',
             backend_file=file_path,
-            slug='test-blog',
             user=user,
         )
 
@@ -52,7 +51,7 @@ class BlogTestCase(TestCase):
 
     def test_blog_has_slug(self):
         self.assertTrue(self.blog.slug)
-        self.assertEqual(self.blog.slug, 'test-blog')
+        self.assertEqual(self.blog.slug, 'my-test-blog')
 
     def test_get_post_model(self):
         self.assertIsInstance(get_post_model()(), Post)

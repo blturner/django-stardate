@@ -50,6 +50,10 @@ class Blog(models.Model):
 
         return get_backend(self.backend_class, blog=self)
 
+    def clean(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+
     @models.permalink
     def get_absolute_url(self):
         return ('post-archive-index', (), {'blog_slug': self.slug})
@@ -76,6 +80,11 @@ class Blog(models.Model):
         app_label, model_name = POST_MODEL.split('.')
 
         return getattr(self, '{}_{}_related'.format(app_label, model_name.lower()))
+
+    def save(self, *args, **kwargs):
+        self.clean()
+
+        super(Blog, self).save(*args, **kwargs)
 
     def save_post_objects(self, post_list):
         Post = get_post_model()
