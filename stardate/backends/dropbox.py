@@ -62,8 +62,7 @@ class DropboxBackend(StardateBackend):
         return post
 
     def get_access_token(self):
-        social_auth = self.get_social_auth()
-        return social_auth.extra_data['access_token']
+        return self.get_social_auth().extra_data.get('access_token')
 
     def get_cursor(self):
         return self.get_social_auth().extra_data.get('cursor')
