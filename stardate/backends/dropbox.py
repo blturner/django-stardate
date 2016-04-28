@@ -63,11 +63,15 @@ class DropboxBackend(StardateBackend):
         return post
 
     def get_access_token(self):
-        extra_data = json.loads(self.get_social_auth().extra_data)
+        extra_data = self.get_social_auth().extra_data
+        if isinstance(extra_data, unicode):
+            extra_data = json.loads(extra_data)
         return extra_data.get('access_token')
 
     def get_cursor(self):
-        extra_data = json.loads(self.get_social_auth().extra_data)
+        extra_data = self.get_social_auth().extra_data
+        if isinstance(extra_data, unicode):
+            extra_data = json.loads(extra_data)
         return extra_data.get('cursor')
 
     def get_dropbox_client(self):
@@ -119,8 +123,9 @@ class DropboxBackend(StardateBackend):
 
     def save_cursor(self, cursor):
         social_auth = self.get_social_auth()
-        extra_data = json.loads(social_auth.extra_data)
-
+        extra_data = social_auth.extra_data
+        if isinstance(extra_data, unicode):
+            extra_data = json.loads(extra_data)
         extra_data['cursor'] = cursor
         social_auth.extra_data = extra_data
         social_auth.save()
