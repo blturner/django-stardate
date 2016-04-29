@@ -120,7 +120,7 @@ class DropboxBackendTestCase(TestCase):
 
         Post.objects.create(
             title='Hello world',
-            publish='2016-04-01 12:00:00+0000',
+            publish='2016-04-01 12:00:00',
             body='Hello world.',
             blog=self.blog,
         )
