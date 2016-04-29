@@ -238,12 +238,6 @@ class DropboxBackendTestCase(TestCase):
             self.blog.backend.client.get_file(self.blog.backend_file).read(),
             packed_string)
 
-    def test_set_social_auth(self):
-        user = User.objects.get(username='bturner')
-        social_auth = UserSocialAuth.objects.get(user__exact=user.id)
-
-        self.assertEqual(self.blog.backend.social_auth, social_auth)
-
 
 class LocalFileBackendTestCase(TestCase):
     def setUp(self):

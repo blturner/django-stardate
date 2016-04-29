@@ -37,13 +37,9 @@ logger = logging.getLogger('stardate')
 class DropboxBackend(StardateBackend):
     def __init__(self, *args, **kwargs):
         super(DropboxBackend, self).__init__(*args, **kwargs)
-        self.client = None
-        # self.cursor = self.get_cursor()
+        self.client = self.get_dropbox_client()
         self.name = u'dropbox'
         self.parser = FileParser()
-        self.social_auth = None
-
-        self.set_social_auth(self.get_social_auth())
 
     def get_file(self, path):
         return self.client.get_file(path).read()
@@ -129,13 +125,6 @@ class DropboxBackend(StardateBackend):
         extra_data['cursor'] = cursor
         social_auth.extra_data = extra_data
         social_auth.save()
-
-        # FIXME: remove
-        self.cursor = self.get_cursor()
-
-    def set_social_auth(self, social_auth):
-        self.social_auth = social_auth
-        self.client = self.get_dropbox_client()
 
     @property
     def last_sync(self):
