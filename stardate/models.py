@@ -111,18 +111,18 @@ class PostManager(models.Manager):
         Returns all draft Post instances. A draft is considered to be a Post
         without a publish property.
         """
-        if self.get_queryset:
+        try:
             queryset_method = self.get_queryset
-        else:
-            queryset_method = self.qet_query_set
+        except AttributeError:
+            queryset_method = self.get_query_set
 
         return queryset_method().filter(publish=None)
 
     def published(self):
-        if self.get_queryset:
+        try:
             queryset_method = self.get_queryset
-        else:
-            queryset_method = self.qet_query_set
+        except AttributeError:
+            queryset_method = self.get_query_set
 
         return queryset_method().filter(
             deleted=False,
@@ -229,6 +229,8 @@ class BasePost(models.Model):
         )
 
     def get_next_post(self):
+        if not self.publish:
+            return False
         next = self.blog.posts.filter(publish__gt=self.publish).exclude(
             id__exact=self.id).order_by('publish')
         if next:
@@ -236,6 +238,8 @@ class BasePost(models.Model):
         return False
 
     def get_prev_post(self):
+        if not self.publish:
+            return False
         prev = self.blog.posts.filter(publish__lt=self.publish).exclude(
                 id__exact=self.id).order_by('-publish')
         if prev:

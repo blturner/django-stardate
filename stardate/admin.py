@@ -22,7 +22,6 @@ class BlogAdmin(admin.ModelAdmin):
 
 class PostAdmin(admin.ModelAdmin):
     date_hierarchy = 'publish'
-    form = PostForm
     list_display = ('title', 'publish', 'blog')
     list_filter = ('blog', 'publish',)
     prepopulated_fields = {'slug': ('title',)}
