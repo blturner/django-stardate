@@ -1,6 +1,11 @@
 {% extends "stardate/base_stardate.html" %}
 
 
+{% block extra_head %}
+    <link rel="canonical" href="{{ post.get_dated_absolute_url }}" />
+{% endblock extra_head %}
+
+
 {% block title %}{{ post.title }}{% endblock %}
 
 
