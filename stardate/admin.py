@@ -14,13 +14,14 @@ class BlogAdmin(admin.ModelAdmin):
         'backend_file',
         'user',
         'social_auth',
+        'last_sync',
+        'sync',
     ]
     prepopulated_fields = {'slug': ('name',)}
 
 
 class PostAdmin(admin.ModelAdmin):
     date_hierarchy = 'publish'
-    form = PostForm
     list_display = ('title', 'publish', 'blog')
     list_filter = ('blog', 'publish',)
     prepopulated_fields = {'slug': ('title',)}

@@ -2,7 +2,6 @@ import logging
 
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
-from django.db.transaction import atomic
 
 from optparse import make_option
 
@@ -23,6 +22,11 @@ class Command(BaseCommand):
     """
     option_list = BaseCommand.option_list + (
         make_option(
+            '--force',
+            action='store_true',
+            dest='force',
+        ),
+        make_option(
             '--user',
             action='append',
             dest='user',
@@ -32,6 +36,8 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
+        force = options['force'] or False
+
         if options['user']:
             users = User.objects.filter(username__in=options['user'])
         else:
@@ -41,15 +47,4 @@ class Command(BaseCommand):
             for blog in Blog.objects.filter(user=user):
                 logger.info(u'Updating posts for {0}'.format(blog))
 
-                posts = blog.backend.pull(blog)
-                self.batch_save(posts)
-
-    @atomic
-    def batch_save(self, queryset):
-        for obj in queryset:
-            push = False
-
-            if obj.stardate:
-                push = True
-
-            obj.save(push=push)
+                blog.backend.pull(force=force)

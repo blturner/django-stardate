@@ -55,7 +55,7 @@ class PostViewMixin(object):
 
     def get_queryset(self):
         blog = Blog.objects.get(slug__iexact=self.kwargs['blog_slug'])
-        return Post.objects.published().filter(blog=blog)
+        return blog.posts.published()
 
 
 class DraftViewMixin(object):

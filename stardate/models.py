@@ -1,6 +1,7 @@
 import datetime
 import uuid
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core import serializers
 from django.db import models
@@ -8,12 +9,20 @@ from django.db.models.query import QuerySet
 from django.template.defaultfilters import slugify
 from django.utils import timezone
 
-from social.apps.django_app.default.models import UserSocialAuth
+from dateutil import tz
 from markupfield.fields import MarkupField
-
-from django.conf import settings
+from social.apps.django_app.default.models import UserSocialAuth
 
 from stardate.utils import get_post_model
+
+SERIALIZED_FIELDS = (
+    'title',
+    'slug',
+    'publish',
+    'stardate',
+    'body',
+    'timezone'
+)
 
 
 class Blog(models.Model):
@@ -23,10 +32,13 @@ class Blog(models.Model):
     # Path to file or directory used by backend to determine
     # how and where to store / retrieve posts
     backend_file = models.CharField(blank=True, max_length=255)
+    last_sync = models.DateTimeField(blank=True, null=True)
     name = models.CharField(max_length=255)
     user = models.ForeignKey(User, related_name="+")
     slug = models.SlugField(unique=True)
     social_auth = models.ForeignKey(UserSocialAuth, blank=True, null=True)
+    sync = models.BooleanField(default=True,
+        help_text='This blog should sync using it\'s selected backend')
 
 
     def __unicode__(self):
@@ -36,9 +48,11 @@ class Blog(models.Model):
     def backend(self):
         from stardate.backends import get_backend
 
-        backend = get_backend(self.backend_class)
-        backend.set_social_auth(self.social_auth)
-        return backend
+        return get_backend(self.backend_class, blog=self)
+
+    def clean(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
 
     @models.permalink
     def get_absolute_url(self):
@@ -52,17 +66,25 @@ class Blog(models.Model):
         """
         Returns a list of dictionaries representing post objects on the blog.
         """
-        return serializers.serialize("python", self.get_posts().filter(
-            deleted=False), fields=('title', 'publish', 'stardate', 'body'))
+        return serializers.serialize("python", self.posts.filter(
+            deleted=False), fields=SERIALIZED_FIELDS)
 
-    def get_posts(self):
+    @property
+    def posts(self):
         """
-        returns a queryset of related posts based on the installed
-        ``Post`` model
+        Dynamically looks up the related post model based on the model specified
+        in the settings file and returns the related object queryset for that
+        model.
         """
-        Post = get_post_model()
-        qs = QuerySet(model=Post).filter(blog=self)
-        return qs
+        POST_MODEL = getattr(settings, 'STARDATE_POST_MODEL')
+        app_label, model_name = POST_MODEL.split('.')
+
+        return getattr(self, '{}_{}_related'.format(app_label, model_name.lower()))
+
+    def save(self, *args, **kwargs):
+        self.clean()
+
+        super(Blog, self).save(*args, **kwargs)
 
     def save_post_objects(self, post_list):
         Post = get_post_model()
@@ -89,18 +111,18 @@ class PostManager(models.Manager):
         Returns all draft Post instances. A draft is considered to be a Post
         without a publish property.
         """
-        if self.get_queryset:
+        try:
             queryset_method = self.get_queryset
-        else:
-            queryset_method = self.qet_query_set
+        except AttributeError:
+            queryset_method = self.get_query_set
 
         return queryset_method().filter(publish=None)
 
     def published(self):
-        if self.get_queryset:
+        try:
             queryset_method = self.get_queryset
-        else:
-            queryset_method = self.qet_query_set
+        except AttributeError:
+            queryset_method = self.get_query_set
 
         return queryset_method().filter(
             deleted=False,
@@ -138,8 +160,13 @@ class BasePost(models.Model):
     def clean(self, *args, **kwargs):
         if not self.stardate:
             self.stardate = str(uuid.uuid1())
+
+        if self.timezone and self.timezone != 'UTC':
+            self.publish = self.publish.replace(tzinfo=tz.gettz(self.timezone))
+
         if not self.slug:
             self.slug = slugify(self.title)
+
         if not self.body.raw.endswith('\n'):
             self.body.raw += '\n'
 
@@ -152,17 +179,28 @@ class BasePost(models.Model):
             self.backend = self.blog.backend
 
         # Validate first so things don't break on push
+        # self.full_clean()
         self.clean()
         self.clean_fields()
         self.validate_unique()
 
-        if push:
-            # Initialize our backend with user's social auth
-            self.backend.set_social_auth(self.blog.social_auth)
+        if push and self.blog.sync:
             # Sync this post with our backend
             # need a serialized post here to pass in
             self.backend.push([self])
         super(BasePost, self).save(*args, **kwargs)
+
+    def serialized(self):
+        serialized = serializers.serialize('python', [self], fields=SERIALIZED_FIELDS)
+
+        for s in serialized:
+            if s['fields']['publish']:
+                s['fields']['publish'] = datetime.datetime.strftime(
+                    s['fields']['publish'].replace(tzinfo=tz.gettz(self.timezone)).astimezone(timezone.utc),
+                    '%Y-%m-%d %I:%M %p'
+                )
+
+        return serialized[0]['fields']
 
     @models.permalink
     def get_absolute_url(self):
@@ -191,14 +229,18 @@ class BasePost(models.Model):
         )
 
     def get_next_post(self):
-        next = self.blog.get_posts().filter(publish__gt=self.publish).exclude(
+        if not self.publish:
+            return False
+        next = self.blog.posts.filter(publish__gt=self.publish).exclude(
             id__exact=self.id).order_by('publish')
         if next:
             return next[0]
         return False
 
     def get_prev_post(self):
-        prev = self.blog.get_posts().filter(publish__lt=self.publish).exclude(
+        if not self.publish:
+            return False
+        prev = self.blog.posts.filter(publish__lt=self.publish).exclude(
                 id__exact=self.id).order_by('-publish')
         if prev:
             return prev[0]

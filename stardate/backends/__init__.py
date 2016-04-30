@@ -4,8 +4,12 @@ import logging
 from datetime import datetime
 
 from django.conf import settings
-from django.core.serializers import serialize
 from django.utils.timezone import utc
+
+try:
+    from django.db.transaction import atomic
+except ImportError:
+    from django.db.transaction import commit_on_success as atomic
 
 try:
     from importlib import import_module
@@ -33,7 +37,7 @@ DEFAULT_BACKENDS = {
 STARDATE_BACKENDS = getattr(settings, 'STARDATE_BACKENDS', DEFAULT_BACKENDS)
 
 
-def get_backend(backend=None):
+def get_backend(backend=None, blog=None):
     i = backend.rfind('.')
     module, attr = backend[:i], backend[i + 1:]
     try:
@@ -44,40 +48,27 @@ def get_backend(backend=None):
         backend_class = getattr(mod, attr)
     except AttributeError:
         print module
-    return backend_class()
+    return backend_class(blog=blog)
 
 
 class StardateBackend(object):
-    def __init__(self, name=None, parser=None, social_auth=None):
-        self.name = name
-        self.parser = parser
-        self.social_auth = social_auth
-
-    def set_social_auth(self, *args, **kwargs):
-        raise NotImplementedError
+    def __init__(self, *args, **kwargs):
+        self.blog = kwargs.get('blog', None)
+        self.name = kwargs.get('name', None)
+        self.parser = kwargs.get('parser', None)
+        self.social_auth = kwargs.get('social_auth', None)
 
     def get_name(self):
         return self.name
 
-    def serialize_posts(self, posts):
+    def _get_post_path(self, folder, post):
         """
-        Returns dictionary version of Post objects
+        Dynamically guess post file path from slug / blog folder
         """
-        posts_as_dicts = []
-        serialized = serialize(
-            'python',
-            posts,
-            fields=('title', 'slug', 'publish', 'stardate', 'body', 'timezone')
-        )
-        for post in serialized:
-            if post['fields']['publish']:
-                post['fields']['publish'] = datetime.strftime(
-                    post['fields']['publish'].astimezone(utc),
-                    '%Y-%m-%d %I:%M %p %Z'
-                )
-
-            posts_as_dicts.append(post['fields'])
-        return posts_as_dicts
+        filename = post['slug']
+        filename = '{0}.md'.format(filename)
+        path = os.path.join(folder, filename)
+        return path
 
     def _update_from_dict(self, blog, post_dict, post=None):
         """
@@ -105,15 +96,41 @@ class StardateBackend(object):
         logger.info('Blog: %s, Post: %s, created=%s', post.blog, post, created)
         return post
 
-    def push_blog_file(self, file_path, posts):
+    def get_posts(self):
+        """
+        Fetch post dictionaries from single file or directory by reading and
+        parsing file content into post dictionaries.
+
+        Returns an array of Post dictionairies.
+        """
+        path = self.blog.backend_file
+        ext = get_extension(path)
+        posts = []
+
+        if ext:
+            content = self.get_file(path)
+            if content:
+                posts = self.parser.unpack(content)
+        else:
+            for file_name in self._list_path(path):
+                content = self.get_file(file_name)
+
+                try:
+                    post = self.parser.parse(content)
+                    posts.append(post)
+                except:
+                    continue
+        return posts
+
+    def push_blog_file(self, posts):
         """
         Update posts in a single blog file
         """
-        remote_posts = self.get_posts(file_path)
+        remote_posts = self.get_posts()
 
         # Use serialized version of posts to find
         # and update
-        local_posts = self.serialize_posts(posts)
+        local_posts = [post.serialized() for post in posts]
 
         # Update remote_posts with local versions
         ## FIXME: n^2 crawl, use stardate as keys
@@ -145,15 +162,17 @@ class StardateBackend(object):
 
         # Turn post list back into string
         content = self.parser.pack(remote_posts)
-        self.write_file(file_path, content)
-        return
 
+        return self.write_file(self.blog.backend_file, content)
+
+    def write_file(self, path, content):
+        raise NotImplementedError
 
     def push_post_files(self, folder, posts):
         """
         Update posts in multiple files
         """
-        local_posts = self.serialized_posts(posts)
+        local_posts = [post.serialized() for post in posts]
 
         for local_post in local_posts:
             # Generate the post file path dynamically
@@ -165,7 +184,7 @@ class StardateBackend(object):
             # Update the contents of the remote post
             remote_post.update(local_post)
             content = self.parser.render(remote_post)
-            self.write_file(content)
+            self.write_file(post_path, content)
         return
 
 
@@ -175,9 +194,12 @@ class StardateBackend(object):
 
         posts: List of Post object instances
         """
+        if not self.blog.sync:
+            return []
+
         # Grab the file or folder path associated
         # with a blog
-        blog_path = posts[0].blog.backend_file
+        blog_path = append_slash(self.blog.backend_file)
 
         # Separate blog path into directory and filename
         blog_dir, blog_file = os.path.split(blog_path)
@@ -185,27 +207,70 @@ class StardateBackend(object):
         # pushing works differently depending on whether
         # We are using a single file or a directory of files
         if blog_file:
-            responses = [self.push_blog_file(blog_path, posts)]
+            responses = [self.push_blog_file(posts)]
 
         else:
             responses = self.push_post_files(blog_dir, posts)
 
         return responses
 
-    def pull(self, blog):
+    def pull(self, force=False):
         """
         Update local posts from remote source
 
         blog: Blog instance
         """
-        remote_posts = self.get_posts(blog.backend_file)
-
+        blog = self.blog
+        last_sync = blog.backend.last_sync
         updated_list = []
+
+        if not blog.sync:
+            return updated_list
+
+        if not force:
+            if blog.last_sync and not blog.last_sync < last_sync:
+                logger.info(u'Nothing to update. Last sync was {}'.format(datetime.strftime(last_sync, '%c')))
+                return updated_list
+        else:
+            logger.info(u'INFO: using --force, forcing sync')
+
+        remote_posts = self.get_posts()
+
         for remote_post in remote_posts:
             updated = self._update_from_dict(blog, remote_post)
             updated_list.append(updated)
 
+        batch_save(updated_list)
+        logger.info(u'Updated {} posts for {}'.format(len(updated_list), blog))
+
+        blog.last_sync = blog.backend.last_sync
+        blog.save()
+        logger.info('last_sync updated: {}'.format(last_sync))
+
         return updated_list
+
+
+def append_slash(path):
+    ext = get_extension(path)
+    if not ext and path[-1] != '/':
+        path = path + '/'
+    return path
+
+
+def get_extension(path):
+    return os.path.splitext(path)[-1].lower()
+
+
+@atomic
+def batch_save(queryset):
+    for obj in queryset:
+        logger.info(obj.title)
+        push = False
+
+        if obj.stardate:
+            push = True
+
+        obj.save(push=push)
 
 
 class BaseStardateParser(object):

@@ -15,7 +15,7 @@
         <h2>{{ group.grouper }}</h2>
         <ol>
             {% for post in group.list %}
-                <li><a href="{{ post.get_absolute_url }}">{{ post.title }}</a></li>
+                <li><a href="{{ post.get_dated_absolute_url }}">{{ post.title }}</a></li>
             {% endfor %}
         </ol>
     {% endfor %}

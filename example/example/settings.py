@@ -124,6 +124,22 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 if django.VERSION[:2] < (1, 6):
     TEST_RUNNER = 'django.test.simple.DjangoTestSuiteRunner'
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'stardate': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
+        },
+    },
+}
+
 STARDATE_BACKEND = 'stardate.backends.dropbox.DropboxBackend'
 STARDATE_POST_MODEL = 'stardate.Post'
 

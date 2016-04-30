@@ -1,5 +1,5 @@
 from django import forms
-from django.utils.text import slugify
+from django.template.defaultfilters import slugify
 
 from markupfield.widgets import AdminMarkupTextareaWidget
 
