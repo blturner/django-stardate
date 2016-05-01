@@ -99,11 +99,6 @@ class Blog(models.Model):
             p.save()
             print 'Saved: %s' % p.title
 
-    def sync_backend(self):
-        post_list = self.get_serialized_posts()
-        path = self.get_backend_choice()
-        self.backend.sync(path, post_list)
-
 
 class PostManager(models.Manager):
     def drafts(self):
