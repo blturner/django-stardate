@@ -62,13 +62,6 @@ class Blog(models.Model):
         choices = self.backend.get_source_list()
         return choices[int(self.backend_file)][1]
 
-    def get_serialized_posts(self):
-        """
-        Returns a list of dictionaries representing post objects on the blog.
-        """
-        return serializers.serialize("python", self.posts.filter(
-            deleted=False), fields=SERIALIZED_FIELDS)
-
     @property
     def posts(self):
         """

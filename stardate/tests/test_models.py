@@ -74,13 +74,6 @@ class BlogTestCase(TestCase):
 
         self.assertEqual(post.publish, expected)
 
-    def test_get_serialized_posts(self):
-        posts = self.blog.get_serialized_posts()
-        self.assertEqual(len(posts), 2)
-
-        self.assertTrue('stardate' in posts[0]['fields'])
-        self.assertTrue('stardate' in posts[1]['fields'])
-
     def test_get_posts(self):
         post_list = self.blog.posts.all()
         self.assertTrue(len(post_list), 2)
@@ -109,16 +102,3 @@ class BlogTestCase(TestCase):
         }
         p = Post(**data)
         self.assertRaises(ValidationError, p.save)
-
-    # def test_post_marked_deleted_is_removed(self):
-    #     p = self.blog.posts.get(title="Test post title")
-    #     p.mark_deleted()
-    #     p.save()  # Probably bad
-    #     self.assertTrue(p.deleted)
-    #     self.assertTrue(self.blog.posts.get(title="Test post title").deleted)
-    #     self.assertTrue(len(self.blog.get_serialized_posts()), 1)
-
-    def test_removed_post_is_deleted(self):
-        post_list = self.blog.get_serialized_posts()
-        post_list.remove(post_list[0])
-        self.assertTrue(len(post_list), 1)
