@@ -149,9 +149,6 @@ class BasePost(models.Model):
         if not self.stardate:
             self.stardate = str(uuid.uuid1())
 
-        if self.timezone and self.timezone != 'UTC':
-            self.publish = self.publish.replace(tzinfo=tz.gettz(self.timezone))
-
         if not self.slug:
             self.slug = slugify(self.title)
 
