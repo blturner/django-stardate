@@ -59,19 +59,28 @@ class BlogTestCase(TestCase):
         with self.settings(STARDATE_POST_MODEL='core.CustomPost'):
             self.assertIsInstance(get_post_model()(), CustomPost)
 
+    def test_serialized_posts(self):
+        serialized = [post.serialized() for post in self.blog.posts.all()]
+        self.assertEqual(len(serialized), 2)
+
+        post = Post.objects.get(id=1).serialized()
+        self.assertTrue('stardate' in post)
+        self.assertEqual(post['title'], 'Test post 1 title')
+        self.assertEqual(post['publish'], '2012-01-02 08:00 AM +0000')
+        self.assertEqual(post['timezone'], 'UTC')
+        self.assertEqual(post['body'], '\n')
+
     def test_publish_field(self):
-        post = Post(
+        post = Post.objects.create(
             blog=self.blog,
             title='A starry night',
-            publish=datetime.datetime(2016, 1, 1),
+            publish=datetime.date(2016, 1, 1),
             timezone='US/Eastern',
             body='foo',
         )
 
-        post.clean()
-
-        expected = datetime.datetime(2016, 1, 1, tzinfo=tz.gettz('US/Eastern')).astimezone(timezone.utc)
-
+        expected = datetime.datetime(2016, 1, 1, 0, 0, tzinfo=timezone.utc)
+        self.assertTrue(timezone.is_aware(post.publish))
         self.assertEqual(post.publish, expected)
 
     def test_get_posts(self):

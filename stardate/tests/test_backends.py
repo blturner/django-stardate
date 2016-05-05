@@ -132,7 +132,7 @@ class DropboxBackendTestCase(TestCase):
         self.assertEqual(post_list[0]['body'], 'Hello world.\n')
         self.assertEqual(
             post_list[0]['publish'],
-            datetime.datetime(2016, 4, 1, 12, 0)
+            datetime.datetime(2016, 4, 1, 12, 0, tzinfo=timezone.utc)
         )
 
     @patch.object(client.DropboxClient, 'metadata')

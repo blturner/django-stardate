@@ -69,17 +69,52 @@ class FileParserTestCase(TestCase):
         self.assertTrue(u'publish: {0}'.format(post_list[1]['publish']) in packed)
 
     def test_parse_publish(self):
-        timestamp = '01-01-2015 06:00AM'
-        expected = datetime.datetime(2015, 1, 1, 6, 0)
+        timestamp = '01-01-2015 06:00AM+0000'
+        expected = datetime.datetime(2015, 1, 1, 6, 0, tzinfo=timezone.utc)
 
         self.assertEqual(self.parser.parse_publish(timestamp), expected)
         self.assertEqual(self.parser.parse_publish(expected), expected)
+
+        self.assertEqual(
+            self.parser.parse_publish('2016-01-01 00:00:00 -0500'),
+            datetime.datetime(2016, 1, 1, tzinfo=tz.gettz('US/Eastern'))
+        )
+
+        self.assertEqual(
+            self.parser.parse_publish('2016-01-01'),
+            datetime.datetime(2016, 1, 1, tzinfo=timezone.utc)
+        )
+
+        self.assertEqual(
+            self.parser.parse_publish('2016-01-01 00:00:00'),
+            datetime.datetime(2016, 1, 1, tzinfo=timezone.utc)
+        )
+
+        self.assertEqual(
+            self.parser.parse_publish('2016-01-01 12AM', 'US/Eastern'),
+            datetime.datetime(2016, 1, 1, tzinfo=tz.gettz('US/Eastern'))
+        )
+
+        self.assertEqual(
+            self.parser.parse_publish(datetime.date(2016, 1, 1)),
+            datetime.datetime(2016, 1, 1, tzinfo=timezone.utc)
+        )
+
+        self.assertEqual(
+            self.parser.parse_publish('2016-01-01 12AM', 'EST'),
+            datetime.datetime(2016, 1, 1, tzinfo=tz.gettz('US/Eastern'))
+        )
+
+        self.assertEqual(
+            self.parser.parse_publish('2016-07-01 12AM', 'US/Eastern'),
+            datetime.datetime(2016, 7, 1, tzinfo=tz.gettz('US/Eastern'))
+        )
 
     def test_parse(self):
         parsed = self.parser.parse(self.test_string)
 
         self.assertEqual(parsed['title'], 'Tingling of the spine')
-        expected = datetime.datetime(2012, 1, 2)
+        expected = datetime.datetime(2012, 1, 2, tzinfo=tz.gettz('US/Eastern'))
         self.assertEqual(parsed['publish'], expected)
         self.assertEqual(parsed['body'], 'Extraordinary claims require extraordinary evidence!')
         self.assertEqual(parsed['timezone'], 'US/Eastern')
@@ -111,9 +146,17 @@ class FileParserTestCase(TestCase):
 
         #The file has one post to unpack
         self.assertEqual(len(post_list), 1)
-        self.assertEqual(post_list[0].get('title'), 'Tingling of the spine')
-        self.assertEqual(post_list[0].get('publish'), parse(TIMESTAMP))
-        self.assertEqual(post_list[0].get('body'), 'Extraordinary claims require extraordinary evidence!')
+
+        post = post_list[0]
+
+        self.assertEqual(post.get('title'), 'Tingling of the spine')
+
+        self.assertEqual(
+            post.get('publish'),
+            datetime.datetime(2012, 1, 2, tzinfo=tz.gettz('US/Eastern'))
+        )
+
+        self.assertEqual(post.get('body'), 'Extraordinary claims require extraordinary evidence!')
 
     @patch('stardate.parsers.logger')
     def test_bad_string(self, mock_logging):
