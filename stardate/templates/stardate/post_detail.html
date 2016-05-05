@@ -2,7 +2,9 @@
 
 
 {% block extra_head %}
+    {% if post.publish %}
     <link rel="canonical" href="{{ post.get_dated_absolute_url }}" />
+    {% endif %}
 {% endblock extra_head %}
 
 
@@ -11,7 +13,9 @@
 
 {% block page %}
     {% block breadcrumbs %}
-    {% include 'stardate/includes/breadcrumbs.html' %}
+        {% if post.publish %}
+        {% include 'stardate/includes/breadcrumbs.html' %}
+        {% endif %}
     {% endblock breadcrumbs %}
 
 
