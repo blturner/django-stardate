@@ -7,7 +7,7 @@ from stardate import views
 urlpatterns = [
     url(r'^$', views.PostArchiveIndex.as_view(), name='post-archive-index'),
     url(r'rss/$', LatestPostsFeed(), name='post-feed'),
-    url(r'new/$', views.PostCreate.as_view(), name='post-create'),
+    url(r'^new/$', views.PostCreate.as_view(), name='post-create'),
     url(r'^drafts/$', views.DraftArchiveIndex.as_view(), name='draft-archive-index'),
     url(r'^drafts/(?P<post_slug>[-\w]+)/$', views.DraftPostDetail.as_view(), name='draft-post-detail'),
     url(r'^drafts/(?P<post_slug>[-\w]+)/edit/$', views.DraftEdit.as_view(), name='draft-post-edit'),
