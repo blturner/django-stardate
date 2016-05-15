@@ -114,7 +114,12 @@ class FileParser(BaseStardateParser):
             date = date.replace(tzinfo=tz.gettz(timezone))
 
         if not is_aware(date):
-            date = make_aware(date)
+            try:
+                # Django>1.7
+                date = make_aware(date)
+            except TypeError:
+                # Django<1.8
+                date = make_aware(date, utc)
 
         if timezone and date.tzinfo != tz.gettz(timezone):
             date = date.replace(tzinfo=tz.gettz(timezone))
