@@ -232,7 +232,7 @@ class StardateBackend(object):
                 logger.info(u'Nothing to update. Last sync was {}'.format(datetime.strftime(last_sync, '%c')))
                 return updated_list
         else:
-            logger.info(u'INFO: using --force, forcing sync')
+            logger.info(u'Forced sync using --force')
 
         remote_posts = self.get_posts()
 
@@ -264,7 +264,6 @@ def get_extension(path):
 @atomic
 def batch_save(queryset):
     for obj in queryset:
-        logger.info(obj.title)
         push = False
 
         if obj.stardate:
