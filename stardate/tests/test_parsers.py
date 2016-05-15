@@ -110,6 +110,11 @@ class FileParserTestCase(TestCase):
             datetime.datetime(2016, 7, 1, tzinfo=tz.gettz('US/Eastern'))
         )
 
+        self.assertEqual(
+            self.parser.parse_publish(datetime.datetime(2016, 1, 1, 0, 0, tzinfo=timezone.utc), 'US/Eastern'),
+            datetime.datetime(2016, 1, 1, tzinfo=tz.gettz('US/Eastern'))
+        )
+
     def test_parse(self):
         parsed = self.parser.parse(self.test_string)
 
@@ -126,17 +131,32 @@ class FileParserTestCase(TestCase):
         self.assertTrue(parsed.has_key('extra_field'))
 
     def test_render(self):
-        post = Post(
+        file_path = tempfile.mkstemp(suffix='.txt')[1]
+        user = User.objects.create(username='bturner')
+        blog = Blog.objects.create(
+            backend_file=file_path,
+            backend_class='stardate.backends.local_file.LocalFileBackend',
+            name='test blog',
+            user=user,
+        )
+        post = Post.objects.create(
+            blog=blog,
             title='Test title',
             publish=datetime.datetime(2013, 6, 1),
             timezone='US/Eastern',
             body='The body.',
         )
 
-        post.clean()
-
         packed = self.parser.pack([post.serialized()])
         rendered = self.parser.render(post.serialized())
+
+        self.assertTrue('publish: 2013-06-01 12:00 AM -0400' in rendered)
+
+        parsed = self.parser.parse(rendered)
+
+        self.assertEqual(parsed.get('title'), post.title)
+        self.assertEqual(parsed.get('timezone'), post.timezone)
+        self.assertEqual(parsed.get('body'), post.body.raw)
 
         self.assertEqual(rendered, packed)
 

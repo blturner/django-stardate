@@ -39,6 +39,8 @@ class FileParser(BaseStardateParser):
                 value = post[key]
 
                 if value:
+                    if isinstance(value, datetime.datetime):
+                        value = datetime.datetime.strftime(value, '%Y-%m-%d %I:%M %p %z')
                     field_string = '{0}: {1}'.format(key, value)
                     meta.append(field_string)
             except KeyError:
@@ -113,6 +115,9 @@ class FileParser(BaseStardateParser):
 
         if not is_aware(date):
             date = make_aware(date)
+
+        if timezone and date.tzinfo != tz.gettz(timezone):
+            date = date.replace(tzinfo=tz.gettz(timezone))
 
         return date
 

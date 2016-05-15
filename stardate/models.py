@@ -169,6 +169,9 @@ class BasePost(models.Model):
         self.clean_fields()
         self.validate_unique()
 
+        if not self.stardate:
+            push = True
+
         if push and self.blog.sync:
             # Sync this post with our backend
             # need a serialized post here to pass in
@@ -181,7 +184,7 @@ class BasePost(models.Model):
         for s in serialized:
             if s['fields']['publish']:
                 s['fields']['publish'] = datetime.datetime.strftime(
-                    s['fields']['publish'].replace(tzinfo=tz.gettz(self.timezone)).astimezone(timezone.utc),
+                    s['fields']['publish'].replace(tzinfo=tz.gettz(self.timezone)),
                     '%Y-%m-%d %I:%M %p %z'
                 )
 

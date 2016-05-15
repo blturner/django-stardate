@@ -88,11 +88,23 @@ class StardateBackend(object):
                 post_dict['blog'] = blog
                 post, created = Post.objects.get_or_create(**post_dict)
 
+        push = False
+
+        for key, value in post_dict.items():
+            post_value = getattr(post, key)
+
+            if key == 'body':
+                post_value = getattr(post, key).raw
+
+            if value != post_value:
+                push = True
+
         # Update from dict values
         if not created:
             for att, value in post_dict.items():
                 setattr(post, att, value)
-            post.save(push=False)
+            logger.debug('push is {}'.format(push))
+            post.save(push=push)
         logger.info('Blog: %s, Post: %s, created=%s', post.blog, post, created)
         return post
 
