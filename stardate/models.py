@@ -17,7 +17,6 @@ from stardate.utils import get_post_model
 
 SERIALIZED_FIELDS = (
     'title',
-    'slug',
     'publish',
     'stardate',
     'body',

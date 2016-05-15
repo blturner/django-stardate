@@ -4,6 +4,7 @@ import logging
 from datetime import datetime
 
 from django.conf import settings
+from django.template.defaultfilters import slugify
 from django.utils.timezone import utc
 
 try:
@@ -65,7 +66,7 @@ class StardateBackend(object):
         """
         Dynamically guess post file path from slug / blog folder
         """
-        filename = post['slug']
+        filename = slugify(post['title'])
         filename = '{0}.md'.format(filename)
         path = os.path.join(folder, filename)
         return path
