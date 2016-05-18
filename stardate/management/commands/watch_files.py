@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 import time
 
 from django.core.management.base import BaseCommand
@@ -23,6 +24,8 @@ class LocalFileEventHandler(FileSystemEventHandler):
 
 
 class Command(BaseCommand):
+    requires_system_checks = False
+
     def watch(self):
         event_handler = LocalFileEventHandler()
         observer = Observer()
@@ -44,7 +47,12 @@ class Command(BaseCommand):
         observer.join()
 
     def handle(self, *args, **options):
-        self.run(**options)
+        from django.conf import settings
+
+        if settings.DEBUG:
+            autoreload.main(self.inner_run, None, options)
+        else:
+            self.watch()
 
     def run(self, **options):
         """
@@ -55,11 +63,14 @@ class Command(BaseCommand):
     def inner_run(self, *args, **options):
         autoreload.raise_last_exception()
 
-        self.stdout.write('watching files')
+        quit_command = 'CTRL-BREAK' if sys.platform == 'win32' else 'CONTROL-C'
+
+        self.stdout.write((
+            "Starting file watcher...\n\n"
+            "Quit with {}.\n"
+        ).format(quit_command))
 
         try:
             self.watch()
         except KeyboardInterrupt:
-            if shutdown_message:
-                self.stdout.write(shutdown_message)
             sys.exit(0)
