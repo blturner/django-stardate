@@ -132,7 +132,7 @@ class DropboxBackendTestCase(TestCase):
         self.assertEqual(post_list[0]['body'], 'Hello world.\n')
         self.assertEqual(
             post_list[0]['publish'],
-            datetime.datetime(2016, 4, 1, 12, 0)
+            datetime.datetime(2016, 4, 1, 12, 0, tzinfo=timezone.utc)
         )
 
     @patch.object(client.DropboxClient, 'metadata')
@@ -163,7 +163,8 @@ class DropboxBackendTestCase(TestCase):
     @patch.object(client.DropboxClient, 'get_file')
     @patch.object(client.DropboxClient, 'metadata')
     def test_pull(self, mock_metadata, mock_get_file, mock_put_file):
-        post_string = 'title: Test post title\n\n\nHello world.'
+        post_string = 'title: Test post title\n\n\nHello world.\n---\n' + \
+            'title: Bar\npublish: 2016-01-01 00:00\n\n\nBar.'
 
         with open(self.blog.backend_file, 'w') as backend_file:
             backend_file.write(post_string)
@@ -333,19 +334,30 @@ class LocalFileBackendTestCase(TestCase):
         Post.objects.create(
             title='A test push post',
             blog=self.blog,
-            body='Testing a push post.'
+            publish=datetime.datetime(2016, 1, 1, 0, 0),
+            body='Testing a push post.',
+        )
+
+        Post.objects.create(
+            title='Foo',
+            blog=self.blog,
+            publish=datetime.datetime(2016, 2, 1, 0, 0),
+            body='foo.',
         )
 
         f = open(self.blog.backend_file, 'r')
         content = f.read()
         f.close()
 
-        parsed = self.blog.backend.parser.unpack(content)
+        self.assertEqual(content.count('---'), 2)
 
-        self.assertEqual(len(parsed), 2)
-        self.assertEqual(parsed[1]['title'], u'A test push post')
-        self.assertEqual(parsed[1]['body'], u'Testing a push post.\n')
-        self.assertTrue('stardate' in parsed[1])
+        self.assertTrue('title: A test push post' in content)
+        self.assertTrue('publish: 2016-01-01 12:00 AM +0000' in content)
+        self.assertTrue('\n\nTesting a push post.\n' in content)
+
+        self.assertTrue('title: Foo' in content)
+        self.assertTrue('publish: 2016-02-01 12:00 AM +0000' in content)
+        self.assertTrue('\n\nfoo.\n' in content)
 
     def test_disabled_blog(self):
         self.blog.sync = False

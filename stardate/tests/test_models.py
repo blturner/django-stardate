@@ -59,27 +59,29 @@ class BlogTestCase(TestCase):
         with self.settings(STARDATE_POST_MODEL='core.CustomPost'):
             self.assertIsInstance(get_post_model()(), CustomPost)
 
+    def test_serialized_posts(self):
+        serialized = [post.serialized() for post in self.blog.posts.all()]
+        self.assertEqual(len(serialized), 2)
+
+        post = Post.objects.get(id=1).serialized()
+        self.assertTrue('stardate' in post)
+        self.assertEqual(post['title'], 'Test post 1 title')
+        self.assertEqual(post['publish'], '2012-01-02 08:00 AM +0000')
+        self.assertEqual(post['timezone'], 'UTC')
+        self.assertEqual(post['body'], '\n')
+
     def test_publish_field(self):
-        post = Post(
+        post = Post.objects.create(
             blog=self.blog,
             title='A starry night',
-            publish=datetime.datetime(2016, 1, 1),
+            publish=datetime.date(2016, 1, 1),
             timezone='US/Eastern',
             body='foo',
         )
 
-        post.clean()
-
-        expected = datetime.datetime(2016, 1, 1, tzinfo=tz.gettz('US/Eastern')).astimezone(timezone.utc)
-
+        expected = datetime.datetime(2016, 1, 1, 0, 0, tzinfo=timezone.utc)
+        self.assertTrue(timezone.is_aware(post.publish))
         self.assertEqual(post.publish, expected)
-
-    def test_get_serialized_posts(self):
-        posts = self.blog.get_serialized_posts()
-        self.assertEqual(len(posts), 2)
-
-        self.assertTrue('stardate' in posts[0]['fields'])
-        self.assertTrue('stardate' in posts[1]['fields'])
 
     def test_get_posts(self):
         post_list = self.blog.posts.all()
@@ -109,16 +111,3 @@ class BlogTestCase(TestCase):
         }
         p = Post(**data)
         self.assertRaises(ValidationError, p.save)
-
-    # def test_post_marked_deleted_is_removed(self):
-    #     p = self.blog.posts.get(title="Test post title")
-    #     p.mark_deleted()
-    #     p.save()  # Probably bad
-    #     self.assertTrue(p.deleted)
-    #     self.assertTrue(self.blog.posts.get(title="Test post title").deleted)
-    #     self.assertTrue(len(self.blog.get_serialized_posts()), 1)
-
-    def test_removed_post_is_deleted(self):
-        post_list = self.blog.get_serialized_posts()
-        post_list.remove(post_list[0])
-        self.assertTrue(len(post_list), 1)

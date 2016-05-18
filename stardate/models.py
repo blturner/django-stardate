@@ -17,7 +17,6 @@ from stardate.utils import get_post_model
 
 SERIALIZED_FIELDS = (
     'title',
-    'slug',
     'publish',
     'stardate',
     'body',
@@ -62,13 +61,6 @@ class Blog(models.Model):
         choices = self.backend.get_source_list()
         return choices[int(self.backend_file)][1]
 
-    def get_serialized_posts(self):
-        """
-        Returns a list of dictionaries representing post objects on the blog.
-        """
-        return serializers.serialize("python", self.posts.filter(
-            deleted=False), fields=SERIALIZED_FIELDS)
-
     @property
     def posts(self):
         """
@@ -98,11 +90,6 @@ class Blog(models.Model):
             p.__dict__.update(**post)
             p.save()
             print 'Saved: %s' % p.title
-
-    def sync_backend(self):
-        post_list = self.get_serialized_posts()
-        path = self.get_backend_choice()
-        self.backend.sync(path, post_list)
 
 
 class PostManager(models.Manager):
@@ -161,9 +148,6 @@ class BasePost(models.Model):
         if not self.stardate:
             self.stardate = str(uuid.uuid1())
 
-        if self.timezone and self.timezone != 'UTC':
-            self.publish = self.publish.replace(tzinfo=tz.gettz(self.timezone))
-
         if not self.slug:
             self.slug = slugify(self.title)
 
@@ -184,6 +168,9 @@ class BasePost(models.Model):
         self.clean_fields()
         self.validate_unique()
 
+        if not self.stardate:
+            push = True
+
         if push and self.blog.sync:
             # Sync this post with our backend
             # need a serialized post here to pass in
@@ -196,8 +183,8 @@ class BasePost(models.Model):
         for s in serialized:
             if s['fields']['publish']:
                 s['fields']['publish'] = datetime.datetime.strftime(
-                    s['fields']['publish'].replace(tzinfo=tz.gettz(self.timezone)).astimezone(timezone.utc),
-                    '%Y-%m-%d %I:%M %p'
+                    s['fields']['publish'].replace(tzinfo=tz.gettz(self.timezone)),
+                    '%Y-%m-%d %I:%M %p %z'
                 )
 
         return serialized[0]['fields']

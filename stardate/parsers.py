@@ -39,6 +39,8 @@ class FileParser(BaseStardateParser):
                 value = post[key]
 
                 if value:
+                    if isinstance(value, datetime.datetime):
+                        value = datetime.datetime.strftime(value, '%Y-%m-%d %I:%M %p %z')
                     field_string = '{0}: {1}'.format(key, value)
                     meta.append(field_string)
             except KeyError:
@@ -86,16 +88,41 @@ class FileParser(BaseStardateParser):
         if isinstance(post_data, types.DictType):
             post_data['body'] = ''.join(bits[1:])
 
+        try:
+            timezone = post_data['timezone']
+        except KeyError:
+            timezone = None
+
         if 'publish' in post_data:
-            post_data['publish'] = self.parse_publish(post_data['publish'])
+            post_data['publish'] = self.parse_publish(post_data['publish'], timezone)
+
+        if 'timezone' not in post_data and 'publish' in post_data:
+            post_data['timezone'] = datetime.datetime.strftime(post_data['publish'], '%Z')
         return post_data
 
-    def parse_publish(self, date):
+    def parse_publish(self, date, timezone=None):
         """
         Parses a datetime string into a datetime instance.
         """
+        if type(date) is datetime.date:
+            date = datetime.datetime.combine(date, datetime.datetime.min.time())
+
         if not isinstance(date, datetime.datetime):
             date = parse(date)
+
+        if not is_aware(date) and timezone:
+            date = date.replace(tzinfo=tz.gettz(timezone))
+
+        if not is_aware(date):
+            try:
+                # Django>1.7
+                date = make_aware(date)
+            except TypeError:
+                # Django<1.8
+                date = make_aware(date, utc)
+
+        if timezone and date.tzinfo != tz.gettz(timezone):
+            date = date.replace(tzinfo=tz.gettz(timezone))
 
         return date
 

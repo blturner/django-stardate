@@ -2,7 +2,9 @@
 
 
 {% block extra_head %}
+    {% if post.publish %}
     <link rel="canonical" href="{{ post.get_dated_absolute_url }}" />
+    {% endif %}
 {% endblock extra_head %}
 
 
@@ -11,7 +13,9 @@
 
 {% block page %}
     {% block breadcrumbs %}
-    {% include 'stardate/includes/breadcrumbs.html' %}
+        {% if post.publish %}
+        {% include 'stardate/includes/breadcrumbs.html' %}
+        {% endif %}
     {% endblock breadcrumbs %}
 
 
@@ -21,19 +25,13 @@
         <h1>{{ post.title }}</h1>
 
         {% if post.publish %}
-        {% timezone post.timezone %}
         <ul>
             <li class="pubdate">
                 {% with post.publish as publish %}
-                <time datetime="{{ publish|date:"c" }}" pubdate>{{ publish|date:"l, F jS, Y P e" }}</time>
-
-                <br />
+                <time datetime="{{ publish|date:"c" }}" pubdate>{{ publish|timezone:post.timezone|date:"l, F jS, Y P e" }}</time> (<time>{{ post.publish|date:'c' }}</time>)
                 {% endwith %}
             </li>
         </ul>
-        {% endtimezone %}
-
-        <time>{{ post.publish|date:'c' }}</time>
         {% endif %}
 
         {% if request.user == post.blog.user %}

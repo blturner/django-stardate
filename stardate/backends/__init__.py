@@ -4,6 +4,7 @@ import logging
 from datetime import datetime
 
 from django.conf import settings
+from django.template.defaultfilters import slugify
 from django.utils.timezone import utc
 
 try:
@@ -65,7 +66,7 @@ class StardateBackend(object):
         """
         Dynamically guess post file path from slug / blog folder
         """
-        filename = post['slug']
+        filename = slugify(post['title'])
         filename = '{0}.md'.format(filename)
         path = os.path.join(folder, filename)
         return path
@@ -88,11 +89,23 @@ class StardateBackend(object):
                 post_dict['blog'] = blog
                 post, created = Post.objects.get_or_create(**post_dict)
 
+        push = False
+
+        for key, value in post_dict.items():
+            post_value = getattr(post, key)
+
+            if key == 'body':
+                post_value = getattr(post, key).raw
+
+            if value != post_value:
+                push = True
+
         # Update from dict values
         if not created:
             for att, value in post_dict.items():
                 setattr(post, att, value)
-            post.save(push=False)
+            logger.debug('push is {}'.format(push))
+            post.save(push=push)
         logger.info('Blog: %s, Post: %s, created=%s', post.blog, post, created)
         return post
 
@@ -232,7 +245,7 @@ class StardateBackend(object):
                 logger.info(u'Nothing to update. Last sync was {}'.format(datetime.strftime(last_sync, '%c')))
                 return updated_list
         else:
-            logger.info(u'INFO: using --force, forcing sync')
+            logger.info(u'Forced sync using --force')
 
         remote_posts = self.get_posts()
 
@@ -264,7 +277,6 @@ def get_extension(path):
 @atomic
 def batch_save(queryset):
     for obj in queryset:
-        logger.info(obj.title)
         push = False
 
         if obj.stardate:
