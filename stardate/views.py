@@ -1,9 +1,15 @@
 import datetime
+import logging
+from hashlib import sha256
+import hmac
+# import threading
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import (
+    HttpResponse, HttpResponseRedirect, Http404, HttpResponseForbidden
+)
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.utils.decorators import method_decorator
@@ -17,6 +23,7 @@ from stardate.models import Blog
 from stardate.utils import get_post_model
 
 Post = get_post_model()
+logger = logging.getLogger('stardate')
 
 
 class BlogCreate(generic.edit.CreateView):
@@ -172,3 +179,24 @@ def select_backend(request, **kwargs):
         context,
         context_instance=RequestContext(request)
     )
+
+
+def verify_dropbox_webhook(request):
+    if not request.method == 'GET':
+        return Http404
+    return HttpResponse(request.GET.get('challenge'))
+
+
+def process_webhook(request):
+    if not request.method == 'POST':
+        return Http404
+
+    signature = request.headers.get('X-Dropbox-Signature')
+
+    if not hmac.compare_digest(signature, hmac.new(DROPBOX_APP_SECRET, request.data, sha256).hexdigest()):
+        return HttpResponseForbidden
+
+    for account in json.loads(request.data)['list_folder']['accounts']:
+        logger.info(account)
+        # threading.Thread(target=process_user, args=(account,)).start()
+    return ''
