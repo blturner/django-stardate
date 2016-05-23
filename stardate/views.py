@@ -181,20 +181,17 @@ def select_backend(request, **kwargs):
     )
 
 
-def verify_dropbox_webhook(request):
-    if not request.method == 'GET':
-        return Http404
-    return HttpResponse(request.GET.get('challenge'))
-
-
 def process_webhook(request):
+    if request.method == 'GET':
+        return HttpResponse(request.GET.get('challenge'))
+
     if not request.method == 'POST':
-        return Http404
+        raise Http404
 
     signature = request.headers.get('X-Dropbox-Signature')
 
     if not hmac.compare_digest(signature, hmac.new(DROPBOX_APP_SECRET, request.data, sha256).hexdigest()):
-        return HttpResponseForbidden
+        raise HttpResponseForbidden
 
     for account in json.loads(request.data)['list_folder']['accounts']:
         logger.info(account)
