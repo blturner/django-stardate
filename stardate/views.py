@@ -190,9 +190,12 @@ def process_webhook(request):
     if not request.method == 'POST':
         raise Http404
 
-    signature = request.headers.get('X-Dropbox-Signature')
+    try:
+        signature = request.headers.get('X-Dropbox-Signature')
 
-    if not hmac.compare_digest(signature, hmac.new(settings.DROPBOX_APP_SECRET, request.data, sha256).hexdigest()):
+        if not hmac.compare_digest(signature, hmac.new(settings.DROPBOX_APP_SECRET, request.data, sha256).hexdigest()):
+            raise HttpResponseForbidden
+    except AttributeError:
         raise HttpResponseForbidden
 
     for account in json.loads(request.data)['list_folder']['accounts']:
