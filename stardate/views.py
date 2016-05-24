@@ -14,6 +14,7 @@ from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.utils.decorators import method_decorator
 from django.views import generic
+from django.views.decorators.csrf import csrf_exempt
 
 from social.apps.django_app.default.models import UserSocialAuth
 
@@ -181,6 +182,7 @@ def select_backend(request, **kwargs):
     )
 
 
+@csrf_exempt
 def process_webhook(request):
     if request.method == 'GET':
         return HttpResponse(request.GET.get('challenge'))
@@ -190,8 +192,8 @@ def process_webhook(request):
 
     signature = request.headers.get('X-Dropbox-Signature')
 
-    # if not hmac.compare_digest(signature, hmac.new(DROPBOX_APP_SECRET, request.data, sha256).hexdigest()):
-    #     raise HttpResponseForbidden
+    if not hmac.compare_digest(signature, hmac.new(DROPBOX_APP_SECRET, request.data, sha256).hexdigest()):
+        raise HttpResponseForbidden
 
     for account in json.loads(request.data)['list_folder']['accounts']:
         logger.info(account)
