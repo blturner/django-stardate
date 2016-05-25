@@ -2,6 +2,7 @@ import datetime
 import logging
 from hashlib import sha256
 import hmac
+import json
 # import threading
 
 from django.conf import settings
@@ -185,20 +186,23 @@ def select_backend(request, **kwargs):
 @csrf_exempt
 def process_webhook(request):
     if request.method == 'GET':
-        return HttpResponse(request.GET.get('challenge'))
-
+        challenge = request.GET.get('challenge')
+        if not challenge:
+            return HttpResponseForbidden()
+        return HttpResponse(challenge)
     if not request.method == 'POST':
         raise Http404
 
-    try:
-        signature = request.headers.get('X-Dropbox-Signature')
+    signature = request.META.get('HTTP_X_DROPBOX_SIGNATURE')
+    if not signature:
+        return HttpResponseForbidden()
 
-        if not hmac.compare_digest(signature, hmac.new(settings.DROPBOX_APP_SECRET, request.data, sha256).hexdigest()):
-            return HttpResponseForbidden
-    except AttributeError:
-        return HttpResponseForbidden
+    if not hmac.compare_digest(
+        signature,
+        hmac.new(settings.DROPBOX_APP_SECRET, request.body, sha256).hexdigest()):
+        return HttpResponseForbidden()
 
-    for account in json.loads(request.data)['list_folder']['accounts']:
-        logger.info(account)
+    for user in json.loads(request.body)['delta']['users']:
+        logger.info(user)
         # threading.Thread(target=process_user, args=(account,)).start()
-    return ''
+    return HttpResponse()
