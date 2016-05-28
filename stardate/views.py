@@ -213,7 +213,7 @@ def process_user(user):
         blogs = social_auth.user.blog_set.all()
 
         for blog in blogs:
+            logger.info('processing {}'.format(blog.name))
             blog.backend.pull()
-        return
     except UserSocialAuth.DoesNotExist:
-        return
+        logger.info('UserSocialAuth with uid {} not found.'.format(user))
