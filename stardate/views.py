@@ -1,13 +1,21 @@
 import datetime
+import logging
+from hashlib import sha256
+import hmac
+import json
+import threading
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import (
+    HttpResponse, HttpResponseRedirect, Http404, HttpResponseForbidden
+)
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.utils.decorators import method_decorator
 from django.views import generic
+from django.views.decorators.csrf import csrf_exempt
 
 from social.apps.django_app.default.models import UserSocialAuth
 
@@ -17,6 +25,7 @@ from stardate.models import Blog
 from stardate.utils import get_post_model
 
 Post = get_post_model()
+logger = logging.getLogger('stardate')
 
 
 class BlogCreate(generic.edit.CreateView):
@@ -172,3 +181,41 @@ def select_backend(request, **kwargs):
         context,
         context_instance=RequestContext(request)
     )
+
+
+@csrf_exempt
+def process_webhook(request):
+    if request.method == 'GET':
+        challenge = request.GET.get('challenge')
+        if not challenge:
+            return HttpResponseForbidden()
+        return HttpResponse(challenge)
+    if not request.method == 'POST':
+        raise Http404
+
+    signature = request.META.get('HTTP_X_DROPBOX_SIGNATURE')
+    if not signature:
+        return HttpResponseForbidden()
+
+    if not hmac.compare_digest(
+        signature,
+        hmac.new(settings.DROPBOX_APP_SECRET, request.body, sha256).hexdigest()):
+        return HttpResponseForbidden()
+
+    for user in json.loads(request.body)['delta']['users']:
+        threading.Thread(target=process_user, args=(user,)).start()
+    return HttpResponse()
+
+def process_user(user):
+    logger.debug('processing: {}'.format(user))
+    try:
+        social_auth = UserSocialAuth.objects.get(uid=user)
+        blogs = social_auth.blog_set.all()
+
+        logger.debug('found {} blog(s)'.format(len(blogs)))
+
+        for blog in blogs:
+            logger.info('processing {}'.format(blog.name))
+            blog.backend.pull()
+    except UserSocialAuth.DoesNotExist:
+        logger.info('UserSocialAuth with uid {} not found.'.format(user))
