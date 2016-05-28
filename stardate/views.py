@@ -203,11 +203,11 @@ def process_webhook(request):
         return HttpResponseForbidden()
 
     for user in json.loads(request.body)['delta']['users']:
-        logger.info(user)
         threading.Thread(target=process_user, args=(user,)).start()
     return HttpResponse()
 
 def process_user(user):
+    logger.debug('processing: {}'.format(user))
     try:
         social_auth = UserSocialAuth.objects.get(uid=user)
         blogs = social_auth.user.blog_set.all()
