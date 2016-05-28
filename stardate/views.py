@@ -3,7 +3,7 @@ import logging
 from hashlib import sha256
 import hmac
 import json
-# import threading
+import threading
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -204,5 +204,16 @@ def process_webhook(request):
 
     for user in json.loads(request.body)['delta']['users']:
         logger.info(user)
-        # threading.Thread(target=process_user, args=(account,)).start()
+        threading.Thread(target=process_user, args=(user,)).start()
     return HttpResponse()
+
+def process_user(user):
+    try:
+        social_auth = UserSocialAuth.objects.get(uid=user)
+        blogs = social_auth.user.blog_set.all()
+
+        for blog in blogs:
+            blog.backend.pull()
+        return
+    except UserSocialAuth.DoesNotExist:
+        return

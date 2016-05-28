@@ -33,6 +33,11 @@ DATABASES = {
         'PASSWORD': '',
         'HOST': '',
         'PORT': '',
+        'TEST': {
+            # Setting name forces the use of a file instead of memory
+            # to prevent errors from using threads.
+            'NAME': 'test.db'
+        },
     }
 }
 
