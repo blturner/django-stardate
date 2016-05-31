@@ -16,7 +16,7 @@ from dateutil import tz
 from stardate.models import Blog, Post
 from stardate.utils import get_post_model
 
-from core.models import CustomPost
+from tests.models import CustomPost
 
 
 @override_settings(STARDATE_POST_MODEL='stardate.Post')
@@ -56,7 +56,7 @@ class BlogTestCase(TestCase):
     def test_get_post_model(self):
         self.assertIsInstance(get_post_model()(), Post)
 
-        with self.settings(STARDATE_POST_MODEL='core.CustomPost'):
+        with self.settings(STARDATE_POST_MODEL='tests.CustomPost'):
             self.assertIsInstance(get_post_model()(), CustomPost)
 
     def test_serialized_posts(self):
