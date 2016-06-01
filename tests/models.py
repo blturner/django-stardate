@@ -10,4 +10,4 @@ class CustomPost(BasePost):
     extra_field = models.CharField(max_length=255)
 
     class Meta:
-        app_label = 'core'
+        app_label = 'tests' # wat
