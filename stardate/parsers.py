@@ -85,7 +85,7 @@ class FileParser(BaseStardateParser):
         # Join incase other parts of post are separated
         # by three return characters \n\n\n
 
-        if isinstance(post_data, types.DictType):
+        if isinstance(post_data, dict):
             post_data['body'] = ''.join(bits[1:])
 
         try:

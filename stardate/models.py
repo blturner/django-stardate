@@ -89,7 +89,7 @@ class Blog(models.Model):
                 p = Post(**post)
             p.__dict__.update(**post)
             p.save()
-            print 'Saved: %s' % p.title
+            logger.info('Saved: {}'.format(p.title))
 
 
 class PostManager(models.Manager):

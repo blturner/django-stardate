@@ -60,14 +60,20 @@ class DropboxBackend(StardateBackend):
 
     def get_access_token(self):
         extra_data = self.get_social_auth().extra_data
-        if isinstance(extra_data, unicode):
-            extra_data = json.loads(extra_data)
+        try:
+            if isinstance(extra_data, unicode):
+                extra_data = json.loads(extra_data)
+        except NameError:
+            pass
         return extra_data.get('access_token')
 
     def get_cursor(self):
         extra_data = self.get_social_auth().extra_data
-        if isinstance(extra_data, unicode):
-            extra_data = json.loads(extra_data)
+        try:
+            if isinstance(extra_data, unicode):
+                extra_data = json.loads(extra_data)
+        except NameError:
+            pass
         return extra_data.get('cursor')
 
     def get_dropbox_client(self):
@@ -95,10 +101,10 @@ class DropboxBackend(StardateBackend):
             meta = self.client.metadata(path, hash=meta_hash)
             cache.delete('paths')
             cache.set('hash', meta['hash'])
-        except rest.ErrorResponse, e:
-            if e.status == 304:
+        except rest.ErrorResponse as err:
+            if err.status == 304:
                 return paths
-            raise e
+            raise
 
         for content in meta.get('contents', []):
             paths.append(content['path'])
@@ -120,8 +126,11 @@ class DropboxBackend(StardateBackend):
     def save_cursor(self, cursor):
         social_auth = self.get_social_auth()
         extra_data = social_auth.extra_data
-        if isinstance(extra_data, unicode):
-            extra_data = json.loads(extra_data)
+        try:
+            if isinstance(extra_data, unicode):
+                extra_data = json.loads(extra_data)
+        except NameError:
+            pass
         extra_data['cursor'] = cursor
         social_auth.extra_data = extra_data
         social_auth.save()
