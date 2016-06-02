@@ -202,7 +202,7 @@ def process_webhook(request):
         hmac.new(settings.DROPBOX_APP_SECRET, request.body, sha256).hexdigest()):
         return HttpResponseForbidden()
 
-    for user in json.loads(request.body)['delta']['users']:
+    for user in json.loads(request.body.decode())['delta']['users']:
         threading.Thread(target=process_user, args=(user,)).start()
     return HttpResponse()
 

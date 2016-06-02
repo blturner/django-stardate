@@ -57,7 +57,10 @@ class FileParserTestCase(TestCase):
 
         self.assertIsInstance(post_list, list)
         self.assertEqual(len(post_list), 2)
-        self.assertIsInstance(packed, basestring)
+        try:
+            self.assertIsInstance(packed, basestring)
+        except NameError:
+            self.assertIsInstance(packed, str)
 
         self.assertTrue(u'title: {0}'.format(post_list[0]['title']) in packed)
         self.assertTrue(u'title: {0}'.format(post_list[1]['title']) in packed)
@@ -127,8 +130,8 @@ class FileParserTestCase(TestCase):
         # Check that extra_field is parsed
         string = u"title: My title\nextra_field: Something arbitrary\n\n\nThe body.\n"
         parsed = self.parser.parse(string)
-        self.assertTrue(parsed.has_key('title'))
-        self.assertTrue(parsed.has_key('extra_field'))
+        self.assertTrue('title' in parsed.keys())
+        self.assertTrue('extra_field' in parsed.keys())
 
     def test_render(self):
         file_path = tempfile.mkstemp(suffix='.txt')[1]

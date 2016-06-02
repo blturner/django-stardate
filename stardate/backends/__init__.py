@@ -43,12 +43,12 @@ def get_backend(backend=None, blog=None):
     module, attr = backend[:i], backend[i + 1:]
     try:
         mod = import_module(module)
-    except ImportError, e:
-        print e
+    except ImportError as err:
+        logger.error(err)
     try:
         backend_class = getattr(mod, attr)
     except AttributeError:
-        print module
+        print (module)
     return backend_class(blog=blog)
 
 
