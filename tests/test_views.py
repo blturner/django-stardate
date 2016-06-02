@@ -52,6 +52,9 @@ class TestViews(TestCase):
 
 def generate_signature(secret, message):
     secret = bytes(secret)
-    message = bytes(message, 'utf-8')
+    try:
+        message = bytes(message)
+    except TypeError:
+        message = bytes(message, 'utf-8')
 
     return hmac.new(secret, message, sha256).hexdigest()
