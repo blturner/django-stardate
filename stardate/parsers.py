@@ -35,21 +35,18 @@ class FileParser(BaseStardateParser):
         # One key/value pair per line
         meta = []
         for key in sorted(post.keys()):
-            try:
-                value = post[key]
+            value = post[key]
 
-                if value:
-                    if isinstance(value, datetime.datetime):
-                        value = datetime.datetime.strftime(value, '%Y-%m-%d %I:%M %p %z')
-                    field_string = '{0}: {1}'.format(key, value)
-                    meta.append(field_string)
-            except KeyError:
-                pass
+            if value:
+                if isinstance(value, datetime.datetime):
+                    value = datetime.datetime.strftime(value, '%Y-%m-%d %I:%M %p %z')
+
+                field_string = '{0}: {1}'.format(key, value)
+                meta.append(field_string)
         meta = '\n'.join(meta)
 
         # Body is separated from meta by three lines
-        rendered = '{0}\n\n\n{1}'.format(meta, body)
-        return rendered
+        return '{0}\n\n\n{1}'.format(meta, body)
 
     def pack(self, posts):
         """

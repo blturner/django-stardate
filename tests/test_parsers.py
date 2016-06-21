@@ -118,7 +118,8 @@ class FileParserTestCase(TestCase):
             datetime.datetime(2016, 1, 1, tzinfo=tz.gettz('US/Eastern'))
         )
 
-    def test_parse(self):
+    @patch('stardate.parsers.logger')
+    def test_parse(self, mock_logging):
         parsed = self.parser.parse(self.test_string)
 
         self.assertEqual(parsed['title'], 'Tingling of the spine')
@@ -132,6 +133,10 @@ class FileParserTestCase(TestCase):
         parsed = self.parser.parse(string)
         self.assertTrue('title' in parsed.keys())
         self.assertTrue('extra_field' in parsed.keys())
+
+        string = ''
+        parsed = self.parser.parse(string)
+        mock_logging.warn.assert_called_once_with('parser received an empty string')
 
     def test_render(self):
         file_path = tempfile.mkstemp(suffix='.txt')[1]
