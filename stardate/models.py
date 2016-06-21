@@ -78,19 +78,6 @@ class Blog(models.Model):
 
         super(Blog, self).save(*args, **kwargs)
 
-    def save_post_objects(self, post_list):
-        Post = get_post_model()
-
-        for post in post_list:
-            post['blog_id'] = self.id
-            try:
-                p = Post.objects.get(stardate=post.get('stardate'))
-            except Post.DoesNotExist:
-                p = Post(**post)
-            p.__dict__.update(**post)
-            p.save()
-            logger.info('Saved: {}'.format(p.title))
-
 
 class PostManager(models.Manager):
     def drafts(self):
