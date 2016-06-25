@@ -141,10 +141,6 @@ class BasePost(models.Model):
         if not self.body.raw.endswith('\n'):
             self.body.raw += '\n'
 
-    def mark_deleted(self):
-        self.deleted = True
-        return self
-
     def save(self, push=True, *args, **kwargs):
         if not hasattr(self, 'backend'):
             self.backend = self.blog.backend
