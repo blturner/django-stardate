@@ -2,6 +2,7 @@ import datetime
 import tempfile
 
 from django.core.exceptions import ValidationError
+from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.utils import timezone
@@ -49,6 +50,16 @@ class BlogTestCase(TestCase):
     def tearDown(self):
         Blog.objects.all().delete()
 
+    def test_drafts(self):
+        Post.objects.create(blog=self.blog, title='Draft post')
+
+        self.assertEqual(Post.objects.drafts().count(), 1)
+        self.assertTrue(Post.objects.get(title='Draft post').is_draft)
+
+    def test__unicode__(self):
+        post = Post.objects.get(title='Test post 1 title')
+        self.assertEqual(post.__str__(), u'Test post 1 title')
+
     def test_blog_has_slug(self):
         self.assertTrue(self.blog.slug)
         self.assertEqual(self.blog.slug, 'my-test-blog')
@@ -87,6 +98,26 @@ class BlogTestCase(TestCase):
         post_list = self.blog.posts.all()
         self.assertTrue(len(post_list), 2)
 
+    def test_get_url_methods(self):
+        post = Post.objects.get(title='Test post 1 title')
+
+        self.assertEqual(post.get_absolute_url(), reverse('post-detail', kwargs={'blog_slug': post.blog.slug, 'post_slug': post.slug}))
+        self.assertEqual(post.get_draft_url(), reverse('draft-post-detail', kwargs={'blog_slug': post.blog.slug, 'post_slug': post.slug}))
+
+        self.assertEqual(
+            post.get_dated_absolute_url(),
+            reverse(
+                'post-detail',
+                kwargs={
+                    'blog_slug': post.blog.slug,
+                    'post_slug': post.slug,
+                    'year': post.publish.year,
+                    'month': post.publish.strftime('%b').lower(),
+                    'day': post.publish.day,
+                }
+            )
+        )
+
     def test_get_next_post(self):
         first_post = Post.objects.get(title="Test post 1 title")
         self.assertEqual(first_post.title, "Test post 1 title")
@@ -98,12 +129,26 @@ class BlogTestCase(TestCase):
 
         self.assertEqual(first_post.get_next_post(), last_post)
 
+        Post.objects.create(blog=self.blog, title='draft')
+        self.assertFalse(Post.objects.get(title='draft').get_next_post())
+        self.assertFalse(Post.objects.get(title='draft').get_prev_post())
+
     def test_get_prev_post(self):
         first_post = Post.objects.get(title="Test post 1 title")
         last_post = Post.objects.get(title="Test post 2 title")
 
         self.assertEqual(last_post.get_prev_post(), first_post)
         self.assertFalse(first_post.get_prev_post())
+
+    def test_creates_stardate_key(self):
+        data = {
+            'blog': self.blog,
+            'title': 'Foo',
+            'body': 'Foo bar.',
+        }
+        p = Post(**data)
+        p.clean()
+        self.assertTrue(p.stardate)
 
     def test_save_invalid_post(self):
         data = {

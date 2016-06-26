@@ -57,10 +57,6 @@ class Blog(models.Model):
     def get_absolute_url(self):
         return ('post-archive-index', (), {'blog_slug': self.slug})
 
-    def get_backend_choice(self):
-        choices = self.backend.get_source_list()
-        return choices[int(self.backend_file)][1]
-
     @property
     def posts(self):
         """
@@ -85,20 +81,10 @@ class PostManager(models.Manager):
         Returns all draft Post instances. A draft is considered to be a Post
         without a publish property.
         """
-        try:
-            queryset_method = self.get_queryset
-        except AttributeError:
-            queryset_method = self.get_query_set
-
-        return queryset_method().filter(publish=None)
+        return self.get_queryset().filter(publish=None)
 
     def published(self):
-        try:
-            queryset_method = self.get_queryset
-        except AttributeError:
-            queryset_method = self.get_query_set
-
-        return queryset_method().filter(
+        return self.get_queryset().filter(
             deleted=False,
             publish__lte=timezone.now()).order_by('-publish')
 
@@ -142,17 +128,11 @@ class BasePost(models.Model):
             self.body.raw += '\n'
 
     def save(self, push=True, *args, **kwargs):
-        if not hasattr(self, 'backend'):
-            self.backend = self.blog.backend
-
         # Validate first so things don't break on push
         # self.full_clean()
         self.clean()
         self.clean_fields()
         self.validate_unique()
-
-        if not self.stardate:
-            push = True
 
         if push and self.blog.sync:
             # Sync this post with our backend
