@@ -1,18 +1,15 @@
+from django.apps import apps
+from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+
+
+get_model = apps.get_model
 
 
 def get_post_model():
     """
     Return the Post model that is active in this project
     """
-    from django.conf import settings
-
-    try:
-        from django.apps import apps
-        get_model = apps.get_model
-    except ImportError:
-        from django.db.models import get_model
-
     try:
         POST_MODEL = getattr(settings, 'STARDATE_POST_MODEL')
     except AttributeError:
