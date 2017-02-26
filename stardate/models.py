@@ -137,7 +137,7 @@ class BasePost(models.Model):
         if push and self.blog.sync:
             # Sync this post with our backend
             # need a serialized post here to pass in
-            self.backend.push([self])
+            self.blog.backend.push([self])
         super(BasePost, self).save(*args, **kwargs)
 
     def serialized(self):

@@ -1,5 +1,10 @@
 from setuptools import find_packages, setup
 
+tests_require = [
+    'coverage==4.3.4',
+    'mock==1.3.0',
+]
+
 setup(
     name='django-stardate',
     version='0.1.0.a5',
@@ -22,5 +27,9 @@ setup(
         'pytz<2015.7',
         'watchdog==0.8.3',
     ],
-    test_requires=['mock==1.3.0',]
+    tests_require=tests_require,
+    extras_require={
+        'tests': tests_require,
+    },
+    test_suite='runtests',
 )

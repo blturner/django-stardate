@@ -1,6 +1,8 @@
 # Test database
 *.db
 *.egg-info
+.coverage
 .tox
 build/
 dist/
+htmlcov/
