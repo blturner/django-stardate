@@ -18,7 +18,7 @@ setup(
         'Markdown==2.6.5',
         'PyYAML==3.11',
         'python-dateutil==2.4.2',
-        'python-social-auth>=0.1,<0.3',
+        'python-social-auth>=0.1,<0.2.19',
         'pytz<2015.7',
         'watchdog==0.8.3',
     ],
