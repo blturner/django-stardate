@@ -1,6 +1,5 @@
 from django.contrib.syndication.views import Feed
 from django.shortcuts import get_object_or_404
-from markdown import markdown
 
 from stardate.models import Blog
 from stardate.utils import get_post_model
@@ -31,4 +30,4 @@ class LatestPostsFeed(Feed):
         return item.publish
 
     def item_description(self, item):
-        return markdown(item.body)[:300]
+        return item.body
