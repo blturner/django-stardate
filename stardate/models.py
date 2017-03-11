@@ -11,7 +11,7 @@ from django.utils import timezone
 
 from dateutil import tz
 from markupfield.fields import MarkupField
-from social.apps.django_app.default.models import UserSocialAuth
+from social_django.models import UserSocialAuth
 
 from stardate.utils import get_post_model
 

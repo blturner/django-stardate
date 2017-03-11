@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('default', '__first__'),
+        ('social_django', '0006_partial'),
     ]
 
     operations = [
@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=255)),
                 ('slug', models.SlugField(unique=True)),
                 ('authors', models.ManyToManyField(to=settings.AUTH_USER_MODEL, null=True, blank=True)),
-                ('social_auth', models.ForeignKey(blank=True, to='default.UserSocialAuth', null=True)),
+                ('social_auth', models.ForeignKey(blank=True, to='social_django.UserSocialAuth', null=True)),
                 ('user', models.ForeignKey(related_name='+', to=settings.AUTH_USER_MODEL)),
             ],
         ),

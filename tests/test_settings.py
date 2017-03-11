@@ -15,7 +15,7 @@ SECRET_KEY = 'fake_key'
 INSTALLED_APPS = [
     'django.contrib.auth',
     'django.contrib.contenttypes',
-    'social.apps.django_app.default',
+    'social_django',
     'stardate',
     'tests',
 ]
@@ -26,6 +26,11 @@ USE_TZ = True
 
 ROOT_URLCONF = 'tests.urls'
 
+AUTHENTICATION_BACKENDS = [
+    'social_core.backends.dropbox.DropboxOAuth',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
 STARDATE_POST_MODEL = 'stardate.Post'
 
 DROPBOX_APP_KEY = 'fake_key'
@@ -33,6 +38,7 @@ DROPBOX_APP_SECRET = 'fake_secret'
 DROPBOX_ACCESS_TYPE = 'app_folder'
 
 # DJANGO-SOCIAL-AUTH
+SOCIAL_AUTH_USER_MODEL = 'auth.User'
 SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/create/'
 SOCIAL_AUTH_DROPBOX_KEY = DROPBOX_APP_KEY
 SOCIAL_AUTH_DROPBOX_SECRET = DROPBOX_APP_SECRET
