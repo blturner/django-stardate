@@ -11,7 +11,6 @@ from django.utils import timezone
 
 from dateutil import tz
 from markupfield.fields import MarkupField
-from social.apps.django_app.default.models import UserSocialAuth
 
 from stardate.utils import get_post_model
 
@@ -35,7 +34,6 @@ class Blog(models.Model):
     name = models.CharField(max_length=255)
     user = models.ForeignKey(User, related_name="+")
     slug = models.SlugField(unique=True)
-    social_auth = models.ForeignKey(UserSocialAuth, blank=True, null=True)
     sync = models.BooleanField(default=True,
         help_text='This blog should sync using it\'s selected backend')
 

@@ -19,12 +19,10 @@ class BlogForm(forms.ModelForm):
         model = Blog
         fields = [
             'name',
-            'social_auth',
             'backend_file',
             'user',
         ]
         widgets = {
-            'social_auth': forms.HiddenInput(),
             'user': forms.HiddenInput(),
         }
 
@@ -32,7 +30,7 @@ class BlogForm(forms.ModelForm):
         instance = super(BlogForm, self).save(commit=False)
 
         try:
-            provider = instance.social_auth.provider
+            provider = instance.user.social_auth[0].provider
         except AttributeError:
             provider = 'local'
 
