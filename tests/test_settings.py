@@ -15,7 +15,7 @@ SECRET_KEY = 'fake_key'
 INSTALLED_APPS = [
     'django.contrib.auth',
     'django.contrib.contenttypes',
-    'social.apps.django_app.default',
+    'social_django',
     'stardate',
     'tests',
 ]

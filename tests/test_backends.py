@@ -9,7 +9,7 @@ from django.utils import timezone
 from dateutil.parser import parse
 from dropbox import client
 from mock import Mock, patch
-from social.apps.django_app.default.models import UserSocialAuth
+from social_django.models import UserSocialAuth
 
 from stardate.models import Blog
 from stardate.parsers import FileParser

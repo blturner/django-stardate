@@ -12,6 +12,9 @@ SOCIAL_AUTH = 'default'
 if 'social_auth' in apps.app_configs:
     SOCIAL_AUTH = 'social_auth'
 
+if 'social_django' in apps.app_configs:
+    SOCIAL_AUTH = 'social_django'
+
 
 class Migration(migrations.Migration):
 
