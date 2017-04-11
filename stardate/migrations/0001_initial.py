@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=255)),
                 ('slug', models.SlugField(unique=True)),
                 ('authors', models.ManyToManyField(to=settings.AUTH_USER_MODEL, null=True, blank=True)),
-                ('social_auth', models.ForeignKey(blank=True, to='default.UserSocialAuth', null=True)),
+                ('social_auth', models.ForeignKey(blank=True, to='{0}.UserSocialAuth'.format(SOCIAL_AUTH), null=True)),
                 ('user', models.ForeignKey(related_name='+', to=settings.AUTH_USER_MODEL)),
             ],
         ),
