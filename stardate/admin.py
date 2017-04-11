@@ -13,7 +13,6 @@ class BlogAdmin(admin.ModelAdmin):
         'slug',
         'backend_file',
         'user',
-        'social_auth',
         'last_sync',
         'sync',
     ]
