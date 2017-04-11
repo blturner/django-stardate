@@ -1,16 +1,23 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from django.apps import apps
 from django.db import migrations, models
 from django.conf import settings
 import markupfield.fields
+
+
+SOCIAL_AUTH = 'default'
+
+if 'social_auth' in apps.app_configs:
+    SOCIAL_AUTH = 'social_auth'
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('default', '__first__'),
+        (SOCIAL_AUTH, '0001_initial'),
     ]
 
     operations = [
