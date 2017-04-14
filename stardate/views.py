@@ -210,7 +210,7 @@ def process_user(user):
     logger.debug('processing: {}'.format(user))
     try:
         social_auth = UserSocialAuth.objects.get(uid=user)
-        blogs = social_auth.blog_set.all()
+        blogs = social_auth.user.blog_set.all()
 
         logger.debug('found {} blog(s)'.format(len(blogs)))
 
