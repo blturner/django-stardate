@@ -32,7 +32,7 @@ class Blog(models.Model):
     backend_file = models.CharField(blank=True, max_length=255)
     last_sync = models.DateTimeField(blank=True, null=True)
     name = models.CharField(max_length=255)
-    user = models.ForeignKey(User, related_name="+")
+    user = models.ForeignKey(User, related_name='blogs')
     slug = models.SlugField(unique=True)
     sync = models.BooleanField(default=True,
         help_text='This blog should sync using it\'s selected backend')

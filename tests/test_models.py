@@ -49,6 +49,12 @@ class BlogTestCase(TestCase):
     def tearDown(self):
         Blog.objects.all().delete()
 
+    def test_blog_user(self):
+        user = User.objects.get(username='bturner')
+
+        self.assertEqual(len(user.blogs.all()), 1)
+        self.assertEqual(self.blog.user, user)
+
     def test_blog_has_slug(self):
         self.assertTrue(self.blog.slug)
         self.assertEqual(self.blog.slug, 'my-test-blog')
