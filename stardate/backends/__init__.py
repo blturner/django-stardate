@@ -79,12 +79,10 @@ class StardateBackend(object):
         # If a post is not provided, try and fetch it
         if not post:
             if 'stardate' in post_dict:
-                post = Post.objects.filter(
+                post = Post.objects.get(
                     blog=blog,
                     stardate=post_dict['stardate']
                 )
-                if post:
-                    post = post[0]
             if not post:
                 post_dict['blog'] = blog
                 post, created = Post.objects.get_or_create(**post_dict)
