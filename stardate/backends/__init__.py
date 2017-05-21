@@ -75,7 +75,12 @@ class StardateBackend(object):
         """
         Create or update a Post from a dictionary
         """
+        from django.db import IntegrityError
+        from django.core.exceptions import ValidationError
+
         created = False
+        save = True
+
         # If a post is not provided, try and fetch it
         if not post:
             if 'stardate' in post_dict:
@@ -85,15 +90,25 @@ class StardateBackend(object):
                 )
             if not post:
                 post_dict['blog'] = blog
-                post, created = Post.objects.get_or_create(**post_dict)
+
+                post = Post(**post_dict)
+
+                try:
+                    post.clean()
+                    post.full_clean()
+                except ValidationError:
+                    # invalid posts should not be returned in this list
+                    # can I write an error to the blog file at this point?
+                    save = False
+                    return
 
         push = False
 
         for key, value in post_dict.items():
-            post_value = getattr(post, key)
-
             if key == 'body':
                 post_value = getattr(post, key).raw
+            else:
+                post_value = getattr(post, key)
 
             if value != post_value:
                 push = True
@@ -103,7 +118,9 @@ class StardateBackend(object):
             for att, value in post_dict.items():
                 setattr(post, att, value)
             logger.debug('push is {}'.format(push))
-            post.save(push=push)
+
+            if save:
+                post.save(push=push)
         logger.info('Blog: %s, Post: %s, created=%s', post.blog, post, created)
         return post
 
@@ -249,7 +266,9 @@ class StardateBackend(object):
 
         for remote_post in remote_posts:
             updated = self._update_from_dict(blog, remote_post)
-            updated_list.append(updated)
+
+            if updated:
+                updated_list.append(updated)
 
         batch_save(updated_list)
         logger.info(u'Updated {} posts for {}'.format(len(updated_list), blog))

@@ -164,9 +164,17 @@ class BasePost(models.Model):
         # self.full_clean()
         self.clean()
         self.clean_fields()
+
         self.validate_unique()
 
+        if not self.slug:
+            self.slug = slugify(self.title)
+
+        if not self.body.raw.endswith('\n'):
+            self.body.raw += '\n'
+
         if not self.stardate:
+            self.stardate = str(uuid.uuid1())
             push = True
 
         if push and self.blog.sync:

@@ -120,7 +120,7 @@ class DropboxBackendTestCase(TestCase):
 
         Post.objects.create(
             title='Hello world',
-            publish='2016-04-01 12:00:00',
+            publish=datetime.datetime(2016, 4, 1, 12),
             body='Hello world.',
             blog=self.blog,
         )
@@ -183,6 +183,27 @@ class DropboxBackendTestCase(TestCase):
 
         # There should be no posts returned after the first update
         self.assertEqual(self.blog.backend.pull(), [])
+
+    @patch.object(client.DropboxClient, 'put_file')
+    @patch.object(client.DropboxClient, 'get_file')
+    @patch.object(client.DropboxClient, 'metadata')
+    def test_pull_with_dupe(self, mock_metadata, mock_get_file, mock_put_file):
+        post_string = \
+            'title: Foo\n\n\nHello world.\n\n---\n\n' + \
+            'title: Foo\n\n\nBar.'
+
+        with open(self.blog.backend_file, 'w') as backend_file:
+            backend_file.write(post_string)
+
+        mock_get_file.side_effect = mock_get
+        mock_put_file.side_effect = mock_put
+
+        mock_metadata.return_value = {
+            'modified': 'Wed, 20 Jul 2011 22:04:50 +0000',
+        }
+
+        pulled_posts = self.blog.backend.pull()
+        self.assertEqual(len(pulled_posts), 1)
 
     @patch.object(client.DropboxClient, 'put_file')
     @patch.object(client.DropboxClient, 'get_file')
