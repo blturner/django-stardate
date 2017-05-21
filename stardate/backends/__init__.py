@@ -91,6 +91,7 @@ class StardateBackend(object):
                     )
                 except Exception as e:
                     logger.exception('something went boom')
+                    logger.debug(post_dict)
             if not post:
                 post_dict['blog'] = blog
 
