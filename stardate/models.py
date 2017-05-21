@@ -131,7 +131,6 @@ class BasePost(models.Model):
         abstract = True
         app_label = 'stardate'
         ordering = ['-publish']
-        unique_together = ('blog', 'slug')
 
     def __init__(self, *args, **kwargs):
         super(BasePost, self).__init__(*args, **kwargs)
