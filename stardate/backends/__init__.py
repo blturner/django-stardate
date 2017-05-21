@@ -89,8 +89,8 @@ class StardateBackend(object):
                         blog=blog,
                         stardate=post_dict['stardate']
                     )
-                except:
-                    logger.exception()
+                except Exception as e:
+                    logger.exception('something went boom')
             if not post:
                 post_dict['blog'] = blog
 
