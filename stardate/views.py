@@ -11,7 +11,7 @@ from django.core.urlresolvers import reverse
 from django.http import (
     HttpResponse, HttpResponseRedirect, Http404, HttpResponseForbidden
 )
-from django.shortcuts import get_object_or_404, render_to_response
+from django.shortcuts import get_object_or_404, render_to_response, render
 from django.template import RequestContext
 from django.utils.decorators import method_decorator
 from django.views import generic
@@ -20,7 +20,7 @@ from django.views.decorators.csrf import csrf_exempt
 from social_django.models import UserSocialAuth
 
 from stardate import backends
-from stardate.forms import BlogForm, PostForm
+from stardate.forms import BackendForm, BlogForm, PostForm
 from stardate.models import Blog
 from stardate.utils import get_post_model
 
@@ -173,14 +173,10 @@ def select_backend(request, **kwargs):
             )
 
     context = {
-        'stardate_backends': backends.STARDATE_BACKENDS
+        'form': BackendForm()
     }
 
-    return render_to_response(
-        'stardate/providers.html',
-        context,
-        context_instance=RequestContext(request)
-    )
+    return render(request, 'stardate/providers.html', context)
 
 
 @csrf_exempt
