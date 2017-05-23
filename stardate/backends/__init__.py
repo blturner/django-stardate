@@ -100,7 +100,6 @@ class StardateBackend(object):
                     post.full_clean()
                 except ValidationError as e:
                     # invalid posts should not be returned in this list
-                    # can I write an error to the blog file at this point?
                     logger.exception('Caught an exception processing {}'.format(post))
                     save = False
                     return
