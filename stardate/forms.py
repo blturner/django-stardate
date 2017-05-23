@@ -8,6 +8,11 @@ from stardate.models import Blog
 from stardate.utils import get_post_model
 
 
+CHOICES = (
+    ('dropbox', 'Dropbox'),
+    ('local', 'Local file'),
+)
+
 Post = get_post_model()
 
 
@@ -28,11 +33,11 @@ class BlogForm(forms.ModelForm):
 
     def save(self):
         instance = super(BlogForm, self).save(commit=False)
+        provider = 'local'
+        social_auth = self.initial.get('social_auth')
 
-        try:
-            provider = instance.user.social_auth[0].provider
-        except AttributeError:
-            provider = 'local'
+        if social_auth:
+            provider = social_auth.provider
 
         instance.backend_class = backends.STARDATE_BACKENDS[provider]['module']
 
@@ -54,3 +59,7 @@ class PostForm(forms.ModelForm):
             'publish',
             'timezone',
         ]
+
+
+class BackendForm(forms.Form):
+    backend = forms.ChoiceField(choices=CHOICES, initial='local', widget=forms.RadioSelect)

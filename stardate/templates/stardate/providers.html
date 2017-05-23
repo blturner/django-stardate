@@ -11,14 +11,7 @@
         {% csrf_token %}
 
         <ul>
-            {% for name, backend in stardate_backends.items %}
-                <li>
-                    <label for="{{ backend.name|lower }}-provider">
-                        <input id="{{ backend.name|lower }}-provider" type="radio" name="backend" value="{{ backend.name|lower }}"{% if forloop.first %} checked{% endif %}>
-                        {{ backend.name }}
-                    </label>
-                </li>
-            {% endfor %}
+        {{ form.as_ul }}
         </ul>
 
         <button type="submit">Submit</button>

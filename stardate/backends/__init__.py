@@ -4,6 +4,7 @@ import logging
 from datetime import datetime
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.template.defaultfilters import slugify
 from django.utils.timezone import utc
 
@@ -76,26 +77,40 @@ class StardateBackend(object):
         Create or update a Post from a dictionary
         """
         created = False
+        save = True
+
         # If a post is not provided, try and fetch it
         if not post:
             if 'stardate' in post_dict:
-                post = Post.objects.filter(
-                    blog=blog,
-                    stardate=post_dict['stardate']
-                )
-                if post:
-                    post = post[0]
+                try:
+                    post = Post.objects.get(
+                        blog=blog,
+                        stardate=post_dict['stardate']
+                    )
+                except Exception as e:
+                    logger.exception('something went boom')
+                    logger.debug(post_dict)
             if not post:
                 post_dict['blog'] = blog
-                post, created = Post.objects.get_or_create(**post_dict)
+
+                post = Post(**post_dict)
+
+                try:
+                    post.clean()
+                    post.full_clean()
+                except ValidationError as e:
+                    # invalid posts should not be returned in this list
+                    logger.exception('Caught an exception processing {}'.format(post))
+                    save = False
+                    return
 
         push = False
 
         for key, value in post_dict.items():
-            post_value = getattr(post, key)
-
             if key == 'body':
                 post_value = getattr(post, key).raw
+            else:
+                post_value = getattr(post, key)
 
             if value != post_value:
                 push = True
@@ -105,7 +120,9 @@ class StardateBackend(object):
             for att, value in post_dict.items():
                 setattr(post, att, value)
             logger.debug('push is {}'.format(push))
-            post.save(push=push)
+
+            if save:
+                post.save(push=push)
         logger.info('Blog: %s, Post: %s, created=%s', post.blog, post, created)
         return post
 
@@ -251,7 +268,9 @@ class StardateBackend(object):
 
         for remote_post in remote_posts:
             updated = self._update_from_dict(blog, remote_post)
-            updated_list.append(updated)
+
+            if updated:
+                updated_list.append(updated)
 
         batch_save(updated_list)
         logger.info(u'Updated {} posts for {}'.format(len(updated_list), blog))
