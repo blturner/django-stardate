@@ -4,6 +4,7 @@ import logging
 from datetime import datetime
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.template.defaultfilters import slugify
 from django.utils.timezone import utc
 
@@ -75,9 +76,6 @@ class StardateBackend(object):
         """
         Create or update a Post from a dictionary
         """
-        from django.db import IntegrityError
-        from django.core.exceptions import ValidationError
-
         created = False
         save = True
 
