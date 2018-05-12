@@ -7,29 +7,13 @@ from django.conf import settings
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 
-from dateutil.parser import parse
-
-from dropbox import client, rest, session
+from dropbox import Dropbox
+from dropbox.exceptions import ApiError
+from dropbox.files import WriteMode
 
 from stardate.backends import StardateBackend
 from stardate.parsers import FileParser
 
-def get_settings_or_env(var_name):
-    """
-    Get a setting from the settings file or an env variable
-    """
-    value = getattr(settings, var_name, None)
-    if not value:
-        try:
-            return os.environ[var_name]
-        except KeyError:
-            error_msg = "Could not find setting or ENV variable {0}".format(var_name)
-            raise ImproperlyConfigured(error_msg)
-    return value
-
-APP_KEY = get_settings_or_env('DROPBOX_APP_KEY')
-APP_SECRET = get_settings_or_env('DROPBOX_APP_SECRET')
-ACCESS_TYPE = get_settings_or_env('DROPBOX_ACCESS_TYPE')
 
 logger = logging.getLogger('stardate')
 
@@ -42,13 +26,15 @@ class DropboxBackend(StardateBackend):
         self.parser = FileParser()
 
     def get_file(self, path):
-        return self.client.get_file(path).read()
+        metadata, file = self.client.files_download(path)
+
+        return file.content
 
     def write_file(self, file_path, content):
-        return self.client.put_file(file_path, content, overwrite=True)
+        return self.client.files_upload(content, file_path, mode=WriteMode('overwrite', None))
 
     def get_social_auth(self):
-        return self.blog.user.social_auth.get(provider='dropbox')
+        return self.blog.user.social_auth.get(provider='dropbox-oauth2')
 
     def get_post(self, path):
         try:
@@ -77,15 +63,8 @@ class DropboxBackend(StardateBackend):
         return extra_data.get('cursor')
 
     def get_dropbox_client(self):
-        sess = session.DropboxSession(APP_KEY, APP_SECRET, ACCESS_TYPE)
         token = self.get_access_token()
-        sess.set_token(token['oauth_token'], token['oauth_token_secret'])
-        return client.DropboxClient(sess)
-
-    def delta(self):
-        delta = self.client.delta(cursor=self.get_cursor())
-        self.save_cursor(delta.get('cursor'))
-        return delta
+        return Dropbox(token)
 
     def _list_path(self, path='/', hash=None):
         """
@@ -98,13 +77,11 @@ class DropboxBackend(StardateBackend):
         meta_hash = cache.get('hash', None)
 
         try:
-            meta = self.client.metadata(path, hash=meta_hash)
+            meta = self.client.files_get_metadata(path)
             cache.delete('paths')
             cache.set('hash', meta['hash'])
-        except rest.ErrorResponse as err:
-            if err.status == 304:
-                return paths
-            raise
+        except ApiError as err:
+            raise err
 
         for content in meta.get('contents', []):
             paths.append(content['path'])
@@ -137,4 +114,8 @@ class DropboxBackend(StardateBackend):
 
     @property
     def last_sync(self):
-        return parse(self.client.metadata(self.blog.backend_file)['modified'])
+        modified = self.client.files_get_metadata(
+            self.blog.backend_file
+        ).server_modified
+
+        return modified

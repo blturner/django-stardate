@@ -7,7 +7,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from dateutil.parser import parse
-from dropbox import client
+from dropbox import Dropbox
 from mock import Mock, patch
 from social_django.models import UserSocialAuth
 
@@ -20,15 +20,25 @@ Post = get_post_model()
 
 
 def mock_get(path):
-    return open(path)
+    tmp_file = open(path)
+    mock_file = Mock()
+    mock_file.content = tmp_file.read()
+
+    return ('meta', mock_file)
 
 
-def mock_put(path, content, overwrite):
+def mock_put(content, path, mode):
     open(path, 'w').write(content)
 
     return {
         'path': path
     }
+
+
+class MockMetadata:
+    @property
+    def server_modified(self):
+        return parse('Wed, 20 Jul 2011 22:04:50 +0000')
 
 
 class StardateBackendTestCase(TestCase):
@@ -48,7 +58,7 @@ class DropboxBackendTestCase(TestCase):
         user = User.objects.create(username='bturner')
 
         defaults = {
-            "provider": "dropbox",
+            "provider": "dropbox-oauth2",
             "uid": "1234",
             "user": user,
             "extra_data": {
@@ -89,31 +99,20 @@ class DropboxBackendTestCase(TestCase):
     def test_get_name(self):
         self.assertEqual(self.blog.backend.get_name(), 'dropbox')
 
-    @patch.object(client.DropboxClient, 'delta', autospec=True)
-    def test_delta(self, mock_delta):
-        mock_delta.return_value = {
-            'entries': [['/test_file.md']],
-            'cursor': 'fake_cursor',
-        }
-
-        delta = self.blog.backend.delta()
-        self.assertEqual(self.blog.backend.get_cursor(), 'fake_cursor')
-        self.assertEqual(delta.get('entries')[0][0], '/test_file.md')
-
-    @patch.object(client.DropboxClient, 'get_file')
+    @patch.object(Dropbox, 'files_download')
     def test_get_file(self, mock_get_file):
         expected = 'title: Hello world\n\n\nHello world'
 
         mock_file = Mock()
-        mock_file.read.return_value = expected
-        mock_get_file.return_value = mock_file
+        mock_file.content = expected
+        mock_get_file.return_value = ('metadata', mock_file)
 
         backend_file = self.blog.backend.get_file(self.blog.backend_file)
 
         self.assertEqual(backend_file, expected)
 
-    @patch.object(client.DropboxClient, 'get_file')
-    @patch.object(client.DropboxClient, 'put_file')
+    @patch.object(Dropbox, 'files_download')
+    @patch.object(Dropbox, 'files_upload')
     def test_get_posts(self, mock_put_file, mock_get_file):
         mock_get_file.side_effect = mock_get
         mock_put_file.side_effect = mock_put
@@ -135,7 +134,7 @@ class DropboxBackendTestCase(TestCase):
             datetime.datetime(2016, 4, 1, 12, 0, tzinfo=timezone.utc)
         )
 
-    @patch.object(client.DropboxClient, 'metadata')
+    @patch.object(Dropbox, 'files_get_metadata')
     def test_get_source_list(self, mock_metadata):
         mock_metadata.return_value = {
             'modified': 'Wed, 20 Jul 2011 22:04:50 +0000',
@@ -159,9 +158,9 @@ class DropboxBackendTestCase(TestCase):
         source_list = self.blog.backend.get_source_list()
         self.assertEqual(expected, source_list)
 
-    @patch.object(client.DropboxClient, 'put_file')
-    @patch.object(client.DropboxClient, 'get_file')
-    @patch.object(client.DropboxClient, 'metadata')
+    @patch.object(Dropbox, 'files_upload')
+    @patch.object(Dropbox, 'files_download')
+    @patch.object(Dropbox, 'files_get_metadata')
     def test_pull(self, mock_metadata, mock_get_file, mock_put_file):
         post_string = 'title: Test post title\n\n\nHello world.\n---\n\n' + \
             'title: Bar\npublish: 2016-01-01 00:00\n\n\nBar.'
@@ -172,9 +171,7 @@ class DropboxBackendTestCase(TestCase):
         mock_get_file.side_effect = mock_get
         mock_put_file.side_effect = mock_put
 
-        mock_metadata.return_value = {
-            'modified': 'Wed, 20 Jul 2011 22:04:50 +0000',
-        }
+        mock_metadata.return_value = MockMetadata()
 
         pulled_posts = self.blog.backend.pull()
         self.assertEqual(len(pulled_posts), 2)
@@ -184,9 +181,9 @@ class DropboxBackendTestCase(TestCase):
         # There should be no posts returned after the first update
         self.assertEqual(self.blog.backend.pull(), [])
 
-    @patch.object(client.DropboxClient, 'put_file')
-    @patch.object(client.DropboxClient, 'get_file')
-    @patch.object(client.DropboxClient, 'metadata')
+    @patch.object(Dropbox, 'files_upload')
+    @patch.object(Dropbox, 'files_download')
+    @patch.object(Dropbox, 'files_get_metadata')
     def test_pull_with_dupe(self, mock_metadata, mock_get_file, mock_put_file):
         post_string = \
             'title: Foo\n\n\nHello world.\n\n---\n\n' + \
@@ -198,15 +195,13 @@ class DropboxBackendTestCase(TestCase):
         mock_get_file.side_effect = mock_get
         mock_put_file.side_effect = mock_put
 
-        mock_metadata.return_value = {
-            'modified': 'Wed, 20 Jul 2011 22:04:50 +0000',
-        }
+        mock_metadata.return_value = MockMetadata()
 
         pulled_posts = self.blog.backend.pull()
         self.assertEqual(len(pulled_posts), 1)
 
-    @patch.object(client.DropboxClient, 'put_file')
-    @patch.object(client.DropboxClient, 'get_file')
+    @patch.object(Dropbox, 'files_upload')
+    @patch.object(Dropbox, 'files_download')
     def test_push(self, mock_get_file, mock_put_file):
         mock_get_file.side_effect = mock_get
         mock_put_file.side_effect = mock_put
@@ -230,15 +225,13 @@ class DropboxBackendTestCase(TestCase):
         )
         self.assertEqual(backend_file, packed_string)
 
-    @patch.object(client.DropboxClient, 'metadata')
-    @patch.object(client.DropboxClient, 'get_file')
-    @patch.object(client.DropboxClient, 'put_file')
+    @patch.object(Dropbox, 'files_get_metadata')
+    @patch.object(Dropbox, 'files_download')
+    @patch.object(Dropbox, 'files_upload')
     def test_pull_then_push(self, mock_put_file, mock_get_file, mock_metadata):
         mock_put_file.side_effect = mock_put
         mock_get_file.side_effect = mock_get
-        mock_metadata.return_value = {
-            'modified': 'Wed, 20 Jul 2011 22:04:50 +0000',
-        }
+        mock_metadata.return_value = MockMetadata()
 
         new_post = 'title: My test post\npublish: June 1, 2013 6AM PST\n\n\nPost body.\n'
 
@@ -257,9 +250,10 @@ class DropboxBackendTestCase(TestCase):
         packed_string = self.blog.backend.parser.pack(
             [post.serialized() for post in self.blog.posts.all()]
         )
-        self.assertEqual(
-            self.blog.backend.client.get_file(self.blog.backend_file).read(),
-            packed_string)
+
+        _meta, file = self.blog.backend.client.files_download(self.blog.backend_file)
+
+        self.assertEqual(file.content, packed_string)
 
 
 class LocalFileBackendTestCase(TestCase):
