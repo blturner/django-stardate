@@ -12,14 +12,14 @@ setup(
     description='Another django blog app.',
     zip_safe=False,
     install_requires=[
-        'Django>=1.4,<1.11',
+        'Django>=1.4,<1.12',
         'django-markupfield==1.4.0',
-        'dropbox>=1.4,<4.0',
+        'dropbox==8.8.1',
         'Markdown==2.6.5',
         'PyYAML==3.11',
         'python-dateutil==2.4.2',
         'pytz<2015.7',
-        'social-auth-app-django==1.1.0',
+        'social-auth-app-django==2.1.0',
         'watchdog==0.8.3',
     ],
     test_requires=['mock==1.3.0',]
