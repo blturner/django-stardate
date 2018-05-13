@@ -6,6 +6,7 @@ import os
 from django.conf import settings
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.timezone import make_aware, is_aware
 
 from dropbox import Dropbox
 from dropbox.exceptions import ApiError
@@ -117,5 +118,8 @@ class DropboxBackend(StardateBackend):
         modified = self.client.files_get_metadata(
             self.blog.backend_file
         ).server_modified
+
+        if not is_aware(modified):
+            modified = make_aware(modified)
 
         return modified
