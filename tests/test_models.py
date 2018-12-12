@@ -30,6 +30,7 @@ class BlogTestCase(TestCase):
             backend_class='stardate.backends.local_file.LocalFileBackend',
             backend_file=file_path,
             user=user,
+            sync=False,
         )
 
         pub_date_1 = datetime.datetime(2012, 1, 2, 8, 0, tzinfo=timezone.utc)
@@ -38,12 +39,14 @@ class BlogTestCase(TestCase):
         Post.objects.create(
             blog=self.blog,
             title="Test post 1 title",
-            publish=pub_date_1
+            publish=pub_date_1,
+            body='the post content',
         )
         Post.objects.create(
             blog=self.blog,
             title="Test post 2 title",
-            publish=pub_date_2
+            publish=pub_date_2,
+            body='the other post content',
         )
 
     def tearDown(self):
@@ -69,12 +72,12 @@ class BlogTestCase(TestCase):
         serialized = [post.serialized() for post in self.blog.posts.all()]
         self.assertEqual(len(serialized), 2)
 
-        post = Post.objects.get(id=1).serialized()
+        post = serialized[1]
         self.assertTrue('stardate' in post)
         self.assertEqual(post['title'], 'Test post 1 title')
         self.assertEqual(post['publish'], '2012-01-02 08:00 AM +0000')
         self.assertEqual(post['timezone'], 'UTC')
-        self.assertEqual(post['body'], '\n')
+        self.assertEqual(post['body'], 'the post content\n')
 
     def test_publish_field(self):
         post = Post.objects.create(

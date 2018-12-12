@@ -1,55 +1,36 @@
 import datetime
 import logging
 import pytz
+import re
 import types
 import yaml
 
 from django.utils.timezone import is_aware, make_aware, utc
 
+import frontmatter
 from dateutil import tz
 from dateutil.parser import parse
 
 from stardate.backends import BaseStardateParser
+from stardate.utils import get_post_model
+
 
 logger = logging.getLogger(__name__)
 
-DELIMITER = "\n---\n\n"
+DELIMITER = "\n\n==========\n\n"
 TIMEFORMAT = '%Y-%m-%d %I:%M %p'  # 2012-01-01 09:00 AM
+
+
+class StardateHandler(frontmatter.default_handlers.YAMLHandler):
+    FM_BOUNDARY = re.compile(r'^\n{2}', re.MULTILINE)
+    START_DELIMITER = ''
+    END_DELIMITER = ''
 
 
 class FileParser(BaseStardateParser):
     def __init__(self):
         self.delimiter = DELIMITER
         self.timeformat = TIMEFORMAT
-
-    def render(self, post):
-        """
-        Turn a post dictionary into a rendered string
-        """
-        post = post.copy()
-
-        # Body gets processed separately
-        body = post.pop('body')
-
-        # Generate meta data lines
-        # One key/value pair per line
-        meta = []
-        for key in sorted(post.keys()):
-            try:
-                value = post[key]
-
-                if value:
-                    if isinstance(value, datetime.datetime):
-                        value = datetime.datetime.strftime(value, '%Y-%m-%d %I:%M %p %z')
-                    field_string = '{0}: {1}'.format(key, value)
-                    meta.append(field_string)
-            except KeyError:
-                pass
-        meta = '\n'.join(meta)
-
-        # Body is separated from meta by three lines
-        rendered = '{0}\n\n\n{1}'.format(meta, body)
-        return rendered
 
     def pack(self, posts):
         """
@@ -58,10 +39,41 @@ class FileParser(BaseStardateParser):
         post_list = []
 
         for post in posts:
-            post_list.append(self.render(post))
+            try:
+                if isinstance(post, dict):
+                    Post = get_post_model()
 
-        document = self.delimiter.join(post_list)
-        return document
+                    if getattr(post, 'content'):
+                        post.pop('content')
+
+                    post = Post(**post)
+                post_list.append(post.to_string())
+            except AttributeError:
+                if isinstance(post, frontmatter.Post):
+                    body = post.content
+
+                    if 'publish' in post.keys():
+                        post['publish'] = datetime.datetime.strftime(
+                            self.parse_publish(post.get('publish')),
+                            '%Y-%m-%d %I:%M %p %z'
+                        )
+                else:
+                    body = post.pop('body', None)
+
+                    if not body:
+                        body = post.pop('content', None)
+
+                    if 'content' in post:
+                        post.pop('content')
+
+                    if post.get('publish'):
+                        post['publish'] = datetime.datetime.strftime(
+                            self.parse_publish(post.get('publish')), '%Y-%m-%d %I:%M %p %z'
+                        )
+
+                post_list.append(frontmatter.dumps(frontmatter.Post(body, **post)))
+
+        return self.delimiter.join(post_list)
 
     def parse(self, string):
         """
@@ -71,34 +83,24 @@ class FileParser(BaseStardateParser):
             logger.warn('parser received an empty string')
             return None
 
-        # split each string from it's meta data
-        bits = string.split('\n\n\n')
+        post = frontmatter.loads(string)
 
-        if not len(bits) > 1:
+        if not post.metadata:
             logger.warn('Not enough information found to parse string.')
             return None
 
-        # load meta data into post dictionary
-        post_data = yaml.load(bits[0]) or {}
-
-        # post body is everything else
-        # Join incase other parts of post are separated
-        # by three return characters \n\n\n
-
-        if isinstance(post_data, dict):
-            post_data['body'] = ''.join(bits[1:])
-
         try:
-            timezone = post_data['timezone']
+            timezone = post.get('timezone')
         except KeyError:
             timezone = None
 
-        if 'publish' in post_data:
-            post_data['publish'] = self.parse_publish(post_data['publish'], timezone)
+        if post.get('publish'):
+            post.metadata['publish'] = self.parse_publish(post.get('publish'), timezone)
 
-        if 'timezone' not in post_data and 'publish' in post_data:
-            post_data['timezone'] = datetime.datetime.strftime(post_data['publish'], '%Z')
-        return post_data
+        if 'timezone' not in post.keys() and 'publish' in post.keys():
+            post.metadata['timezone'] = datetime.datetime.strftime(post.get('publish'), '%Z')
+
+        return post
 
     def parse_publish(self, date, timezone=None):
         """
@@ -130,10 +132,12 @@ class FileParser(BaseStardateParser):
         """
         Returns a list of parsed post dictionaries.
         """
-        parsed_list = []
+        posts = string.split(self.delimiter)
+        unpacked = []
 
-        for post in string.split(self.delimiter):
+        for post in posts:
             parsed = self.parse(post)
             if parsed:
-                parsed_list.append(parsed)
-        return parsed_list
+                unpacked.append(parsed)
+
+        return unpacked

@@ -9,6 +9,8 @@ from django.db.models.query import QuerySet
 from django.template.defaultfilters import slugify
 from django.utils import timezone
 
+import frontmatter
+
 from dateutil import tz
 from markupfield.fields import MarkupField
 
@@ -19,7 +21,8 @@ SERIALIZED_FIELDS = (
     'publish',
     'stardate',
     'body',
-    'timezone'
+    'timezone',
+    'slug',
 )
 
 
@@ -34,8 +37,10 @@ class Blog(models.Model):
     name = models.CharField(max_length=255)
     user = models.ForeignKey(User, related_name='blogs')
     slug = models.SlugField(unique=True)
-    sync = models.BooleanField(default=True,
-        help_text='This blog should sync using it\'s selected backend')
+    sync = models.BooleanField(
+        default=True,
+        help_text='This blog should sync using it\'s selected backend'
+    )
 
 
     def __unicode__(self):
@@ -152,6 +157,13 @@ class BasePost(models.Model):
         if not self.body.raw.endswith('\n'):
             self.body.raw += '\n'
 
+        if self.publish:
+            if not isinstance(self.publish, datetime.datetime):
+                self.publish = datetime.datetime(self.publish.year, self.publish.month, self.publish.day)
+
+            if timezone.is_naive(self.publish):
+                self.publish = timezone.make_aware(self.publish, timezone.get_default_timezone())
+
     def mark_deleted(self):
         self.deleted = True
         return self
@@ -192,6 +204,10 @@ class BasePost(models.Model):
                     s['fields']['publish'].replace(tzinfo=tz.gettz(self.timezone)),
                     '%Y-%m-%d %I:%M %p %z'
                 )
+
+            # frontmatter does not handle slug as unicode for some reason
+            if s['fields']['slug']:
+                s['fields']['slug'] = str(s['fields']['slug'])
 
         return serialized[0]['fields']
 
@@ -238,6 +254,31 @@ class BasePost(models.Model):
         if prev:
             return prev[0]
         return False
+
+    def frontmatter(self):
+        keys = ['publish', 'title', 'timezone', 'slug', 'stardate']
+        fm = {}
+
+        for key in keys:
+            value = getattr(self, key)
+
+            if key == 'publish' and isinstance(value, datetime.datetime):
+                value = datetime.datetime.strftime(value, '%Y-%m-%d %I:%M %p %z')
+
+            if value:
+                fm[key] = str(value)
+
+        return fm
+
+    def to_frontmatter_post(self):
+        fm = self.frontmatter()
+
+        return frontmatter.Post(self.body.raw, **fm)
+
+    def to_string(self):
+        post = self.to_frontmatter_post()
+
+        return self.blog.backend.parser.pack([post])
 
     @property
     def is_draft(self):

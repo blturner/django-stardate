@@ -21,7 +21,7 @@ TIMESTAMP = '2012-01-02 12:00 AM'
 class FileParserTestCase(TestCase):
     def setUp(self):
         self.parser = FileParser()
-        self.test_string = "publish: {0}\ntimezone: US/Eastern\ntitle: Tingling of the spine\n\n\nExtraordinary claims require extraordinary evidence!".format(TIMESTAMP)
+        self.test_string = "---\npublish: {0}\ntimezone: US/Eastern\ntitle: Tingling of the spine\n---\nExtraordinary claims require extraordinary evidence!".format(TIMESTAMP)
 
     def tearDown(self):
         Blog.objects.all().delete()
@@ -30,46 +30,60 @@ class FileParserTestCase(TestCase):
     def test_pack(self):
         file_path = tempfile.mkstemp(suffix='.txt')[1]
         user = User.objects.create(username='bturner')
+
         blog = Blog.objects.create(
             backend_file=file_path,
             backend_class='stardate.backends.local_file.LocalFileBackend',
             name='test blog',
             user=user,
+            sync=False,
         )
 
-        Post.objects.create(
+        p1 = Post.objects.create(
             blog=blog,
             title='My first post',
             publish=datetime.datetime(2015, 1, 1, 6, 0),
             body='This is the first post.'
         )
 
-        Post.objects.create(
+        p2 = Post.objects.create(
             blog=blog,
             title='My second post',
             publish=datetime.datetime(2015, 1, 2, 6, 0),
             body='This is the second post.'
         )
 
-        post_list = [post.serialized() for post in blog.posts.all()]
+        post_list = blog.posts.all()
 
         packed = self.parser.pack(post_list)
 
-        self.assertIsInstance(post_list, list)
         self.assertEqual(len(post_list), 2)
+
         try:
             self.assertIsInstance(packed, basestring)
         except NameError:
             self.assertIsInstance(packed, str)
 
-        self.assertTrue(u'title: {0}'.format(post_list[0]['title']) in packed)
-        self.assertTrue(u'title: {0}'.format(post_list[1]['title']) in packed)
-        self.assertTrue(u'stardate: {0}'.format(post_list[0]['stardate']) in packed)
-        self.assertTrue(u'stardate: {0}'.format(post_list[1]['stardate']) in packed)
-        self.assertTrue(u'\n\n\n{0}'.format(post_list[0]['body']) in packed)
-        self.assertTrue(u'\n\n\n{0}'.format(post_list[1]['body']) in packed)
-        self.assertTrue(u'publish: {0}'.format(post_list[0]['publish']) in packed)
-        self.assertTrue(u'publish: {0}'.format(post_list[1]['publish']) in packed)
+        self.assertTrue(u'title: {0}'.format(p1.title) in packed)
+        self.assertTrue(u'title: {0}'.format(p2.title) in packed)
+
+        self.assertTrue(u'stardate: {0}'.format(p1.stardate) in packed)
+        self.assertTrue(u'stardate: {0}'.format(p2.stardate) in packed)
+
+        self.assertTrue(u'{0}'.format(p1.body.raw.strip()) in packed)
+        self.assertTrue(u'{0}'.format(p2.body.raw.strip()) in packed)
+
+        p1_publish = datetime.datetime.strftime(
+            p1.publish,
+            '%Y-%m-%d %I:%M %p %z'
+        )
+        self.assertTrue(u'publish: {0}'.format(p1_publish) in packed)
+
+        p2_publish = datetime.datetime.strftime(
+            p2.publish,
+            '%Y-%m-%d %I:%M %p %z'
+        )
+        self.assertTrue(u'publish: {0}'.format(p2_publish) in packed)
 
     def test_parse_publish(self):
         timestamp = '01-01-2015 06:00AM+0000'
@@ -119,67 +133,30 @@ class FileParserTestCase(TestCase):
         )
 
     def test_parse(self):
+        expected = datetime.datetime(2012, 1, 2, tzinfo=tz.gettz('US/Eastern'))
         parsed = self.parser.parse(self.test_string)
 
-        self.assertEqual(parsed['title'], 'Tingling of the spine')
-        expected = datetime.datetime(2012, 1, 2, tzinfo=tz.gettz('US/Eastern'))
-        self.assertEqual(parsed['publish'], expected)
-        self.assertEqual(parsed['body'], 'Extraordinary claims require extraordinary evidence!')
-        self.assertEqual(parsed['timezone'], 'US/Eastern')
-
-        # Check that extra_field is parsed
-        string = u"title: My title\nextra_field: Something arbitrary\n\n\nThe body.\n"
-        parsed = self.parser.parse(string)
-        self.assertTrue('title' in parsed.keys())
-        self.assertTrue('extra_field' in parsed.keys())
-
-    def test_render(self):
-        file_path = tempfile.mkstemp(suffix='.txt')[1]
-        user = User.objects.create(username='bturner')
-        blog = Blog.objects.create(
-            backend_file=file_path,
-            backend_class='stardate.backends.local_file.LocalFileBackend',
-            name='test blog',
-            user=user,
-        )
-        post = Post.objects.create(
-            blog=blog,
-            title='Test title',
-            publish=datetime.datetime(2013, 6, 1),
-            timezone='US/Eastern',
-            body='The body.',
-        )
-
-        packed = self.parser.pack([post.serialized()])
-        rendered = self.parser.render(post.serialized())
-
-        self.assertTrue('publish: 2013-06-01 12:00 AM -0400' in rendered)
-
-        parsed = self.parser.parse(rendered)
-
-        self.assertEqual(parsed.get('title'), post.title)
-        self.assertEqual(parsed.get('timezone'), post.timezone)
-        self.assertEqual(parsed.get('body'), post.body.raw)
-
-        self.assertEqual(rendered, packed)
+        self.assertEqual(parsed.metadata.get('title'), u'Tingling of the spine')
+        self.assertEqual(parsed.metadata.get('timezone'), u'US/Eastern')
+        
+        # self.assertEqual(parsed['publish'], expected)
+        self.assertEqual(parsed.content, u'Extraordinary claims require extraordinary evidence!')
 
     def test_unpack(self):
         content = self.test_string
         post_list = self.parser.unpack(content)
-
-        #The file has one post to unpack
-        self.assertEqual(len(post_list), 1)
-
         post = post_list[0]
 
-        self.assertEqual(post.get('title'), 'Tingling of the spine')
-
+        self.assertEqual(len(post_list), 1)
+        self.assertEqual(post.get('title'), u'Tingling of the spine')
         self.assertEqual(
-            post.get('publish'),
+            self.parser.parse_publish(post.get('publish'), post.get('timezone')),
             datetime.datetime(2012, 1, 2, tzinfo=tz.gettz('US/Eastern'))
         )
-
-        self.assertEqual(post.get('body'), 'Extraordinary claims require extraordinary evidence!')
+        self.assertEqual(
+            post.content,
+            u'Extraordinary claims require extraordinary evidence!'
+        )
 
     @patch('stardate.parsers.logger')
     def test_bad_string(self, mock_logging):

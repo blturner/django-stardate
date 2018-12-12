@@ -126,11 +126,14 @@ class DropboxBackendTestCase(TestCase):
 
         post_list = self.blog.backend.get_posts()
 
+        post = post_list[0]
+
         self.assertEqual(len(post_list), 1)
-        self.assertEqual(post_list[0]['title'], 'Hello world')
-        self.assertEqual(post_list[0]['body'], 'Hello world.\n')
+        self.assertEqual(post.get('title'), u'Hello world')
+        self.assertEqual(post.content, u'Hello world.')
+
         self.assertEqual(
-            post_list[0]['publish'],
+            post.get('publish'),
             datetime.datetime(2016, 4, 1, 12, 0, tzinfo=timezone.utc)
         )
 
@@ -162,8 +165,7 @@ class DropboxBackendTestCase(TestCase):
     @patch.object(Dropbox, 'files_download')
     @patch.object(Dropbox, 'files_get_metadata')
     def test_pull(self, mock_metadata, mock_get_file, mock_put_file):
-        post_string = 'title: Test post title\n\n\nHello world.\n---\n\n' + \
-            'title: Bar\npublish: 2016-01-01 00:00\n\n\nBar.'
+        post_string = '---\ntitle: Test post title\n---\n\n\nHello world.\n{0}---\ntitle: Bar\npublish: 2016-01-01 00:00\n---\n\n\nBar.'.format(self.blog.backend.parser.delimiter)
 
         with open(self.blog.backend_file, 'w') as backend_file:
             backend_file.write(post_string)
@@ -186,8 +188,7 @@ class DropboxBackendTestCase(TestCase):
     @patch.object(Dropbox, 'files_get_metadata')
     def test_pull_with_dupe(self, mock_metadata, mock_get_file, mock_put_file):
         post_string = \
-            'title: Foo\n\n\nHello world.\n\n---\n\n' + \
-            'title: Foo\n\n\nBar.'
+            '---\ntitle: Foo\n---\n\n\nHello world.\n{0}---\ntitle: Foo\n---\n\nBar.'.format(self.blog.backend.parser.delimiter)
 
         with open(self.blog.backend_file, 'w') as backend_file:
             backend_file.write(post_string)
@@ -220,9 +221,7 @@ class DropboxBackendTestCase(TestCase):
         )
 
         backend_file = open(self.blog.backend_file).read()
-        packed_string = self.blog.backend.parser.pack(
-            [post.serialized() for post in self.blog.posts.all()]
-        )
+        packed_string = self.blog.backend.parser.pack(self.blog.posts.all())
         self.assertEqual(backend_file, packed_string)
 
     @patch.object(Dropbox, 'files_get_metadata')
@@ -233,7 +232,7 @@ class DropboxBackendTestCase(TestCase):
         mock_get_file.side_effect = mock_get
         mock_metadata.return_value = MockMetadata()
 
-        new_post = 'title: My test post\npublish: June 1, 2013 6AM PST\n\n\nPost body.\n'
+        new_post = '---\ntitle: My test post\npublish: June 1, 2013 6AM PST\n---\nPost body.\n'
 
         with open(self.blog.backend_file, 'w') as backend_file:
             backend_file.write(new_post)
@@ -247,9 +246,9 @@ class DropboxBackendTestCase(TestCase):
         with open(self.blog.backend_file) as backend_file:
             self.assertTrue('stardate:' in backend_file.read())
 
-        packed_string = self.blog.backend.parser.pack(
-            [post.serialized() for post in self.blog.posts.all()]
-        )
+        self.assertEqual(self.blog.posts.all().count(), 1)
+
+        packed_string = self.blog.backend.parser.pack(self.blog.posts.all())
 
         _meta, file = self.blog.backend.client.files_download(self.blog.backend_file)
 
@@ -258,7 +257,7 @@ class DropboxBackendTestCase(TestCase):
 
 class LocalFileBackendTestCase(TestCase):
     def setUp(self):
-        fd, file_path = tempfile.mkstemp(suffix='.md')
+        self.fd, file_path = tempfile.mkstemp(suffix='.md')
         user = User.objects.create(username='bturner')
         blog = Blog.objects.create(
             backend_class='stardate.backends.local_file.LocalFileBackend',
@@ -296,35 +295,75 @@ class LocalFileBackendTestCase(TestCase):
     def test_posts_from_file(self):
         temp_file = tempfile.mkstemp(suffix='.md')[1]
         f = open(temp_file, 'w')
-        f.write('title: Test post\n\n\nThe body content.')
+        f.write('---\ntitle: Test post\n---\n\n\nThe body content.')
         f.close()
 
         self.blog.backend_file = temp_file
 
         posts = self.blog.backend.get_posts()
-        self.assertEqual(posts, [{'title': 'Test post', 'body': 'The body content.'}])
+
+        # self.assertEqual(posts, [{'title': 'Test post', 'body': 'The body content.'}])
+        self.assertEqual(posts[0].get('title'), 'Test post')
+        self.assertEqual(posts[0].content, 'The body content.')
 
     def test_posts_from_dir(self):
         temp_dir = tempfile.mkdtemp()
         fd, file_path = tempfile.mkstemp(dir=temp_dir, suffix='.md')
         f = open(file_path, 'w')
-        f.write('title: Test post\n\n\nThe body content.')
+        f.write('---\ntitle: Test post\n---\n\n\nThe body content.')
         f.close()
 
         fd, file_path = tempfile.mkstemp(dir=temp_dir, suffix='.md')
         f = open(file_path, 'w')
-        f.write('title: Another test post\n\n\nA different body.')
+        f.write('---\ntitle: Another test post\n---\n\n\nA different body.')
         f.close()
 
         self.blog.backend_file = temp_dir
 
         posts = self.blog.backend.get_posts()
         self.assertEqual(len(posts), 2)
-        self.assertTrue('title' in posts[0])
-        self.assertTrue('title' in posts[1])
-        self.assertTrue('body' in posts[0])
-        self.assertTrue('body' in posts[1])
 
+        first_post = [post for post in posts if post.get('title') == 'Test post']
+        self.assertEqual(first_post[0].content, 'The body content.')
+
+        second_post = [post for post in posts if post.get('title') == 'Another test post']
+        self.assertEqual(second_post[0].content, 'A different body.')
+
+        # cleanup temp files
+        for f in os.listdir(temp_dir):
+            f = os.path.join(temp_dir, f)
+            os.remove(f)
+        os.removedirs(temp_dir)
+
+    def test_push_from_dir(self):
+        temp_dir = tempfile.mkdtemp()
+        fd, file_path = tempfile.mkstemp(dir=temp_dir, suffix='.md')
+        f = open(file_path, 'w')
+        f.write('---\ntitle: Test post\n---\n\n\nThe body content.')
+        f.close()
+
+        fd, file_path = tempfile.mkstemp(dir=temp_dir, suffix='.md')
+        f = open(file_path, 'w')
+        f.write('---\ntitle: Another test post\n---\n\n\nA different body.')
+        f.close()
+
+        self.blog.backend_file = temp_dir
+
+        Post.objects.create(
+            title='A test push post',
+            blog=self.blog,
+            publish=datetime.datetime(2016, 1, 1, 0, 0),
+            body='Testing a push post.',
+        )
+
+        blog_files = os.listdir(temp_dir)
+        new_file = open(os.path.join(temp_dir, blog_files[2]), 'r').read()
+
+        self.assertEqual(len(blog_files), 3)
+        self.assertTrue('A test push post' in new_file)
+        self.assertTrue('---\n\nTesting a push post.' in new_file)
+        self.assertTrue('publish: 2016-01-01 12:00 AM +0000' in new_file)
+        
         # cleanup temp files
         for f in os.listdir(temp_dir):
             f = os.path.join(temp_dir, f)
@@ -336,7 +375,7 @@ class LocalFileBackendTestCase(TestCase):
         expected_timestamp = datetime.datetime(2013, 1, 1, 11, 0, tzinfo=timezone.utc)
 
         f = open(self.blog.backend_file, 'w')
-        f.write('title: Post title\npublish: {0}\ntimezone: US/Eastern\n\n\nA post for pulling in.'.format(timestamp))
+        f.write('---\ntitle: Post title\npublish: {0}\ntimezone: US/Eastern\n---\n\n\nA post for pulling in.'.format(timestamp))
         f.close()
 
         pulled_posts = self.blog.backend.pull()
@@ -365,7 +404,7 @@ class LocalFileBackendTestCase(TestCase):
         content = f.read()
         f.close()
 
-        self.assertEqual(content.count('---'), 2)
+        self.assertEqual(content.count('---'), 6)
 
         self.assertTrue('title: A test push post' in content)
         self.assertTrue('publish: 2016-01-01 12:00 AM +0000' in content)
@@ -373,7 +412,7 @@ class LocalFileBackendTestCase(TestCase):
 
         self.assertTrue('title: Foo' in content)
         self.assertTrue('publish: 2016-02-01 12:00 AM +0000' in content)
-        self.assertTrue('\n\nfoo.\n' in content)
+        self.assertTrue('\n\nfoo.' in content)
 
     def test_disabled_blog(self):
         self.blog.sync = False
