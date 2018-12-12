@@ -18,7 +18,7 @@ setup(
         'Markdown==2.6.5',
         'PyYAML==3.11',
         'python-dateutil==2.4.2',
-        'python-frontmatter==0.4.2',
+        'python-frontmatter==0.4.4',
         'pytz<2015.7',
         'social-auth-app-django==2.1.0',
         'watchdog==0.8.3',
