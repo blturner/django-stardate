@@ -35,6 +35,14 @@ def mock_put(content, path, mode):
     }
 
 
+def mock_put_bytes(content, path, mode):
+    open(path, 'wb').write(content)
+
+    return {
+        'path': path
+    }
+
+
 class MockMetadata:
     @property
     def server_modified(self):
@@ -115,7 +123,7 @@ class DropboxBackendTestCase(TestCase):
     @patch.object(Dropbox, 'files_upload')
     def test_get_posts(self, mock_put_file, mock_get_file):
         mock_get_file.side_effect = mock_get
-        mock_put_file.side_effect = mock_put
+        mock_put_file.side_effect = mock_put_bytes
 
         Post.objects.create(
             title='Hello world',
@@ -171,7 +179,7 @@ class DropboxBackendTestCase(TestCase):
             backend_file.write(post_string)
 
         mock_get_file.side_effect = mock_get
-        mock_put_file.side_effect = mock_put
+        mock_put_file.side_effect = mock_put_bytes
 
         mock_metadata.return_value = MockMetadata()
 
@@ -194,7 +202,7 @@ class DropboxBackendTestCase(TestCase):
             backend_file.write(post_string)
 
         mock_get_file.side_effect = mock_get
-        mock_put_file.side_effect = mock_put
+        mock_put_file.side_effect = mock_put_bytes
 
         mock_metadata.return_value = MockMetadata()
 
@@ -205,7 +213,7 @@ class DropboxBackendTestCase(TestCase):
     @patch.object(Dropbox, 'files_download')
     def test_push(self, mock_get_file, mock_put_file):
         mock_get_file.side_effect = mock_get
-        mock_put_file.side_effect = mock_put
+        mock_put_file.side_effect = mock_put_bytes
 
         # Creating a Post will automatically push it to the backend file
         first_post = Post.objects.create(
@@ -228,7 +236,7 @@ class DropboxBackendTestCase(TestCase):
     @patch.object(Dropbox, 'files_download')
     @patch.object(Dropbox, 'files_upload')
     def test_pull_then_push(self, mock_put_file, mock_get_file, mock_metadata):
-        mock_put_file.side_effect = mock_put
+        mock_put_file.side_effect = mock_put_bytes
         mock_get_file.side_effect = mock_get
         mock_metadata.return_value = MockMetadata()
 
