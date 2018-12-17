@@ -132,7 +132,7 @@ class FileParser(BaseStardateParser):
         """
         Returns a list of parsed post dictionaries.
         """
-        posts = string.split(self.delimiter)
+        posts = str(string).split(self.delimiter)
         unpacked = []
 
         for post in posts:

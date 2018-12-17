@@ -35,6 +35,14 @@ def mock_put(content, path, mode):
     }
 
 
+def mock_get_bytes(path):
+    tmp_file = open(path)
+    mock_file = Mock()
+    mock_file.content = tmp_file.read().encode('utf-8')
+
+    return ('meta', mock_file)
+
+
 def mock_put_bytes(content, path, mode):
     open(path, 'wb').write(content)
 
@@ -112,7 +120,7 @@ class DropboxBackendTestCase(TestCase):
         expected = 'title: Hello world\n\n\nHello world'
 
         mock_file = Mock()
-        mock_file.content = expected
+        mock_file.content = b'title: Hello world\n\n\nHello world'
         mock_get_file.return_value = ('metadata', mock_file)
 
         backend_file = self.blog.backend.get_file(self.blog.backend_file)
@@ -122,7 +130,7 @@ class DropboxBackendTestCase(TestCase):
     @patch.object(Dropbox, 'files_download')
     @patch.object(Dropbox, 'files_upload')
     def test_get_posts(self, mock_put_file, mock_get_file):
-        mock_get_file.side_effect = mock_get
+        mock_get_file.side_effect = mock_get_bytes
         mock_put_file.side_effect = mock_put_bytes
 
         Post.objects.create(
@@ -178,7 +186,7 @@ class DropboxBackendTestCase(TestCase):
         with open(self.blog.backend_file, 'w') as backend_file:
             backend_file.write(post_string)
 
-        mock_get_file.side_effect = mock_get
+        mock_get_file.side_effect = mock_get_bytes
         mock_put_file.side_effect = mock_put_bytes
 
         mock_metadata.return_value = MockMetadata()
@@ -201,7 +209,7 @@ class DropboxBackendTestCase(TestCase):
         with open(self.blog.backend_file, 'w') as backend_file:
             backend_file.write(post_string)
 
-        mock_get_file.side_effect = mock_get
+        mock_get_file.side_effect = mock_get_bytes
         mock_put_file.side_effect = mock_put_bytes
 
         mock_metadata.return_value = MockMetadata()
@@ -212,7 +220,7 @@ class DropboxBackendTestCase(TestCase):
     @patch.object(Dropbox, 'files_upload')
     @patch.object(Dropbox, 'files_download')
     def test_push(self, mock_get_file, mock_put_file):
-        mock_get_file.side_effect = mock_get
+        mock_get_file.side_effect = mock_get_bytes
         mock_put_file.side_effect = mock_put_bytes
 
         # Creating a Post will automatically push it to the backend file
@@ -237,7 +245,7 @@ class DropboxBackendTestCase(TestCase):
     @patch.object(Dropbox, 'files_upload')
     def test_pull_then_push(self, mock_put_file, mock_get_file, mock_metadata):
         mock_put_file.side_effect = mock_put_bytes
-        mock_get_file.side_effect = mock_get
+        mock_get_file.side_effect = mock_get_bytes
         mock_metadata.return_value = MockMetadata()
 
         new_post = '---\ntitle: My test post\npublish: June 1, 2013 6AM PST\n---\nPost body.\n'
@@ -260,7 +268,7 @@ class DropboxBackendTestCase(TestCase):
 
         _meta, file = self.blog.backend.client.files_download(self.blog.backend_file)
 
-        self.assertEqual(file.content, packed_string)
+        self.assertEqual(file.content.decode('utf-8'), packed_string)
 
 
 class LocalFileBackendTestCase(TestCase):
