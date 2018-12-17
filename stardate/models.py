@@ -1,3 +1,6 @@
+from __future__ import unicode_literals
+from django.utils.encoding import python_2_unicode_compatible
+
 import datetime
 import uuid
 
@@ -25,7 +28,7 @@ SERIALIZED_FIELDS = (
     'slug',
 )
 
-
+@python_2_unicode_compatible
 class Blog(models.Model):
     authors = models.ManyToManyField(User, blank=True)
     # Dot notation path to backend Class
@@ -43,7 +46,7 @@ class Blog(models.Model):
     )
 
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     @property
@@ -119,6 +122,7 @@ class PostManager(models.Manager):
             publish__lte=timezone.now()).order_by('-publish')
 
 
+@python_2_unicode_compatible
 class BasePost(models.Model):
     authors = models.ManyToManyField(User, blank=True, related_name="%(app_label)s_%(class)s_related")
     blog = models.ForeignKey(Blog, related_name="%(app_label)s_%(class)s_related")
@@ -144,7 +148,7 @@ class BasePost(models.Model):
         if hasattr(self, 'blog'):
             self.backend = self.blog.backend
 
-    def __unicode__(self):
+    def __str__(self):
         return self.title
 
     def clean(self, *args, **kwargs):
