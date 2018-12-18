@@ -345,12 +345,6 @@ class LocalFileBackendTestCase(TestCase):
         second_post = [post for post in posts if post.get('title') == 'Another test post']
         self.assertEqual(second_post[0].content, 'A different body.')
 
-        # cleanup temp files
-        for f in os.listdir(temp_dir):
-            f = os.path.join(temp_dir, f)
-            os.remove(f)
-        os.removedirs(temp_dir)
-
     def test_push_from_dir(self):
         temp_dir = tempfile.mkdtemp()
         fd, file_path = tempfile.mkstemp(dir=temp_dir, suffix='.md')
