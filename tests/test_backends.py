@@ -273,7 +273,7 @@ class DropboxBackendTestCase(TestCase):
 
 class LocalFileBackendTestCase(TestCase):
     def setUp(self):
-        self.fd, file_path = tempfile.mkstemp(suffix='.md')
+        fd, file_path = tempfile.mkstemp(suffix='.md')
         user = User.objects.create(username='bturner')
         blog = Blog.objects.create(
             backend_class='stardate.backends.local_file.LocalFileBackend',
