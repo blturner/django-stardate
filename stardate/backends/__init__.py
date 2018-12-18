@@ -221,7 +221,7 @@ class StardateBackend(object):
             try:
                 with open(post_path) as f:
                     remote_post = frontmatter.loads(f)
-            except FileNotFoundError:
+            except IOError:
                 remote_post = frontmatter.Post('')
 
             # Update the contents of the remote post
