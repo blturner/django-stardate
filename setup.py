@@ -16,7 +16,7 @@ setup(
         'django-markupfield==1.4.0',
         'dropbox==8.8.1',
         'Markdown==2.6.5',
-        'PyYAML==3.11',
+        'PyYAML==5.1',
         'python-dateutil==2.4.2',
         'pytz<2015.7',
         'social-auth-app-django==2.1.0',
