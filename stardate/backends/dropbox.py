@@ -29,10 +29,10 @@ class DropboxBackend(StardateBackend):
     def get_file(self, path):
         metadata, file = self.client.files_download(path)
 
-        return file.content
+        return file.content.decode('utf-8')
 
     def write_file(self, file_path, content):
-        return self.client.files_upload(content, file_path, mode=WriteMode('overwrite', None))
+        return self.client.files_upload(content.encode('utf-8'), file_path, mode=WriteMode('overwrite', None))
 
     def get_social_auth(self):
         return self.blog.user.social_auth.get(provider='dropbox-oauth2')

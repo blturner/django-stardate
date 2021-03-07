@@ -5,6 +5,7 @@ from datetime import datetime
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.forms import model_to_dict
 from django.template.defaultfilters import slugify
 from django.utils.timezone import utc
 
@@ -17,6 +18,8 @@ try:
     from importlib import import_module
 except ImportError:
     from django.utils.importlib import import_module
+
+import frontmatter
 
 from stardate.utils import get_post_model
 
@@ -39,9 +42,13 @@ DEFAULT_BACKENDS = {
 STARDATE_BACKENDS = getattr(settings, 'STARDATE_BACKENDS', DEFAULT_BACKENDS)
 
 
-def get_backend(backend=None, blog=None):
+def get_backend(
+    backend='stardate.backends.local_file.LocalFileBackend',
+    blog=None
+):
     i = backend.rfind('.')
     module, attr = backend[:i], backend[i + 1:]
+    mod = None
     try:
         mod = import_module(module)
     except ImportError as err:
@@ -81,7 +88,7 @@ class StardateBackend(object):
 
         # If a post is not provided, try and fetch it
         if not post:
-            if 'stardate' in post_dict:
+            if 'stardate' in post_dict.keys():
                 try:
                     post = Post.objects.get(
                         blog=blog,
@@ -91,6 +98,10 @@ class StardateBackend(object):
                     logger.exception('something went boom')
                     logger.debug(post_dict)
             if not post:
+                post_dict = post_dict.to_dict()
+                post_dict['body'] = post_dict['content']
+                post_dict.pop('content', None)
+
                 post_dict['blog'] = blog
 
                 post = Post(**post_dict)
@@ -105,20 +116,18 @@ class StardateBackend(object):
                     return
 
         push = False
+        body = getattr(post, 'body').raw
 
-        for key, value in post_dict.items():
-            if key == 'body':
-                post_value = getattr(post, key).raw
-            else:
-                post_value = getattr(post, key)
-
-            if value != post_value:
+        try:
+            if body != post_dict.content:
                 push = True
+        except:
+            pass
 
         # Update from dict values
         if not created:
-            for att, value in post_dict.items():
-                setattr(post, att, value)
+            for key in post_dict.keys():
+                setattr(post, key, post_dict.get(key))
             logger.debug('push is {}'.format(push))
 
             if save:
@@ -156,11 +165,11 @@ class StardateBackend(object):
         """
         Update posts in a single blog file
         """
-        remote_posts = self.get_posts()
+        remote_posts = [post.to_dict() for post in self.get_posts()]
 
         # Use serialized version of posts to find
         # and update
-        local_posts = [post.serialized() for post in posts]
+        local_posts = posts
 
         # Update remote_posts with local versions
         ## FIXME: n^2 crawl, use stardate as keys
@@ -170,9 +179,9 @@ class StardateBackend(object):
             # First we try to see if match by stardate exists
             for remote_post in remote_posts:
                 if 'stardate' in remote_post:
-                    if local_post['stardate'] == remote_post['stardate']:
+                    if getattr(local_post, 'stardate') == remote_post['stardate']:
                         exists = True
-                        remote_post.update(local_post)
+                        remote_post.update(local_post.serialized())
                         break
 
             # If post was created remotely and was pulled in
@@ -181,9 +190,9 @@ class StardateBackend(object):
             if not exists:
                 for remote_post in remote_posts:
                     if 'title' in remote_post:
-                        if local_post['title'] == remote_post['title']:
+                        if getattr(local_post, 'title') == remote_post['title']:
                             exists = True
-                            remote_post.update(local_post)
+                            remote_post.update(local_post.serialized())
                             break
 
             # Add new remote post if it does not exist yet
@@ -202,19 +211,24 @@ class StardateBackend(object):
         """
         Update posts in multiple files
         """
-        local_posts = [post.serialized() for post in posts]
+        local_posts = [post.to_frontmatter_post() for post in posts]
 
         for local_post in local_posts:
             # Generate the post file path dynamically
             post_path = self._get_post_path(folder, local_post)
 
             # Get the existing remote post as a post dict
-            remote_post = self.get_post(post_path)
+            try:
+                with open(post_path) as f:
+                    remote_post = frontmatter.loads(f)
+            except IOError:
+                remote_post = frontmatter.Post('')
 
             # Update the contents of the remote post
-            remote_post.update(local_post)
-            content = self.parser.render(remote_post)
-            self.write_file(post_path, content)
+            remote_post.metadata.update(local_post.metadata)
+            remote_post.content = local_post.content
+
+            self.write_file(post_path, frontmatter.dumps(remote_post))
         return
 
 
@@ -238,7 +252,6 @@ class StardateBackend(object):
         # We are using a single file or a directory of files
         if blog_file:
             responses = [self.push_blog_file(posts)]
-
         else:
             responses = self.push_post_files(blog_dir, posts)
 

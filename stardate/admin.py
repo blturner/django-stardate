@@ -11,6 +11,7 @@ class BlogAdmin(admin.ModelAdmin):
     fields = [
         'name',
         'slug',
+        'backend_class',
         'backend_file',
         'user',
         'last_sync',
