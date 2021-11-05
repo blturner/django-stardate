@@ -49,7 +49,7 @@ def get_backend(backend=None, blog=None):
     try:
         backend_class = getattr(mod, attr)
     except AttributeError:
-        print (module)
+        return
     return backend_class(blog=blog)
 
 
