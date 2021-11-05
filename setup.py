@@ -15,6 +15,7 @@ setup(
         "Django>=1.4,<1.12",
         "django-markupfield==2.0.1",
         "dropbox==9.5.0",
+        "Markdown==3.3.4",
         "PyYaml==5.1",
         "python-dateutil==2.8.0",
         "pytz<2015.7",
