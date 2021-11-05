@@ -14,7 +14,7 @@ setup(
     install_requires=[
         "Django>=1.4,<1.12",
         "django-markupfield==1.4.0",
-        "dropbox==8.9.0",
+        "dropbox==9.5.0",
         "Markdown==2.6.5",
         "PyYaml==5.1",
         "python-dateutil==2.8.0",
