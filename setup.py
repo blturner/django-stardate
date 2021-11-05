@@ -17,7 +17,7 @@ setup(
         "dropbox==8.9.0",
         "Markdown==2.6.5",
         "PyYaml==5.1",
-        "python-dateutil==2.4.2",
+        "python-dateutil==2.8.0",
         "pytz<2015.7",
         "social-auth-app-django==2.1.0",
         "watchdog==0.8.3",
